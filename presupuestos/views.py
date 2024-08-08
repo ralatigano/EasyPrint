@@ -23,9 +23,6 @@ from datetime import date
 # Create your views here.
 app_name = 'presupuestos'
 
-# editando_presup = False
-# confirma = False
-# np_global = 0
 
 # Página principal de la app para hacer una nueva cotización.
 
@@ -40,12 +37,9 @@ def Inicio(request):
     descuento = 0
     totalNeto = 0
     vendedor = request.session.get('vendedor')
-    # np_global = 0
     pres = Presupuesto.objects.all()
-    # np = 0
     np = max(p.numero for p in pres) + 1 if pres else 1
     request.session['np_global'] = np
-    # ListProds = Producto.objects.all()
     Prods = Producto.objects.filter(
         presupuesto=None).filter(vendedor=vendedor)
     for p in Prods:
@@ -206,7 +200,6 @@ def agregar_descartar_producto(request, str):
                 vendedor=vendedor,
             )
             url = f'/presupuestos/verPresupuesto/{np_global}'
-            # costo['url'] = url
         else:
             Producto.objects.create(
                 presupuesto=None,
@@ -226,7 +219,6 @@ def agregar_descartar_producto(request, str):
                 vendedor=vendedor,
             )
             url = '/presupuestos/inicio'
-            # costo['url'] = url
         messages.success(request, 'El producto se ha agregado correctamente.')
         # Limpiar los datos de la sesión
         request.session.pop('datos_producto', None)
@@ -250,7 +242,6 @@ def edit_producto_cotizado(request):
     try:
         cambios_precio = False
         cambios = False
-        # print(request.POST)
         prod = Producto.objects.get(codigo=int(request.POST['cod_edit']))
         if prod.cantidad != request.POST['cant_edit']:
             prod.cantidad = float(request.POST['cant_edit'])
@@ -277,7 +268,6 @@ def edit_producto_cotizado(request):
         if cambios_precio:
             p_precio = float(Producto.objects.filter(
                 nombre=prod.nombre).filter(resultado=0).values_list('precio', flat=True).first())
-            # print(f'p_precio: {p_precio}')
             prod.precio = round(p_precio * prod.cantidad * prod.cant_area +
                                 costo_produccion + empaquetado_precio, 2)
             prod.desc_plata = float(prod.precio * prod.desc_porcentaje / 100)
@@ -362,7 +352,6 @@ def guardar_presupuesto(request):
         pre_n.total = t
         pre_n.save()
 
-        # return redirect('/presupuestos')
     else:
         c = ''
         # Creo el presupuesto solo con el número de modo de poder asignárselo a los productos que perteneceran al nuevo presupuesto
@@ -481,7 +470,6 @@ def generar_presupuesto_pdf(request, np):
         'total_neto': total_neto,
         'base_url': base_url,
     }
-    # return render(request, 'presupuestos/descargar_presupuesto.html', data)
     # Renderizar la plantilla HTML
     html_string = render_to_string(
         'presupuestos/descargar_presupuesto.html', data)

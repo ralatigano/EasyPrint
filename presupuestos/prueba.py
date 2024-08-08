@@ -39,7 +39,6 @@ def calcular_cant_etiquetas_por_superficie(ancho_hoja, alto_hoja, ancho_elemento
 
     # Usamos len para averiguar cuantos elementos entraron.
     cant_elementos_empaquetados = len(elementos_empaquetados)
-    # print(f'Se empaquetaron {cant_elementos_empaquetados} elementos')
 
     # Calcular la altura máxima ocupada por las etiquetas empacadas
     altura_max_ocupada = 0
@@ -82,88 +81,3 @@ def calcular_cant_etiquetas_por_superficie(ancho_hoja, alto_hoja, ancho_elemento
     plt.savefig(save_path)
 
     return cant_elementos_empaquetados, relative_path, area_ocupada
-
-    # # Crea un HTML con la imagen
-    # html = f"""
-    # <!DOCTYPE html>
-    # <html>
-    # <head>
-    #     <title>Representación gráfica de la superficie x con las etiquetas ubicadas</title>
-    # </head>
-    # <body>
-    #     <h1>Representación gráfica de la superficie x con las etiquetas ubicadas</h1>
-    #     <img src="surface.png" alt="Surface x con etiquetas ubicadas">
-    #     <p>Número de etiquetas: {num_packed_labels} en una superficie de  {a} x {b}</p>
-    # </body>
-    # </html>
-    # """
-
-    # # Guarda el HTML en un archivo
-    # with open('surface.html', 'w') as file:
-    #     file.write(html)
-
-    # # Abre el HTML en el navegador
-    # webbrowser.open('surface.html')
-
-    ########################### Esto funciona pero no considera la froma óptima de orientar las etiquetas ###########################
-    # # Supongamos que las dimensiones de la superficie x son a*x e b*y
-    # a = 31
-    # b = 46
-
-    # # Supongamos que las dimensiones de la etiqueta de superficie y son c*x e d*y
-    # c = 2
-    # d = 4
-    # gap = 0.5  # Gap de 0.5 unidades entre las etiquetas
-
-    # # Crea una imagen de la superficie x con las etiquetas ubicadas
-    # fig, ax = plt.subplots()
-    # ax.set_xlim(0, a)
-    # ax.set_ylim(0, b)
-
-    # # Crea un rectángulo para representar la superficie x
-    # rect = plt.Rectangle((0, 0), a, b, color='blue', alpha=0.5)
-    # ax.add_patch(rect)
-
-    # # Crea rectángulos para representar las etiquetas de superficie y con gap de 0.5 unidades
-    # etiquetas_x = []
-    # etiquetas_y = []
-    # num_etiquetas = 0
-
-    # for i in range(a // c):
-    #     x_pos = i * (c + gap)
-    #     for j in range(b // d):
-    #         y_pos = j * (d + gap)
-    #         if x_pos + c <= a and y_pos + d <= b:
-    #             rect = plt.Rectangle((x_pos, y_pos), c,
-    #                                  d, color='red', alpha=0.5)
-    #             ax.add_patch(rect)
-    #             etiquetas_x.append(x_pos)
-    #             etiquetas_y.append(y_pos)
-    #             num_etiquetas += 1
-
-    # # Ajusta la escala de ambos ejes para mantenerla igual
-    # ax.set_aspect('equal')
-    # # Guarda el gráfico en un archivo HTML
-    # plt.savefig('surface.png')
-
-    # # Crea un HTML con la imagen
-    # html = f"""
-    # <!DOCTYPE html>
-    # <html>
-    # <head>
-    #     <title>Representación gráfica de la superficie x con las etiquetas ubicadas</title>
-    # </head>
-    # <body>
-    #     <h1>Representación gráfica de la superficie x con las etiquetas ubicadas</h1>
-    #     <img src="surface.png" alt="Surface x con etiquetas ubicadas">
-    #     <p>Número de etiquetas: {num_etiquetas} en una superficie de  {a} x {b}</p>
-    # </body>
-    # </html>
-    # """
-
-    # # Guarda el HTML en un archivo
-    # with open('surface.html', 'w') as file:
-    #     file.write(html)
-
-    # # Abre el HTML en el navegador
-    # webbrowser.open('surface.html')

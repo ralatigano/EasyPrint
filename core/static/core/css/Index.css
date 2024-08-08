@@ -2,13 +2,8 @@
 .FormularioInicial {
     border-radius: 10px;
     padding: 30px;
-    /* width: 100%; */
-}
-/* Estilos de la tabla */
-/* .table-container {
     width: 100%;
-    overflow-x: auto; /* Asegura que la tabla pueda desplazarse horizontalmente si es necesario 
-} */
+}
 
 /* Asegurarse de que los elementos del formulario ocupen todo el ancho disponible */
 .form-group {
@@ -55,17 +50,21 @@ input#t_produccion {
     width: 25px !important;
 }
 .contenedor_formulario {
+    width: 100%;
     display: grid;
     grid-gap: 20px;
-    grid-template-columns: repeat(4, calc(85% / 4));
+    grid-template-columns: repeat(4, 1fr);
     grid-template-rows: repeat(5,auto);
     grid-template-areas:    "cliente cliente nothing n_presupuesto"
                             "categoria categoria producto producto"
                             "cantidad-ancho-alto cantidad-ancho-alto cantidad-ancho-alto cantidad-ancho-alto"
                             "info_adic info_adic info_adic descuento"
                             "btn_agregar btn_agregar btn_agregar btn_agregar";
+    opacity: 0.9;
+    border-radius: 10px;
+    margin: 5px 5px 5px 5px;
+    padding: 20px 20px 20px 20px;
 }
-
 .light_bg {
     background-color: var(--fondo-light);
     color: black;
@@ -79,6 +78,7 @@ input#t_produccion {
 .contenedor_formulario .form-control,
 .contenedor_formulario .form-select {
     width: 100%;
+    max-width: 100%;
     box-sizing: border-box; /* Asegura que el padding se incluya en el ancho total */
 }
 
@@ -111,15 +111,6 @@ input#t_produccion {
 .contenedor_formulario .form-group.btn_agregar {
     grid-area : btn_agregar;
 }
-
-
-/* #Presupuesto {
-    border-color: black;
-} */
-
-/* .etiquetas {
-    color: white;
-} */
 
 .buttons {
     max-width: 80%;

@@ -27,9 +27,6 @@ def generar_contrasena():
 
 def notificar_contrasena(correo, usuario, contrasena):
 
-    # tarea = Tareas.objects.get(id=tarea_id)
-    # correo_encargado = User.objects.get(username=tarea.encargado).email
-    # url_tarea = f'https://{settings.ALLOWED_HOSTS[0]}/core/explorarTarea/{tarea.nombre}'
     template = get_template('core/correo_contrasena.html')
     data = {
         'usuario': usuario,
@@ -121,27 +118,19 @@ def obtener_datos(request):
     else:
         cliente = request.POST['cliente']
     prod_cod = request.POST['producto']
-    # print('PRODUCTO: ' + request.POST['producto'])
     categoria = request.POST['categoria']
     cat = Categoria.objects.get(nombre=categoria)
     prod = Producto.objects.filter(resultado=0).get(codigo=prod_cod)
-    # codigo = prod.codigo
     info_adic = request.POST['info_adic']
     cantidad = float(request.POST['cantidad'])
     cant_area = float(request.POST['cant_area'])
-    # print(f'cantidad obtener datos: {cantidad}')
     t_produccion = float(request.POST['t_produccion'])
     if request.POST.get('empaquetado') == 'on':
         empaq = True
     else:
         empaq = False
-    # ancho = int(request.POST['ancho'])
-    # alto = int(request.POST['alto'])
     precio = float(prod.precio)
     descuento = int(request.POST['descuento'])
-    # resultado = round((float(precio) * int(cantidad))
-    # * (1 - descuento/100), 2)
-    # desc_plata = round(cantidad * prod.precio * descuento / 100, 2)
     return ({
             'np': np,
             'cliente': cliente,
@@ -156,8 +145,6 @@ def obtener_datos(request):
             'precio': precio,
             'descuento': descuento,
             'factor': prod.factor,
-            # 'desc_plata': desc_plata,
-            # 'resultado': resultado
             })
 
 

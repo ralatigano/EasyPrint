@@ -167,16 +167,13 @@ def restablecer_contrasena(request):
 
 def correo_contrasena(request):
     usuario = request.POST['usuario']
-    # print(usuario)
     email = request.POST['email']
-    # print(email)
     try:
         user = User.objects.get(username=usuario)
         if user.email == email:
             contrasena_temp = generar_contrasena()
             user.set_password(contrasena_temp)
             user.save()
-            # print('llega hasta aquí')
             notificar_contrasena(email, usuario, contrasena_temp)
             messages.success(
                 request, 'Se ha generado una contraseña temporal y se ha enviado al correo electrónico suministrado.')

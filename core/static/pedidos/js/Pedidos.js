@@ -29,7 +29,7 @@ const initDataTable=async() => {
 
 window.addEventListener("load", async() => {
     await initDataTable();
-    // document.getElementById("nav_item_pedidos").style.fontWeight = "bold";
+    document.getElementById("nav_item_pedidos").style.fontWeight = "bold";
 });
 
 

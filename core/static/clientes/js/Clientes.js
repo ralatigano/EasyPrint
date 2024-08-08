@@ -38,7 +38,6 @@ editarClienteModal.addEventListener('show.bs.modal', event => {
   //obtengo el código del producto y su nombre para mostrarlo en el modal
   //{{c.id}}|{{c.nombre}}|{{c.negocio}}|{{c.cuit}}|{{c.telefono}}|{{c.direccion}}|{{c.metodo_contacto}}
   const recipient = button.getAttribute('data-bs-whatever')
-  console.log(recipient);
   var partes = recipient.split('|');
   const id = partes[0];
   const nombre = partes[1];

@@ -28,7 +28,7 @@ const initDataTable=async() => {
 
 window.addEventListener("load", async() => {
     await initDataTable();
-    // document.getElementById("nav_item_presupuestos").style.fontWeight = "bold";
+    document.getElementById("nav_item_presupuestos").style.fontWeight = "bold";
 });
 
 

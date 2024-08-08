@@ -66,27 +66,6 @@ def completar_pedido(request):
     }
     return render(request, 'pedidos/completar_pedido.html', data)
 
-    # if editando_presup:
-    #     Prods = Producto.objects.filter(presupuesto=np_global)
-    #     lista = []
-    #     for p in Prods:
-    #         lista.append(f'{p.cantidad} {p.nombre}')
-    #     cli = Presupuesto.objects.get(numero=np_global).cliente
-    #     total = Presupuesto.objects.get(numero=np_global).total
-    #     data = {
-    #         'n_ped': n_ped,
-    #         'np': np_global,
-    #         'prods': lista,
-    #         'cli': cli,
-    #         'total': total
-    #     }
-    #     return render(request, 'pedidos/completar_pedido.html', data)
-    # else:
-    #     request.session['confirma'] = True
-    #     return redirect('/presupuestos/guardarPresupuesto')
-
-# vista que permite cambiar el estado de un pedido.
-
 
 @login_required
 def cambiar_estado(request):
@@ -219,5 +198,3 @@ def confirmar_pedido(request):
                 request, 'Hubo un error al registrar el pedido. ' + str(e))
 
         return redirect(url)
-
-    # return redirect('/pedidos')

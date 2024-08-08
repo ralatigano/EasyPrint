@@ -21,16 +21,6 @@
     background-image: url(/static/core/img/dark/Fondo_dark.png); 
 }
 
-/* header, footer {
-    position: relative;
-    z-index: 2; 
-}
-
-main {
-    position: relative;
-    z-index: 2;
-} */
-
 .contenedor {
     position: relative;
     display: grid;
@@ -54,12 +44,11 @@ main {
 }
 
 .contenedor .ContenidoPrincipal {
-    /* position: relative; */
     grid-area: ContenidoPrincipal;
     margin: 10px;
     padding: 50px;
     min-height: 800px; 
-    overflow: hidden;  
+    overflow: auto;  
     z-index: 10;
 }
 
@@ -67,19 +56,6 @@ main {
 
     grid-area: Pie;
 }
-
-/* #recuadro-gral {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%); 
-    max-width: 90vw;
-    padding: 10px;
-    overflow: hidden;
-    border-radius: 10px;
-    z-index: -1;
-    opacity: 75%;
-} */
 
 .version {
     position: absolute;
@@ -163,6 +139,11 @@ main {
     text-align: left;
     width: 100%;
     gap: 10px;
+}
+
+.table{
+    border-radius: 10px;
+    overflow: hidden;
 }
 
 .modal {

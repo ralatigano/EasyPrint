@@ -1,5 +1,6 @@
 .Formulario_Pedido {
-    background-color:green;
+    /* background-color:green; */
+    border-radius: 10px;
     margin: 50px;
     padding: 50px;
 }

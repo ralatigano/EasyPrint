@@ -2,6 +2,7 @@
 // Inicializar DataTable y otros elementos después de que el DOM esté completamente cargado
 document.addEventListener("DOMContentLoaded", async() => {
     await initDataTable();
+    document.getElementById("nav_item_inicio").style.fontWeight = "bold";
 });
 
 let dataTable;
@@ -96,7 +97,6 @@ function submitCalculation() {
     .then(response => response.json())
     .then(data => {
         if (data.error) {
-            console.log('upps, hubo un error');
             alert(data.error);
         } else {
             document.getElementById('cant_resultado').innerText = data.cant_resultado;
@@ -198,7 +198,6 @@ function previoModal() {
     .then(response => response.json())
     .then(data => {
         if (data.error) {
-            console.log('upps, hubo un error');
             alert(data.error);
         } else {
             document.getElementById('prod_prev').innerText = data.producto;

@@ -133,7 +133,6 @@ def cargar_productos(request):
                 values = []
                 for col in range(1, 8):
                     cell = sheet.cell(row=total, column=col)
-                    # print(cell)
                     value = cell.value if cell.value is not None else " "
                     values.append(str(value))
                 codigo, nombre, ancho, alto, precio, factor, categoria = values

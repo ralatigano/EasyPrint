@@ -27,8 +27,8 @@ const initDataTable=async() => {
 }
 
 window.addEventListener("load", async() => {
-     await initDataTable();
-    //  document.getElementById("nav_item_productos").style.fontWeight = "bold";
+    await initDataTable();
+    document.getElementById("nav_item_productos").style.fontWeight = "bold";
 });
 
 (function () {

@@ -14,7 +14,7 @@ document.addEventListener("DOMContentLoaded", function() {
             const darkMode = data.dark_mode;
             setTheme(darkMode);
             // Llamar función que adapta el recuadro de fondo
-            //adaptRecuadroFondo(darkMode)
+            adaptRecuadroFondo()
         },
         error: function() {
             // Establecer el tema en función de las preferencias obtenidas
@@ -308,30 +308,14 @@ document.addEventListener('DOMContentLoaded', function() {
 const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
 const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
 
-function adaptRecuadroFondo(themeValue) {
-    const recuadroGral = document.getElementById('recuadro-gral');
+function adaptRecuadroFondo() {
     const contenidoPrincipal = document.querySelector('.ContenidoPrincipal');
 
     // Ajusta el ancho del recuadro al 90% del viewport
     const viewportWidth = window.innerWidth;
-    const anchoRecuadro = `${viewportWidth * 0.9}px`;
-    recuadroGral.style.width = anchoRecuadro;
+    contenidoPrincipal.style.width = `${viewportWidth * 0.9}px`;
 
-    // Ajusta la altura del recuadro según el contenido
-    const alturaContenido = contenidoPrincipal ? contenidoPrincipal.offsetHeight : 0;
-    recuadroGral.style.height = `${alturaContenido + 20}px`; // 20% mayor
-
-    contenidoPrincipal.style.width = `${anchoRecuadro * 0.9}px`;
-    //contenidoPrincipal.style.height = 'auto';
-
-    // Ajuste de colores según el tema
-    recuadroGral.style.backgroundColor = themeValue === 'dark' ? '#474973' : '#B1DE43';
-
-  
-    // Vuelve a ajustar el tamaño si el contenido cambia (en caso de redimensionar ventana)
-    //window.addEventListener('resize', () => adaptRecuadroFondo(themeValue));
-
-    // Ajuste inicial después de cargar el contenido
-    // document.addEventListener('DOMContentLoaded', () => adaptRecuadroFondo(themeValue));
-    //window.addEventListener('load', () => adaptRecuadroFondo(themeValue));
 }
+
+window.addEventListener('resize', () => adaptRecuadroFondo());
+window.addEventListener('load', () => adaptRecuadroFondo());
