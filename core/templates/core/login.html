@@ -1,0 +1,32 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="es" data-bs-theme="light">
+    <head>
+        <title> {% block title %} Iniciar sesión {% endblock %} </title>
+        {% block head %}
+        <link rel="stylesheet" href="{% static 'core/css/login.css' %}">
+        {% endblock %}
+    </head>
+    <body>
+        {% block header %}
+        <div class="vacio"></div>
+        {% endblock %}
+
+        {% block content %}
+        <div class="recuadro-fondo-login light"></div>
+        <form action="/" method="post" class="form-login">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" id="submit" class="btn btn-light btn-fuente">Iniciar sesión</button>
+            <br>
+            <a href="/restablecerContrasena">Olvidé mi contraseña</a>
+        </form>
+        {% endblock %}
+        
+        {% block footer %}
+        <div class="vacio"></div>
+        {% endblock %}
+    </body>
+</html>

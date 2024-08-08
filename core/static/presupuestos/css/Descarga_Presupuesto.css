@@ -1,0 +1,150 @@
+
+@page {
+    size: A4;
+    margin: 0mm;
+}
+
+@media print {
+    /* Tus estilos específicos para el PDF aquí */
+    #a4-container {
+        width: 21cm;
+        height: 29.7cm;
+    }
+
+    /* Ajustes de imágenes para PDF */
+    .encabezado img,
+    .cliente img,
+    footer img,
+    .disclaimer img,
+    .redes img {
+        max-width: 100%;
+        height: auto;
+    }
+}
+
+/* Estilo para el contenedor A4 */
+#a4-container {
+    width: 21cm;
+    height: 29.7cm;
+    margin: auto;
+    border: 1px solid #ccc;
+    padding: 10mm;
+    box-sizing: border-box;
+    background: white;
+    position: relative; /* Importante para posicionar elementos absolutos */
+}
+
+/* Ajuste general de las imágenes */
+#a4-container img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+}
+
+/* Específicos para las imágenes en el encabezado */
+#a4-container .encabezado img {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Específicos para las imágenes de cliente */
+#a4-container .cliente img {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Específicos para las imágenes del footer */
+#a4-container footer img {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Ajuste para imágenes específicas */
+#a4-container .disclaimer img, #a4-container .redes img {
+    max-width: 100%;
+    height: auto;
+}
+/* Ajuste de elementos superpuestos */
+#a4-container input[type="text"] {
+    position: absolute;
+    background-color: transparent;
+    font-size: 20px;
+    border: none;
+    z-index: 10; /* Asegúrate de que esté encima de las imágenes */
+}
+
+#a4-container #n_presupuesto{
+    height: 40px;
+    width: auto;
+    text-align: center;
+    background-color: transparent;
+    position: absolute;
+    top: 125px;
+    left:600px;
+    font-size: 20px;
+    border: none;
+}
+#a4-container #dia{
+    height: 40px;
+    width: auto;
+    text-align: center;
+    background-color: transparent;
+    position: absolute;
+    top:240px;
+    left:600px;
+    font-size: 20px;
+    border: none;
+}
+#a4-container #mes{
+    height: 40px;
+    width: auto;
+    text-align: center;
+    background-color: transparent;
+    position: absolute;
+    top:240px;
+    left:630px;
+    font-size: 20px;
+    border: none;
+}
+#a4-container #anio{
+    height: 40px;
+    width: auto;
+    text-align: center;
+    background-color: transparent;
+    position: absolute;
+    top:240px;
+    left:655px;
+    font-size: 20px;
+    border: none;
+}
+
+#a4-container #cliente{
+    height: 40px;
+    width: 1000px;
+    background-color: transparent;
+    position: absolute;
+    top:340px;
+    left:130px;
+    font-size: 20px;  
+    border: none;
+}
+
+/* Estilo general para todas las tablas */
+#a4-container table {
+    font-size: 10px; /* Ajusta este valor según sea necesario */
+    border-style: solid;
+    border-width: 1px;
+    border-color: black;
+}
+
+/* Estilo específico para la tabla de presupuesto */
+#a4-container #Descarga_Presupuesto {
+    font-size: 10px; /* Ajusta este valor según sea necesario */
+}
+
+/* También puedes ajustar los tamaños de fuente en los elementos <th> y <td> */
+#a4-container #Descarga_Presupuesto th,
+#a4-container #Descarga_Presupuesto td {
+    font-size: 10px; /* Ajusta este valor según sea necesario */
+}

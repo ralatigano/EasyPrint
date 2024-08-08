@@ -1,0 +1,107 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+<!DOCTYPE html>
+<html>
+    <head>
+        {% block head %}
+        <!-- Custom Css -->
+        <link rel="stylesheet" href="{% static 'clientes/css/Clientes.css' %}">
+        <title>{% block title %}Clientes{% endblock %}</title>
+        {% endblock %}
+    </head>
+    <body>
+        {% block header %}
+        <div class="titulo">
+            <h1>Clientes</h1>
+        </div>
+        {% endblock %}
+        {% block content %}
+        <div class="row">    
+            <div class="container">
+                <div class="col-sm-12 col-md-12 col-lg-12 col-xl-12">
+                    <table id="Clientes" class="table table-hover table table-striped">
+                        <thead>
+                            <tr>
+                                <th class="centered">Nombre</th>
+                                <th class="centered">Negocio</th>
+                                <th class="centered">CUIT</th>
+                                <th class="centered">Teléfono</th>
+                                <th class="centered">Dirección</th>
+                                <th class="centered">Editar información</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody_Clientes">
+                            {% for c in clientes %}
+                                <tr>
+                                    <td>{{c.nombre}}</td>
+                                    <td>{{c.negocio}}</td>
+                                    <td>{{c.cuit}}</td>
+                                    <td><a href="https://wa.me/{{c.telefono}}" target="_blank" rel="noopener noreferrer">{{c.telefono}}</a></td>
+                                    <td><a href="https://www.google.com/maps/search/?api=1&query={{c.direccion_google}}" target="_blank" rel="noopener noreferrer">{{c.direccion}}</a></td>
+                                    <td>
+                                        <button type="button" class="btn btn-dark btn-xs" data-bs-toggle="modal" data-bs-target="#editarClienteModal" data-bs-whatever="{{c.id}}|{{c.nombre}}|{{c.negocio}}|{{c.cuit}}|{{c.telefono}}|{{c.direccion}}|{{c.metodo_contacto}}"><i class="fa-solid fa-pencil sm"></i></button>
+                                    </td>
+                                </tr>
+                            {% endfor %} 
+
+                        </tbody>
+
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Editar Cliente -->
+        <div class="modal fade" id="editarClienteModal" tabindex="-1" aria-labelledby="editarClienteModalLabel" data-bs-backdrop="static" aria-hidden="true">   
+            <form action="EditarCliente" method="POST">
+                {% csrf_token %}
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h1 class="modal-title fs-5" id="editarClienteModal">Modal title</h1>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <input id="id" name="id" hidden>
+
+                            <label for="nombre" style="font-weight: bold">Nombre:</label>
+                            <input id="nombre" name="nombre" required>
+
+                            <label for="cuit" style="font-weight: bold">CUIT:</label>
+                            <input id="cuit" name="cuit">
+
+                            <label for="negocio" style="font-weight: bold">Negocio:</label>
+                            <input type="text" id="negocio" name="negocio" required> 
+                            <label for="met_contacto" style="font-weight: bold">Método de contacto:</label>
+                            <select name="met_contacto" id="met_contacto" class="form-control select" required>
+                                <option value="Elige una categoría">Elige una opción</option>
+                                <option value="0">Visita local</option>
+                                <option value="1">WhatsApp</option>
+                                <option value="2">Instagram</option>
+                                <option value="3">Facebook</option>
+                            </select>
+                        
+                            <label for="telefono" style="font-weight: bold">Teléfono:</label>
+                            <input type="text" id="telefono" name="telefono"> 
+
+                            <label for="direccion" style="font-weight: bold">Dirección:</label>
+                            <input type="text" id="direccion" name="direccion"> 
+                        
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-dark btn-xs btn-fuente" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-dark btn-xs btn-fuente">Guardar cambios</a></button> 
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <!-- Custom Js -->
+        <script src="{% static 'clientes/js/Clientes.js' %}"></script>
+        {% endblock %}
+        {% block footer %}
+
+        {% endblock %}
+    </body>
+</html>

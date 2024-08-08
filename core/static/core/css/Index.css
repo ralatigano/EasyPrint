@@ -1,0 +1,178 @@
+
+.FormularioInicial {
+    border-radius: 10px;
+    padding: 30px;
+    /* width: 100%; */
+}
+/* Estilos de la tabla */
+/* .table-container {
+    width: 100%;
+    overflow-x: auto; /* Asegura que la tabla pueda desplazarse horizontalmente si es necesario 
+} */
+
+/* Asegurarse de que los elementos del formulario ocupen todo el ancho disponible */
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    box-sizing: border-box; /* Incluye padding y border en el ancho total */
+}
+
+.cantidad-ancho-alto {
+    display: flex;
+    flex-wrap: wrap; /* Permite que los elementos se envuelvan en lugar de estar en una sola línea */
+    gap: 10px; /* Espacio entre los elementos */
+}
+
+.cantidad-ancho-alto > * {
+    flex: 1 1 calc(50% - 10px); /* Ajusta el ancho de los elementos en base al espacio disponible */
+}
+@media (max-width: 768px) {
+    .cantidad-ancho-alto > * {
+        flex: 1 1 100%; /* Cada input ocupará el 100% en pantallas pequeñas */
+    }
+}
+
+/* Si necesitas ajustar específicamente ciertos inputs */
+input#cantidad,
+input#cant_area,
+input#t_produccion {
+    max-width: 75px; /* Cambia el valor según tus necesidades */
+    max-height: 50px;
+}
+
+/* Ajustar el tamaño del checkbox */
+.form-check-input {
+    height: 25px;
+    width: 25px !important;
+}
+.contenedor_formulario {
+    display: grid;
+    grid-gap: 20px;
+    grid-template-columns: repeat(4, calc(85% / 4));
+    grid-template-rows: repeat(5,auto);
+    grid-template-areas:    "cliente cliente nothing n_presupuesto"
+                            "categoria categoria producto producto"
+                            "cantidad-ancho-alto cantidad-ancho-alto cantidad-ancho-alto cantidad-ancho-alto"
+                            "info_adic info_adic info_adic descuento"
+                            "btn_agregar btn_agregar btn_agregar btn_agregar";
+}
+
+.light_bg {
+    background-color: var(--fondo-light);
+    color: black;
+}
+
+.dark_bg { 
+    background-color: var(--fondo-dark);
+    color: white;
+}
+
+.contenedor_formulario .form-control,
+.contenedor_formulario .form-select {
+    width: 100%;
+    box-sizing: border-box; /* Asegura que el padding se incluya en el ancho total */
+}
+
+.contenedor_formulario .form-group.cliente {
+    grid-area : cliente;
+}
+.contenedor_formulario .form-group.n_presupuesto {
+    grid-area : n_presupuesto;
+}
+.contenedor_formulario .form-group.categoria {
+    grid-area : categoria;
+}
+.contenedor_formulario .form-group.producto {
+    grid-area : producto;
+}
+.contenedor_formulario .form-group.cantidad-ancho-alto {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    grid-template-rows: 1;
+    grid-gap: 30px;
+    grid-area : cantidad-ancho-alto;
+}
+
+.contenedor_formulario .form-group.info_adic {
+    grid-area : info_adic;
+}
+.contenedor_formulario .form-group.descuento {
+    grid-area : descuento;
+}
+.contenedor_formulario .form-group.btn_agregar {
+    grid-area : btn_agregar;
+}
+
+
+/* #Presupuesto {
+    border-color: black;
+} */
+
+/* .etiquetas {
+    color: white;
+} */
+
+.buttons {
+    max-width: 80%;
+    margin: 0 auto; /* Centra el contenedor de botones horizontalmente */
+    display: flex;
+    justify-content: center;
+    gap: 10px; /* Espacio entre los botones */
+}
+
+.buttons a {
+    flex: 1; /* Los botones se ajustan al tamaño del contenedor */
+    max-width: calc((80% / 3) - 10px); /* Ajusta el tamaño máximo de cada botón */
+}
+
+
+
+@media (max-width: 1200px) {
+    .contenedor_formulario {
+        grid-template-columns: repeat(2, 1fr);
+        grid-template-areas: 
+            "cliente cliente"
+            "n_presupuesto n_presupuesto"
+            "categoria categoria"
+            "producto producto"
+            "cantidad-ancho-alto cantidad-ancho-alto"
+            "info_adic info_adic"
+            "descuento descuento"
+            "btn_agregar btn_agregar";
+    }
+}
+
+@media (max-width: 768px) {
+    .contenedor_formulario {
+        grid-template-columns: 1fr;
+        grid-template-areas: 
+            "cliente"
+            "n_presupuesto"
+            "categoria"
+            "producto"
+            "cantidad-ancho-alto"
+            "cantidad-ancho-alto"
+            "info_adic"
+            "descuento"
+            "btn_agregar";
+    }
+    .contenedor_formulario .form-group.cantidad-ancho-alto {
+        grid-template-columns: 1fr;
+    }
+}
+
+#calcularCantPorHojaModal #cant_resultado,
+#calcularCantPorHojaModal #cant_hojas,
+#calcularCantPorHojaModal #area_ocupada{
+    font-weight: bold;
+    font-size: 1.5rem;
+}

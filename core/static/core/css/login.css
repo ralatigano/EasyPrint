@@ -1,0 +1,42 @@
+/* Login */
+.recuadro-fondo-login {
+    position: absolute;
+    top: 40%;
+    left: 50%;
+    transform: translate(-50%, -60%);
+    width: 400px;
+    height: 300px;
+    border-radius: 10px;
+    opacity: 85%;
+    z-index: 1;
+}
+
+.recuadro-fondo-login.dark {
+    background-color: var(--fondo-dark);
+}
+
+.recuadro-fondo-login.light {
+    background-color: var(--fondo-light);
+}
+.form-login {
+    position: absolute;
+    top: 40%;
+    left: 50%;
+    transform: translate(-50%, -60%);
+    width: auto;
+    background-color: transparent;
+    z-index: 1000;
+}
+
+.form-restablecer-contrasena {
+    position: absolute;
+    top: 40%;
+    left: 50%;
+    transform: translate(-50%, -60%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    background-color: transparent;
+    z-index: 1000;
+}

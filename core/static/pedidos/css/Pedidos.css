@@ -1,0 +1,19 @@
+.Formulario_Pedido {
+    background-color:green;
+    margin: 50px;
+    padding: 50px;
+}
+.form-group.btn-guardar-cancelar {
+    display: grid;
+    grid-gap: 20px;
+    grid-template-columns:repeat(4, 1fr);
+    grid-template-rows: 1;
+    grid-template-areas: "btn-danger nothing nothing btn-success";
+}
+
+.form-group.btn-guardar-cancelar .a.btn.btn-danger {
+    grid-area : btn-danger;
+}
+.form-group.btn-guardar-cancelar .button.btn.btn-success {
+    grid-area : btn-success;
+}

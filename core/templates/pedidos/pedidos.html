@@ -1,0 +1,194 @@
+
+{% extends 'core/base.html' %}
+{% load static %}
+
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>{% block title %}Pedidos{% endblock %}</title>
+        <style>
+        .container {
+            overflow-x: auto;
+            max-width: 100%;
+        }
+        </style>
+    </head>
+    <body>
+        {% block header %}
+        <div class="titulo">
+            <h1>Pedidos</h1>
+        </div>
+        {% endblock %}
+        {% block content %}
+        <div class="container">
+            <div class="row">    
+                <div class="col-sm-12 col-md-12 col-lg-12 col-xl-12">
+                    <table id="Pedidos" class="table table-hover table-bordered">
+                        <thead>
+                            <tr>
+                                <th class="centered">Número</th>
+                                <th class="centered">Cliente</th>
+                                <th class="centered">Productos/Servicios</th>
+                                <th class="centered">Observaciones</th>
+                                <th class="centered">Total</th>
+                                <th class="centered">Seña</th>
+                                <th class="centered">Saldo</th>
+                                <th class="centered">Estado</th>
+                                <th class="centered">Presupuesto</th>
+                                <th class="centered">Fecha de creación</th>
+                                <th class="centered">Encargado</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody_Pedido">
+                            {% for p in Peds %}
+                                <tr>
+                                    <td>{{p.numero}}</td>
+                                    <td>{{p.cliente}}</td>
+                                    <td>{{p.producto}}</td>
+                                    <td>
+                                        {{p.descripcion}}
+                                        <button type="button" class="btn btn-dark btn-xs" data-bs-toggle="modal" data-bs-target="#agregarDescripcionModal" data-bs-whatever="{{p.numero}}|{{p.descripcion}}"><i class="fa-solid fa-pencil sm"></i></button>
+                                    </td>
+                                    <td>$ {{p.precio}}</td>
+                                    <td>
+                                        $ {{p.senia}}
+                                        <button type="button" class="btn btn-dark btn-xs" data-bs-toggle="modal" data-bs-target="#agregarSeniaModal" data-bs-whatever="{{p.numero}}"><i class="fa-solid fa-pencil sm"></i></button>
+                                    </td>
+                                    <td>$ {{p.saldo}}</td>
+                                    <td>
+                                        {{p.estado}} 
+                                        <button type="button" class="btn btn-dark btn-xs" data-bs-toggle="modal" data-bs-target="#cambiarEstadoModal" data-bs-whatever="{{p.numero}}"><i class="fa-solid fa-pencil sm"></i></button>
+                                    </td>
+                                    <td><a href="/presupuestos/verPresupuesto/{{p.presupuesto}}">{{p.presupuesto}}</a></td>
+                                    <td>{{p.created}}</td>
+                                    <td>
+                                        {{p.nombre_encargado}}
+                                        <button type="button" class="btn btn-dark btn-xs" data-bs-toggle="modal" data-bs-target="#cambiarEncargadoModal" data-bs-whatever="{{p.numero}}"><i class="fa-solid fa-pencil sm"></i></button>
+                                    </td>
+                                </tr>
+                            {% endfor %} 
+
+                        </tbody>
+
+                    </table>
+                </div>
+            </div>
+        </div>
+                    
+        <!-- Modal Cambiar Estado -->
+        <div class="modal fade" id="cambiarEstadoModal" tabindex="-1" aria-labelledby="cambiarEstadoModalLabel" data-bs-backdrop="static" aria-hidden="true">   
+            <form action="/pedidos/cambiarEstado" method="POST">
+                {% csrf_token %}
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h1 class="modal-title-estado fs-5" id="cambiarEstadoModalLabel">Modal title</h1>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <input type="text" id="cambiarPedido_estado" name="cambiarPedido_estado" readonly="true" hidden>
+                            <label for="estado" style="font-weight: bold">Seleccionar el nuevo estado:</label>
+                            <select name="estado" id="estado" class="form-control select">
+                                <option value="Elegir un estado">Elegir un estado</option>
+                                <option value="Sin seña">Sin seña</option>
+                                <option value="Señado">Señado</option>
+                                <option value="En proceso">En proceso</option>
+                                <option value="Para retirar">Para retirar</option>
+                                <option value="Entregado">Entregado</option>
+                                <option value="Pagado">Pagado</option>
+                                <option value="Cancelado">Cancelado</option>
+                            </select>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-dark btn-fuente" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-dark btn-fuente">Guardar cambios</a></button> 
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+                    
+
+        <!-- Modal Cambiar Encargado -->
+        <div class="modal fade" id="cambiarEncargadoModal" tabindex="-1" aria-labelledby="cambiarEncargadoModalLabel" data-bs-backdrop="static" aria-hidden="true">   
+            <form action="/pedidos/cambiarEncargado" method="POST">
+                {% csrf_token %}
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h1 class="modal-title-enc fs-5" id="cambiarEncargadoModalLabel">Modal title</h1>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <input type="text" id="cambiarPedido_enc" name="cambiarPedido_enc" readonly="true" hidden>
+                            <label for="encargadoSelect" style="font-weight: bold">Asignar este pedido a:</label>
+                            <select name="encargadoSelect" id="encargadoSelect" class="form-control select">
+                                <!-- Opciones cargadas dinámicamente -->
+                            </select>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-dark btn-fuente" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-dark btn-fuente">Guardar cambios</a></button> 
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+
+        <!-- Modal Agregar descripción -->
+        <div class="modal fade" id="agregarDescripcionModal" tabindex="-1" aria-labelledby="agregarDescripcionModalLabel" data-bs-backdrop="static" aria-hidden="true">   
+            <form action="/pedidos/agregarDescripcion" method="POST">
+                {% csrf_token %}
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h1 class="modal-title-desc fs-5" id="agregarDescripcionModalLabel">Modal title</h1>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <input type="text" id="cambiarPedido_desc" name="cambiarPedido_desc" readonly="true" hidden>
+                            <label for="descripcion" style="font-weight: bold">Agregar anotación al pedido:</label>
+                            <textarea rows="4" cols="50" id="descripcion" name="descripcion"></textarea>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-dark btn-fuente" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-dark btn-fuente">Guardar cambios</a></button> 
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Modal Agregar nueva senia -->
+        <div class="modal fade" id="agregarSeniaModal" tabindex="-1" aria-labelledby="agregarSeniaModalLabel" data-bs-backdrop="static" aria-hidden="true">   
+            <form action="/pedidos/agregarSenia" method="POST">
+                {% csrf_token %}
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h1 class="modal-title-senia fs-5" id="agregarSeniaModalLabel">Modal title</h1>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <input type="text" id="cambiarPedido_senia" name="cambiarPedido_senia" readonly="true" hidden>
+                            <label for="senia" style="font-weight: bold">Ingresa el monto de la seña $ (formato #.##):</label>
+                            <input type="text" id="senia" name="senia">
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-dark btn-fuente" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-dark btn-fuente">Guardar cambios</a></button> 
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Custom Js -->
+        <script src="{% static 'pedidos/js/Pedidos.js' %}"></script>
+        {% endblock %}
+        {% block footer %}
+
+        {% endblock %}
+    </body>
+</html>

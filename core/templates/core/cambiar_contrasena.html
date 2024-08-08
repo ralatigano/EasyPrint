@@ -1,0 +1,48 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>{% block title %} Cambiar contraseña {% endblock %}</title>
+        {% block head %}
+        <link rel="stylesheet" href="{% static 'core/css/cambiar_contrasena.css' %}">
+        {% endblock %}
+    </head>
+    <body>
+        {% block header %}
+        <div class="saludo">
+            <h1>Cambiar contraseña usuario: {{usuario}}</h1>
+        </div>
+        {% endblock %}
+    
+        {% block content %}
+        <div class="container">
+            <form action="cambiarContrasena" method="post" class="formulario" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="contrasena1">Contraseña nueva:</label>
+                    <input type="text" id="contrasena1" name="contrasena1">
+                </div>
+                <div class="form-group">
+                    <label for="contarsena2">Repetir contraseña nueva:</label>
+                    <input type="text" id="contarsena2" name="contrasena2">
+                </div>
+                <div class="formulario-btns">
+                    <button type="submit" id="submit" class="btn btn-dark btn-fuente">Guardar</button>
+                    <a href="/perfil"><button type="button" class="btn btn-dark btn-fuente">Volver atras</button></a>
+                    <a href="/presupuestos/inicio"><button type="button" class="btn btn-dark btn-fuente">Cancelar</button></a>
+                </div>
+            </form>
+            <!-- <div class="footer-btn-group">
+                <a href="/perfil"><button type="button" class="btn btn-dark btn-fuente">Volver atras</button></a>
+                <a href="/presupuestos/inicio"><button type="button" class="btn btn-dark btn-fuente">Cancelar</button></a>
+            </div> -->
+        </div>
+        {% endblock %}
+        
+        {% block footer %}
+        
+        {% endblock %}
+    </body>
+</html>

@@ -1,0 +1,216 @@
+:root {
+    --fondo-light: #B1DE43;
+    --fondo-dark: #474973;
+}
+
+/* Estilos generales */
+.imagen-fondo {
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-attachment: fixed;
+    width: 100vw;
+    z-index: -10;
+}
+
+.imagen-fondo-light {
+    background-image: url(/static/core/img/light/Fondo_light.png);  
+}
+
+.imagen-fondo-dark {
+    background-image: url(/static/core/img/dark/Fondo_dark.png); 
+}
+
+/* header, footer {
+    position: relative;
+    z-index: 2; 
+}
+
+main {
+    position: relative;
+    z-index: 2;
+} */
+
+.contenedor {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr auto; 
+    grid-template-areas: 
+        "Encabezado"
+        "ContenidoPrincipal"
+        "Pie";
+    min-height: 100vh;
+    align-items: center;
+    justify-content: center;
+    background-color: transparent;
+}
+
+.contenedor .Encabezado {
+    grid-area: Encabezado;
+    margin: 30px;
+    padding: 50px;
+    width: 100vw;
+}
+
+.contenedor .ContenidoPrincipal {
+    /* position: relative; */
+    grid-area: ContenidoPrincipal;
+    margin: 10px;
+    padding: 50px;
+    min-height: 800px; 
+    overflow: hidden;  
+    z-index: 10;
+}
+
+.contenedor .Pie {
+
+    grid-area: Pie;
+}
+
+/* #recuadro-gral {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%); 
+    max-width: 90vw;
+    padding: 10px;
+    overflow: hidden;
+    border-radius: 10px;
+    z-index: -1;
+    opacity: 75%;
+} */
+
+.version {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+}
+
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100vw;
+    z-index: 10;
+    font-family: 'ubuntu', sans-serif;
+}
+
+.navbar .izquierda {
+    text-align: left;
+}
+
+.navbar .derecha {
+    text-align: right;
+}
+
+.vacio {
+    background-color: transparent;
+    height: 100px;
+    width: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.titulo {
+    width: 100%;
+    border-radius: 10px;
+}
+
+.saludo {
+    position: absolute;
+    margin: 30px;
+    display: grid;
+    grid-template-columns: repeat(2, auto);
+    justify-content: left;
+    text-align: left;
+    align-items: center;
+    background-color: transparent;
+    width: 100vw;
+}
+
+.btn-fuente{
+    font-family: 'Ubuntu', sans-serif !important; 
+    text-transform: none; 
+}
+.btn-group {
+    position: absolute;
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.texto_navbar {
+    display: flex;
+    text-align: right;
+    align-items: center;
+    gap: 10px;
+}
+
+.form-group label {
+    font-weight: bold;
+}
+
+#hora, #fecha {
+    border: none;
+}
+
+.modal-body {
+    display: grid;
+    text-align: left;
+    width: 100%;
+    gap: 10px;
+}
+
+.modal {
+    z-index: 1100; 
+}
+
+.modal-backdrop {
+    z-index: 1000; 
+}
+
+.modal-dialog {
+    margin: 1.75rem auto;
+}
+
+.rounded-circle {
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+/* Iconos */
+.bi-circle-half-fill,
+.bi-sun-fill,
+.bi-moon-stars-fill,
+.bi.bi-check2 {
+    display: inline-block;
+    vertical-align: -.125em;
+    background-repeat: no-repeat;
+}
+
+
+.centered {
+    text-align: center !important;
+    vertical-align: middle !important;
+}
+
+th, td {
+    text-align: center;
+    vertical-align: middle;
+}
+
+body {
+    overflow-x: auto;  
+    margin: 0; 
+    padding: 0; 
+} 
+
+.row {
+    border-radius: 10px;
+    margin: 10px;
+    padding: 10px;
+}

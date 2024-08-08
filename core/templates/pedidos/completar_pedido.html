@@ -1,0 +1,90 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>{% block title %}Nuevo pedido{% endblock %}</title>
+        {% block head %}
+        <link rel="stylesheet" href="{% static 'pedidos/css/Pedidos.css' %}">
+        {% endblock %}
+    </head>
+    <body>
+        {% block header %}
+            <h2>Completar pedido</h2>
+        {% endblock %}
+        {% block content %}
+            <div class="container">    
+                <div class="row">
+                    <div class="Formulario_Pedido" style="padding: 100px">
+                        <div class="card-body">
+                            <form action="/pedidos/confirmarPedido" method="POST">
+                                {% csrf_token %}
+                                <div class="form-group cliente">
+                                    <label for="cliente" style="font-weight: bold; color:white">Cliente:</label>
+                                    <input type="text" id="cliente" name="cliente" class="form-control" placeholder="Cliente" value="{{cliente}}" readonly>
+                                </div>
+                                <div class="form-group n_pedido">
+                                    <label for="n_pedido" style="font-weight: bold; color:white">N° Pedido</label>
+                                    <input type="text" id="n_pedido" name="n_pedido" class="form-control" value="{{n_ped}}" readonly>
+                                </div>
+                                <div class="form-group codigo">
+                                    <label for="n_presupuesto" style="font-weight: bold; color:white">N° Presupuesto:</label>
+                                    <input type="text" id="n_presupuesto" name="n_presupuesto" class="form-control" value="{{np}}" readonly>
+                                </div>
+                                <div class="form-group productos">
+                                    <label for="productos" style="font-weight: bold; color:white">Productos:</label>  
+                                    <ul id="productos" name="productos" class="form-control" style="list-style-type:none">
+                                    {% for p in prods %}
+                                        <li>{{p}}</li> 
+                                    {% endfor %}
+                                    </ul>
+                                </div>
+                                <div class="form-group info_adic">
+                                    <label for="info_adic" style="font-weight: bold; color:white">Información adicional</label>
+                                    <input type="textarea" id="info_adic" name="info_adic" class="form-control" placeholder="Información adicional">
+                                </div>
+                                <div class="form-group">
+                                    <label for="total" style="font-weight: bold; color:white">Subtotal: $</label>
+                                    <input type="text" id="total" name="total" class="form-control" value="{{total}}" readonly>
+                                    <label for="descuento" style="font-weight: bold; color:white">Descuento: $</label>
+                                    <input type="text" id="descuento" name="descuento" class="form-control" value="{{descuento}}" readonly>
+                                    <label for="total_neto" style="font-weight: bold; color:white">Total Neto: $</label>
+                                    <input type="text" id="total_neto" name="total_neto" class="form-control" value="{{total_neto}}" readonly>
+                                </div>
+                                <div class="form-group categoria">
+                                    <label for="estado" style="font-weight: bold; color:white">Estado</label>
+                                    <select name="estado" id="estado" class="form-control">
+                                        <option value="Sin seña">Sin seña</option>
+                                        <option value="Señado">Señado</option>
+                                        <option value="Em proceso">En proceso</option>
+                                        <option value="Para retirar">Para retirar</option>
+                                        <option value="Entregado">Entregado</option>
+                                        <option value="Pagado">Pagado</option>
+                                        <option value="Cancelado">Cancelado</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="senia" style="font-weight: bold; color:white">Seña: $</label>
+                                    <input type="text" id="senia" name="senia" class="form-control" value=0>
+                                </div>
+                                <br>
+                                <div class="form-group btn-guardar-cancelar">
+                                    {% if editando_presup %}
+                                        <a href='/presupuestos/verPresupuesto/{{np}}' class="btn btn-danger btn-fuente"><i class="fa-solid fa-xmark"></i> Volver atras</a>
+                                    {% else %}
+                                        <a href='/presupuestos/inicio' class="btn btn-danger btn-fuente"><i class="fa-solid fa-xmark"></i> Volver atras </a>
+                                    {% endif %}
+                                    <button type="submit" class="btn btn-success btn-fuente"><i class="fa-solid fa-sack-dollar"></i> Confirmar pedido </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endblock %}
+        
+        {% block footer %}
+        {% endblock %}
+    </body>
+</html>

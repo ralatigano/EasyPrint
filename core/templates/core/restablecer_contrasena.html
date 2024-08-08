@@ -1,0 +1,63 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="es">
+    <head>
+        <title> {% block title %} Restablecer Contraseña {% endblock %} </title>
+        {% block head %}
+        <link rel="stylesheet" href="{% static 'core/css/login.css' %}">
+        {% endblock %}
+    </head>
+    <body>
+        {% block header %}
+        <div class="vacio"></div>
+        {% endblock %}
+
+        {% block content %}
+        <div id="myDiv" class="recuadro-fondo-login"></div>
+        <form  id="myForm" action="/correoContrasena" method="post" class="form-restablecer-contrasena">
+            {% csrf_token %}
+            <p>Ingresa el nombre de usuario y el correo registrado en nuestro servidor. Te enviaremos un email con una contraseña temporal. Una vez que ingreses podras cambiarla.</p>
+            <br>
+            <label for="usuario">Nombre de usuario:</label>
+            <input type="text" id="usuario" name="usuario">
+            <br>
+            <label for="email">Correo electrónico:</label>
+            <input type="email" id="email" name="email">
+            <br>
+            <button type="submit" id="submit" class="btn btn-dark btn-fuente">Enviar correo</button>
+        </form>
+        
+        {% endblock %}
+        
+        {% block footer %}
+        <div class="vacio"></div>
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                // Obtener referencias a los elementos
+                var myDiv = document.getElementById("myDiv");
+                var myForm = document.getElementById("myForm");
+            
+                // Función para ajustar el ancho del formulario
+                function adjustFormWidth() {
+                    var divWidth = myDiv.offsetWidth;
+                    var formWidth = (divWidth * 0.8); // Ajustar el ancho del formulario en relación al ancho del div
+                    myForm.style.width = formWidth + "px";
+                    var formHeight = myForm.offsetHeight;
+                    var divHeight = (formHeight * 1.2);
+                    myDiv.style.height = divHeight + "px";
+                }
+            
+                // Llamar a la función para ajustar el ancho del formulario
+                adjustFormWidth();
+            
+                // Llamar a la función al cambiar el tamaño de la ventana
+                window.addEventListener("resize", adjustFormWidth);
+            });
+        </script>
+        {% endblock %}
+    
+        
+    </body>
+</html>

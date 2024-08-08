@@ -1,0 +1,33 @@
+/* .recuadro-fondo-register.dark {
+    background-color: var(--fondo-dark);
+}
+
+.recuadro-fondo-register.light {
+    background-color: var(--fondo-light);
+} */
+
+.recuadro-fondo-register {
+    position: absolute; /* Cambiado de absolute a relative */
+    top: 50%; /* Ajusta la posición vertical */
+    left: 50%; /* Ajusta la posición horizontal */
+    transform: translate(-50%, -50%); /* Centra el recuadro en el contenedor */
+    width: 400px;
+    height: 800px;
+    margin: 0 auto; /* Centrar el contenedor */
+    border-radius: 10px;
+    /* opacity: 90%; */
+    z-index: 1;
+}
+
+.container.mt-5 {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 800px;
+    height: 800px; 
+    margin: 0 auto; 
+    padding: 20px;  
+    background-color: transparent;
+    z-index: 50;
+}

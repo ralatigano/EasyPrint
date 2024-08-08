@@ -1,0 +1,61 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+<!DOCTYPE html>
+<html>
+<head>
+    {% block head %}
+    {% endblock %}
+    <title> {% block title %} Presupuestos {% endblock %}</title>
+</head>
+    <body>
+        {% block header %}
+        <div class="titulo">
+            <h1>Presupuestos</h1>
+        </div>
+        {% endblock %}
+        {% block content %}
+        <div class="row">    
+            <div class="container">
+                <div class="col-sm-12 col-md-12 col-lg-12 col-xl-12">
+
+                    <table id="Presupuestos" class="table table-hover table table-bordered table table-striped">
+                        <thead>
+                            <tr>
+                                <th class="centered">Número</th>
+                                <th class="centered">Cliente</th>
+                                <th class="centered">Total</th>
+                                <th class="centered">Fecha de creación</th>
+                                <th class="centered">Editar/Descargar</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody_Presupuesto">
+                            {% for pres in Pres %}
+                                <tr>
+                                    <td><a href="/presupuestos/verPresupuesto/{{pres.numero}}">{{pres.numero}}</a></td>
+                                    <td>{{pres.cliente}}</td>
+                                    <td>$ {{pres.total}}</td>
+                                    <td>{{pres.created}}</td>
+                                    <td>
+                                        <a href="/presupuestos/verPresupuesto/{{pres.numero}}" class="btn btn-dark btn-xs"><i class="fa-solid fa-pencil"></i></a>
+                                        <a href="/presupuestos/descargarPresupuesto/{{pres.numero}}" class="btn btn-dark btn-xs"><i class="fa-solid fa-share-nodes"></i></a>
+                                    </td>
+                                </tr>
+                            {% endfor %} 
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+            </div>
+        </div>
+        <!-- Custom Js -->
+        <script src="{% static 'presupuestos/js/Presupuestos.js' %}"></script>
+
+        {% endblock %}
+        {% block footer %}
+
+        {% endblock %}
+    </body>
+</html>

@@ -1,0 +1,39 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="es" data-bs-theme="light">
+    <head>
+        <title> {% block title %} Crear usuario {% endblock %} </title>
+        {% block head %}
+        <link rel="stylesheet" href="{% static 'core/css/registro.css' %}">
+        {% endblock %}
+    </head>
+    <body>
+        {% block header %}
+        <div class="titulo">
+            <h1>Crear nuevo usuario:</h1>
+        </div>
+        {% endblock %}
+
+        {% block content %}
+        <!-- <div class="recuadro-fondo-register"></div> -->
+        <div class="container mt-5">
+            <form method="post">
+                {% csrf_token %}
+                {{ form.as_p }}
+                <button type="submit" class="btn btn-outline-light btn-fuente">Registrarse</button>
+            </form>
+        </div>
+
+        <!-- Custom Js -->
+        <script src="{% static 'core/js/registro.js' %}"></script> 
+
+        {% endblock %}
+        
+        {% block footer %}
+        {% endblock %}
+
+        
+    </body>
+</html>

@@ -1,0 +1,33 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>{% block title %} {% endblock %}</title>
+    </head>
+    <body>
+        {% block header %}
+        <h1>Hola {{usuario}}</h1>
+        {% endblock %}
+
+        {% block content %}
+        <img src="https://i.ibb.co/WVxcDKg/Isologotipo-easy-light.png" alt="Isologotipo-easy-light">
+        <br>
+        <h1>-- Se ha restablecido tu contraseña --</h1>
+        <br>
+        <p>Se ha solicitado restablecer la contraseña del usuario <strong>{{usuario}}</strong>. Puedes ingresar al sistema temporalmente con esta contraseña.</p>
+        <br>
+        <p>
+            <strong>Contrasena temporal:</strong> {{contrasena}}
+        </p>
+        <br>
+        <p>Aun si no solicitaste esta contraseña, la próxima vez que ingreses a la aplicación, deberás usarla y podrás cambiarla una vez dentro.</p>
+        <br>
+        <p>Este es un mensaje automático. Por favor, no responda este mail.</p>
+        {% endblock %}
+
+        {% block footer %} 
+        
+        {% endblock %}
+    </body>
+</html>

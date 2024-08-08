@@ -1,0 +1,297 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+<!DOCTYPE html>
+<html>
+    <head>
+        {% block head %}
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <title>{% block title %}Nueva Cotización{% endblock %}</title>
+            <link rel="stylesheet" href="{% static 'core/css/Index.css' %}">
+        {% endblock %} 
+    </head>
+    <body>
+        {% block header%}
+            <div class="titulo">
+            {% if cli %}
+            <h1>Ver Presupuesto {{np}}</h1>
+                {% else %}
+                    <h1>Nuevo Presupuesto</h1>
+                {% endif %}
+            {% endblock %}
+            </div>
+        {% block content %}
+ 
+            <div class="row">   
+                <div class="FormularioInicial">
+                    <form action="" method="POST" class="contenedor_formulario" id="nueva_cotizacion_form">
+                        {% csrf_token %}
+
+                        <div class="form-group cliente">
+                            <label for="cliente" style="font-weight: bold">Cliente</label>
+                            {% if cli %}
+                                <input type="text" id="cliente" name="cliente" class="form-control" value="{{cli}}" readonly>
+                            {% else %}
+                                <input type="text" id="cliente" name="cliente" class="form-control" placeholder="Cliente">
+                            {% endif %}
+                        </div>
+
+                        <div class="form-group n_presupuesto">
+                            <label for="n_presupuesto" style="font-weight: bold;">N° Presupusto</label>
+                            <input type="text" id="n_presupuesto" name="n_presupuesto" class="form-control" value="{{np}}" readonly>
+                        </div>
+                        <br>
+
+                        <div class="form-group categoria">
+                            <label for="categoria" style="font-weight: bold;">Categoría</label>
+                            <select name="categoria" id="categoria" class="form-select">
+                                <option value="0">Selecciona una categoría</option>
+                                {% for c in Cat %}
+                                    {% if c.nombre != 'Misceláneos' %}
+                                        <option value="{{c.nombre}}">{{c.nombre}}</option>
+                                    {% endif %}
+                                {% endfor %}
+                            </select>
+                        </div>
+
+
+                        <div class="form-group producto">
+                            <label for="producto" style="font-weight: bold;">Producto</label>
+                            <select name="producto" id="producto" class="form-select">
+                                <option value="">Selecciona un producto</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group cantidad-ancho-alto" name="cantidad-ancho-alto">
+                            <label for="cantidad" style="font-weight: bold;">Cantidad/Repetición: </label>
+                            <input type="text" id="cantidad" name="cantidad" class="form-control" value="1" required>
+                            <label for="cant_area" style="font-weight: bold;">Cantidad/Área: </label>
+                            <input type="text" id="cant_area" name="cant_area" class="form-control" value="1">
+                            <label for="empaquetado" style="font-weight: bold">Empaquetado</label>
+                            <input type="checkbox" id="empaquetado" name="empaquetado" class="form-check-input" checked>
+                            <label for="t_produccion" style="font-weight: bold;">Tiempo de producción [hs]: </label>
+                            <input type="text" id="t_produccion" name="t_produccion" class="form-control" value="1"> 
+                        </div>
+
+                        <div class="form-group descuento">
+                            <label for="descuento" style="font-weight: bold;">Descuento</label>
+                            <input type="text" id="descuento" name="descuento" class="form-control" min="0" max="100" value="0" required>
+                        </div>
+
+                        <div class="form-group info_adic">
+                            <label for="info_adic" style="font-weight: bold;">Información adicional</label>
+                            <input type="textarea" id="info_adic" name="info_adic" class="form-control" placeholder="Información adicional">
+                        </div>
+
+                        <div class="form-group btn_agregar">
+                            <a href="/presupuestos/inicio"><button type="button" class="btn btn_agregar btn-dark btn-fuente"><i class="fa-solid fa-eraser"></i> Limpiar formulario</button></a>
+                            <button type="button" class="btn btn-dark btn-xs btn-fuente" data-bs-toggle="modal" data-bs-target="#calcularCantPorHojaModal" data-bs-whatever=""><i class="fa-solid fa-grip"></i> Calcular Unid/hoja </button>
+                            <button type="button" class="btn btn_agregar btn-dark btn-fuente" onclick="previoModal()"><i class="fa-solid fa-calculator"></i> Calcular $ </button>
+                        </div>
+                    </form>
+                </div>
+            
+                <div class="container">
+                    <div class="col-sm-12 col-md-12 col-lg-12 col-xl-12">
+                        <table id="NuevoPresupuesto" class="table table-hover table-bordered">
+                            <thead>
+                                <tr>
+                                    <th class="centered">Código</th>
+                                    <th class="centered">Servicio</th>
+                                    <th class="centered">Descripción</th>
+                                    <th class="centered">Empaquetado</th>
+                                    <th class="centered">Cantidad</th>
+                                    <th class="centered">Precio</th>
+                                    <th class="centered">Descuento [%]</th>
+                                    <th class="centered">Descuento [$]</th>
+                                    <th class="centered">Total</th>
+                                    <th class="centered">Editar/Borrar</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tableBody_Presupuesto">
+                                {% for c in Prods %}
+                                        <tr>
+                                            <td>{{c.codigo}}</td>
+                                            <td>{{c.nombre}}</td>
+                                            <td>{{c.info_adic}}</td>
+                                            <td>
+                                                {% if c.empaquetado %}
+                                                    Si
+                                                {% else %}
+                                                    No
+                                                {% endif %}
+                                            </td>
+                                            <td>{{c.cantidad}}</td>
+                                            <td>$ {{c.precio}}</td>
+                                            <td>{{c.desc_porcentaje}}%</td>
+                                            <td>$ {{c.desc_plata}}</td>
+                                            <td>$ {{c.resultado}}</td>
+                                            <td>
+                                                <button type="button" class="btn btn-dark btn-xs" data-bs-toggle="modal" data-bs-target="#editarProductoModal" data-bs-whatever="{{c.codigo}} | {{c.nombre}} | {{c.info_adic}} | {{c.cantidad}} | {{c.cant_area}} | {{c.desc_porcentaje}} | {{c.empaquetado}} | {{c.t_produccion}}"><i class="fa-solid fa-pencil"></i></button>
+                                                <a href="/presupuestos/deleteCalc_Presupuesto/{{c.codigo}}" class="btn btn-dark btn-xs btnEliminacion"><i class="fa-solid fa-trash-can"></i></a>
+                                            </td>
+                                        </tr>
+                                        
+                                {% endfor %} 
+
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="8" style="text-align:right; font-weight: bold;">Total bruto:</td>
+                                    <td>$ {{total}}</td>
+                                </tr>
+                                <tr>
+                                    <td colspan="8" style="text-align:right; font-weight: bold;">Total descuento:</td>
+                                    <td>$ {{descuento}}</td>
+                                </tr>
+                                <tr>
+                                    <td colspan="8" style="text-align:right; font-weight: bold;">Total Neto:</td>
+                                    <td>$ {{totalNeto}}</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                    <div class="buttons">
+                        {% if cli %}
+                            <a href="/presupuestos" class="btn btn-outline-dark btn-dark btn-fuente"><i class="fa-regular fa-circle-left"></i> Volver atras </a>
+                        {% else %}
+                            <a href="/presupuestos/borrarTodo" class="btn btn-outline-dark btn-dark btn-fuente"><i class="fa-solid fa-trash-can"></i> Borrar todo </a>
+                        {% endif %}
+                        <a href="/presupuestos/guardarPresupuesto" class="btn btn-outline-dark btn-dark"><i class="fa-solid fa-sd-card"></i> Guardar presupuesto </a>
+                        <a href="/pedidos/completarPedido" class="btn btn-outline-dark btn-dark"><i class="fa-solid fa-check"></i> Confirmar pedido </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal cálculo de cantidades y hojas -->
+            <div class="modal fade" id="calcularCantPorHojaModal" tabindex="-1" aria-labelledby="calcularCantPorHojaModalLabel" data-bs-backdrop="static" aria-hidden="true">   
+                <form action="" method="POST" id="calcular_cantidad_por_hoja_form">
+                    {% csrf_token %}
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h1 class="modal-title-prod fs-5" id="calcularCantPorHojaModalLabel">Modal title</h1>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" onclick="closeModal()"></button>
+                            </div>
+                            <div class="modal-body">
+                                <h3>Dimensiones de la hoja/el pliego:</h3>
+                                <label for="ancho_hoja" style="font-weight: bold">Ancho [cm]:</label>
+                                <input type="text" id="ancho_hoja" name="ancho_hoja" required>
+                            
+                                <label for="alto_hoja" style="font-weight: bold">Alto [cm]:</label>
+                                <input type="text" id="alto_hoja" name="alto_hoja" required>
+
+                                <h3>Dimensiones de el sticker/elemento:</h3>
+                                <label for="ancho_elemento" style="font-weight: bold">Ancho [cm]:</label>
+                                <input type="text" id="ancho_elemento" name="ancho_elemento" required>
+                            
+                                <label for="alto_elemento" style="font-weight: bold">Alto [cm]:</label>
+                                <input type="text" id="alto_elemento" name="alto_elemento" required>
+
+                                <label for="separacion" style="font-weight: bold" default="0">Separación [cm] (si es que necesitas que los elementos estén separados entre si, de lo contrario usa "0".):</label>
+                                <input type="text" name="separacion" id="separacion">
+
+                                <h3>Cantidad de elementos del pedido:</h3>
+                                <label for="cant_deseada" style="font-weight: bold">Cantidad:</label>
+                                <input type="text" id="cant_deseada" name="cant_deseada">
+                                
+                                <h3>Representación gráfica:</h3>
+                                <img src="" alt="" id="img_hoja">
+                                <p id="resultado">
+                                    Entran <span id="cant_resultado"></span> elementos por hoja.
+                                    Necesitarás <span id="cant_hojas"></span> hojas/pliegos para completar el pedido.
+                                    Se utilizará <span id="area_ocupada"></span> m2 de papel/vinilo/lona.
+                                </p>
+                                
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" id="btn_calcular" class="btn btn-dark btn-fuente" onclick="submitCalculation()"> Calcular </button>
+                                <button type="button" class="btn btn-dark btn-fuente" data-bs-dismiss="modal" onclick="closeModal()">Volver atras</button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Modal resultado del cálculo -->
+            <div class="modal fade" id="resultadoPrevioModal" tabindex="-1" aria-labelledby="resultadoPrevioModalLabel" data-bs-backdrop="static" aria-hidden="true">   
+                <form action="" method="POST" id="">
+                    {% csrf_token %}
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h1 class="modal-title-prod fs-5" id="resultadoPrevioModalLabel">Cálculo rápido</h1>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <p>Producto: <span id="prod_prev" style="font-weight: bold"> </span></p>
+                                <p>Cantidad: <span id="cant_prev" style="font-weight: bold"> </span></p>
+                                <p>Cantidad/Área: <span id="cant_area_prev" style="font-weight: bold"> </span></p>
+                                <p>Precio: <span id="precio_prev" style="font-weight: bold"> </span></p>
+                                <p>Descuento: <span id="descuento_prev" style="font-weight: bold"></span></p>
+                                <p>Empaquetado: <span id="empaquetado_prev" style="font-weight: bold"> </span></p>
+                                <p>Tiempo de producción [hs]: <span id="t_produccion_prev" style="font-weight: bold"> </span></p>
+                                <p>Detalle: <span id="detalle_prev" style="font-weight: bold"> </span></p>
+                            </div>
+                            <div class="modal-footer">
+                                <a href="/presupuestos/agregarDescartarProducto/add" style="text-decoration: none;"><button type="button" id="btn_calcular_previo" class="btn btn-dark btn-fuente" onclick=""> Agregar </button></a>
+                                <a href="/presupuestos/agregarDescartarProducto/del" style="text-decoration: none;"><button type="button" class="btn btn-dark btn-fuente" data-bs-dismiss="modal" onclick=""> Descartar </button"></a>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Modal editar producto del presupuesto -->
+            <div class="modal fade" id="editarProductoModal" tabindex="-1" aria-labelledby="editarProductoModalLabel" data-bs-backdrop="static" aria-hidden="true">   
+                <form action="/presupuestos/editarProductoCotizado" method="POST" id="">
+                    {% csrf_token %}
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h1 class="modal-title-prod fs-5" id="editarProductoModalLabel">Editar cotización</h1>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <input type="text" id="cod_edit" name="cod_edit" readonly>
+
+                                <label for="prod_edit" style="font-weight: bold">Producto:</label>
+                                <input type="text" id="prod_edit" name="prod_edit" readonly>
+
+                                <label for="cant_edit" style="font-weight: bold">Cantidad:</label>
+                                <input type="text" id="cant_edit" name="cant_edit">
+
+                                <label for="cant_area_edit" style="font-weight: bold">Cantidad/Área:</label>
+                                <input type="text" id="cant_area_edit" name="cant_area_edit">
+                                
+                                <label for="desc_edit" style="font-weight: bold">Descuento:</label>
+                                <input type="text" id="desc_edit" name="desc_edit">
+                                
+                                <label for="detalle_edit" style="font-weight: bold">Información adicional:</label>
+                                <input type="text" id="detalle_edit" name="detalle_edit">
+
+                                <label for="empaq_edit" style="font-weight: bold">Empaquetado:</label>
+                                <input type="checkbox" id="empaq_edit" name="empaq_edit" class="form-check-input" size="25">
+
+                                <label for="t_prod_edit" style="font-weight: bold">Tiempo de producción [hs]:</label>
+                                <input type="text" id="t_prod_edit" name="t_prod_edit">
+                            </div>
+                            <div class="modal-footer">
+                                <button type="submit" id="btn_calcular_edit" class="btn btn-dark btn-fuente" onclick=""> Guardar cambios </button>
+                                <button type="button" class="btn btn-dark btn-fuente" data-bs-dismiss="modal" onclick="">Volver atras</button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <!-- Custom Js -->
+            <script src="{% static 'core/js/Index.js' %}"></script>
+        
+        {% endblock %}
+        {% block footer %}
+        
+        {% endblock %}
+    </body>
+
+</html>
+

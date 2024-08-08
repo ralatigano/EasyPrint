@@ -1,0 +1,35 @@
+.formulario {
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Centra los elementos del formulario */
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.btn-group {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px; /* Espacio entre botones y otros elementos */
+}
+
+.formulario-btns {
+    display: flex;
+    justify-content: center; /* Centra los botones del formulario */
+    width: 100%;
+    margin-top: 20px;
+}
+
+.container {
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Alinea el contenido al centro */
+    padding: 20px;
+}
+
+footer {
+    display: flex;
+    justify-content: center; /* Alinea los botones del pie de página al centro */
+    padding: 20px;
+}
