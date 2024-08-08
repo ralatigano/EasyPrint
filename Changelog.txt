@@ -6,7 +6,7 @@ Commit ^bCrsG3$
         *Se ajusta el ancho del elemento Contenido Principal de modo que se adapte mejor a distintos tamaños de pantalla.
         *Se limpia el código elimando secciones comentadas.
         *Se corrige el resaltado de la pestaña actual.
-        *Se utiliza un unico estilo para todas las tablas de la aplicación.
+        *Se utiliza un unico estilo para todas las tablas de la aplicación. Se agrega esquinas redondeadas para mejorar la estética.
     -inicio y ver presupuestos
         *Se mejora el contraste del formulario que sirve para cotizar agregando dinámicamente (de acuerdo al tema seleccionado) un color de fondo con transparencia.
         
