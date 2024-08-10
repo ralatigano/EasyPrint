@@ -16,6 +16,7 @@
 
         {% block content %}
         <div class="recuadro-fondo-login light"></div>
+        <div id="logo_login" class="brand_login light_login"></div>
         <form action="/" method="post" class="form-login">
             {% csrf_token %}
             {{ form.as_p }}

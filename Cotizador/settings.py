@@ -152,5 +152,6 @@ EMAIL_PORT = env.int('EMAIL_PORT')
 EMAIL_HOST_USER = env.str('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = env.str('EMAIL_HOST_PASSWORD')
 
+# Configuración para el manejo de sesiones.
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'
 SESSION_COOKIE_NAME = 'sessionid'

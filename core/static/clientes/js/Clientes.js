@@ -1,6 +1,6 @@
 let dataTable;
 let dataTableIsInitilized=false;
-
+// Función para inicializar DataTable Clientes
 const initDataTable=async() => {
     if(dataTableIsInitilized){
         dataTable.destroy();
@@ -30,7 +30,7 @@ window.addEventListener("load", async() => {
     document.getElementById("nav_item_clientes").style.fontWeight = "bold";
 });
 
-
+// Función que controla el modal de editar cliente, toma valores del data-bs-whatever y los muestra en el modal
 const editarClienteModal = document.getElementById('editarClienteModal')
 editarClienteModal.addEventListener('show.bs.modal', event => {
   //botón que lanza el modal

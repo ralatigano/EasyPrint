@@ -44,6 +44,8 @@ def obtener_datos(request):
             'descuento': descuento,
             })
 
+# Función que calcula el precio de un producto al iniciar una cotización usando la información que viene en el diccionario.
+
 
 def calc_precio(diccionario):
     costo_produccion = float(Producto.objects.get(codigo=125).precio)
@@ -72,6 +74,8 @@ def calc_precio(diccionario):
         'empaquetado': empaquetado,
         't_produccion': t_prod,
     })
+
+# Lógica que genera un nuevo número de pedido en función de la fecha.
 
 
 def armar_numero_pedido():

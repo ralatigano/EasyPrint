@@ -1,3 +1,14 @@
+****************** 10/8/2024 ******************
+Versión 2.0.2
+Commit cNs8%jJ$
+    -General
+        *Se describe brevemente que hace cada función en jS o en en las vistas del backend.
+    -Usuarios
+        *Se agrega una vista para ver los usuarios registrados con las funcionalidades de un CRUD completas.
+    -Login
+        *Se agrega el logo de Easyprint para causar un mejor efecto estético.
+    -Ver/Editar perfil
+        *Se agrega una línea para que se renderice apropiadamente la información a pesar de estar incompleta.
 
 ****************** 8/8/2024 ******************
 Versión 2.0.1

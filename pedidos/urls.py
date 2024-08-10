@@ -8,6 +8,7 @@ from .views import (
 urlpatterns = [
     # Tabla pedidos
     path('', pedidos, name='pedidos'),
+    # Vista para completar el pedido en función de un presupuesto.
     path('completarPedido', completar_pedido, name='completarPedido'),
     path('confirmarPedido', confirmar_pedido, name='confirmarPedido'),
     # Editar atributos específicos de un pedido

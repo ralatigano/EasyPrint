@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
 from django.contrib import messages
 from django.contrib.auth import login, logout, authenticate
@@ -6,7 +6,7 @@ from django.contrib.auth.forms import AuthenticationForm
 from datetime import datetime
 from django.contrib.auth.decorators import login_required
 from .functions import *
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Group
 from .models import Usuario
 from productos.models import Producto, Categoria
 from presupuestos.models import Presupuesto
@@ -82,7 +82,7 @@ def registrar_usuario(request):
     }
     return render(request, 'core/registro.html', data)
 
-# Vista que permite la edición del perfil del usuario.
+# Vista que permite la edición del perfil del usuario por el usuario mismo.
 
 
 @login_required
@@ -115,7 +115,7 @@ def editar_perfil(request):
         first_name = User.objects.get(username=username).first_name
         last_name = User.objects.get(username=username).last_name
         birthday = datetime.strftime(User.objects.get(
-            username=username).usuario.birthday, '%Y-%m-%d')
+            username=username).usuario.birthday, '%Y-%m-%d') if User.objects.get(username=username).usuario.birthday else ''
         try:
             img = User.objects.get(username=request.user).usuario.image.url
         except:
@@ -130,7 +130,7 @@ def editar_perfil(request):
         }
         return render(request, 'core/perfil.html', data)
 
-# Vista que permite cambiar la contraseña una vez que este ingresó a la aplicación.
+# Vista que permite cambiar la contraseña al usuario una vez que este ingresó a la aplicación.
 
 
 @login_required
@@ -158,11 +158,13 @@ def cambiar_contrasena(request):
             data = {'usuario': usuario}
         return render(request, 'core/cambiar_contrasena.html', data)
 
-# Vista que permite restablecer la contraseña en caso de olvido.
+# Vista que permite restablecer la contraseña en caso de olvido sin haber ingresado a la app.
 
 
 def restablecer_contrasena(request):
     return render(request, 'core/restablecer_contrasena.html')
+
+# Vista complementaria al reesttablecimiento de la contraseña.
 
 
 def correo_contrasena(request):
@@ -212,11 +214,15 @@ def get_dark_mode(request):
     dark_mode = 'dark' if usuario.dark_mode else 'light'
     return JsonResponse({'dark_mode': dark_mode})
 
+# Vista que maneja el cerrado de sesión.
+
 
 @login_required
 def cerrar_sesion(request):
     logout(request)
     return redirect('login')
+
+# Vista que obtiene los datos de los usuarios para pasarlos al frontend para el modal de edición.
 
 
 @login_required
@@ -228,5 +234,111 @@ def obtener_usuarios(request):
     return JsonResponse({'usuarios': usuarios_list})
 
 
-def prueba(request):
-    return render(request, 'core/prueba.html')
+# Vista que presenta una tabla de los usuarios con las funcionalidades del CRUD de dicho objeto.
+@login_required
+def usuarios(request):
+    autorizado = request.session.get('autorizado')
+    usuario_nombre = request.session.get('usuario_nombre')
+    img = request.session.get('img')
+    Usus = User.objects.all().exclude(first_name='Ramiro', last_name='Latigano')
+    usuarios_con_datos = []
+    for usuario in Usus:
+        grupos_ids = ','.join([str(grupo.id)
+                              for grupo in usuario.groups.all()])
+        usuario.recipient_data = f"{usuario.id}|{usuario.username}|{usuario.first_name}|{usuario.last_name}|{usuario.email}|{usuario.usuario.telefono}|{grupos_ids}"
+        usuarios_con_datos.append(usuario)
+    if autorizado:
+        data = {
+            'usuario': usuario_nombre,
+            'img': img,
+            'Usus': usuarios_con_datos,
+            'autorizado': autorizado,
+        }
+        return render(request, 'core/usuarios.html', data)
+    else:
+        messages.error(
+            request, 'No tiene permisos para acceder a esta sección.')
+        return redirect('presupuestos/inicio')
+
+# Vista consultada desde el frontend para obtener información para editar un usuario.
+
+
+@login_required
+def info_grupos(request):
+    if request.method == 'GET':
+        grupos = Group.objects.all()
+        data = {'Group': [{'id': grupo.id, 'nombre': grupo.name}
+                          for grupo in grupos]}
+        return JsonResponse(data)
+    else:
+        return JsonResponse({'error': 'Método no permitido'}, status=405)
+
+# Vista que recibe el POST del modal de edición de usuario y actualiza la base de datos.
+
+
+@login_required
+def editar_usuario(request):
+    if request.method == 'POST':
+        user_id = request.POST.get('id')
+        username = request.POST.get('username')
+        nombre = request.POST.get('nombre')
+        apellido = request.POST.get('apellido')
+        email = request.POST.get('email')
+        telefono = request.POST.get('telefono')
+        # Obtener los grupos seleccionados como lista
+        grupos = request.POST.getlist('grupo')
+
+        # Cargar la instancia del usuario
+        user = get_object_or_404(User, id=user_id)
+        usuario = get_object_or_404(Usuario, user=user)
+
+        # Inicializar la bandera de cambios
+        cambios = False
+
+        # Comparar y actualizar los valores si hay cambios
+        if user.username != username:
+            user.username = username
+            cambios = True
+        if user.first_name != nombre:
+            user.first_name = nombre
+            cambios = True
+        if user.last_name != apellido:
+            user.last_name = apellido
+            cambios = True
+        if user.email != email:
+            user.email = email
+            cambios = True
+        if usuario.telefono != telefono:
+            usuario.telefono = telefono
+            cambios = True
+
+        # Actualizar los grupos
+        if set(grupos) != set(user.groups.values_list('id', flat=True)):
+            user.groups.clear()  # Limpiar grupos actuales
+            for grupo_id in grupos:
+                grupo = Group.objects.get(id=grupo_id)
+                user.groups.add(grupo)
+            cambios = True
+
+        # Guardar los cambios si hay alguno
+        if cambios:
+            user.save()
+            usuario.save()
+            messages.success(request, 'Usuario actualizado correctamente.')
+        else:
+            messages.info(request, 'No hubo cambios para guardar.')
+    return redirect('usuarios')  # Redirige a la vista deseada
+
+# Vista que permite eliminar un usuario de la base de datos.
+
+
+@login_required
+def borrar_usuario(request, usuario_id):
+    try:
+        usu = User.objects.filter(id=usuario_id)
+        usu.delete()
+        messages.success(request, 'El usuario se ha aniquilado correctamente.')
+    except Exception as e:
+        messages.error(
+            request, f'No se ha podido borrar el usuario. Error({e})')
+    return redirect('/usuarios')

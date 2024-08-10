@@ -32,7 +32,7 @@ urlpatterns = [
          delete_calc_presupuesto, name='deleteCalc_Presupuesto'),
     # vista que permite borrar todos los items del presupuesto que se está armando.
     path('borrarTodo', destroy_calc_presupuesto, name='borrarTodo'),
-    # vista que permite editar algunos datos deun producto de la cotización actual.
+    # vista que permite editar algunos datos de un producto de la cotización actual.
     path('editarProductoCotizado',
          edit_producto_cotizado, name='editarProductoCotizado'),
     path('guardarPresupuesto', guardar_presupuesto, name='guardarPresupuesto'),

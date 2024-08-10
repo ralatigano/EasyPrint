@@ -66,6 +66,8 @@ def completar_pedido(request):
     }
     return render(request, 'pedidos/completar_pedido.html', data)
 
+# Vista que maneja el POST del modal correspondiente para editar el estado de un pedido.
+
 
 @login_required
 def cambiar_estado(request):
@@ -150,6 +152,8 @@ def agregar_senia(request):
             messages.error(
                 request, 'Hubo un error al editar el pedido. ' + str(e))
     return redirect('/pedidos')
+
+# Vista que recibe el POST de la plantilla para completar el pedido desde la nueva cotización.
 
 
 @login_required

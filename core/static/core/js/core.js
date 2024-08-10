@@ -104,7 +104,7 @@ function editThemeToggleMenu(themeValue) {
         setSvgsImages(themeValue);
     }
 }
-
+// Función que modifica el ícono del botón de tema
 function getIconClass(themeValue) {
     if (themeValue === "light") {
         return "bi-sun-fill";
@@ -112,7 +112,7 @@ function getIconClass(themeValue) {
         return "bi-moon-stars-fill";
     } 
 }
-
+// Función que modifica algunas cuestiones visuales del menú desplegable del cambio de tema como los dibujos y el checkk que indica el tema elegido.
 function setSvgsImages(themeValue) {
     const svgSun = document.querySelectorAll('.bi-sun-fill');
     svgSun.forEach(svg => {
@@ -204,6 +204,8 @@ function editNavBar(themeValue) {
         imgElement.setAttribute('src', '/static/core/img/light/Isologotipo_easy_light.png');
     }
 }
+
+// Función que modifica algunos elementos de la vista de inicio de sesión
 function editLogin(themeValue) {
     const navBar = document.querySelector('.navbar');
     navBar.classList.remove('navbar-light', 'navbar-dark');
@@ -212,13 +214,18 @@ function editLogin(themeValue) {
     navBar.classList.add(`bg-${themeValue}`);
     const recuadroLogin = document.querySelector('.recuadro-fondo-login');
     const btn = document.getElementById('submit');
+    const logo = document.getElementById('logo_login');
     // Verificar el valor del tema elegido
     if (themeValue === 'dark') {
+        logo.classList.remove('light_login');
+        logo.classList.add('dark_login');
         recuadroLogin.classList.remove('light');
         recuadroLogin.classList.add('dark'); 
         btn.classList.remove('btn-light');
         btn.classList.add('btn-dark');
     } else {
+        logo.classList.remove('dark_login');
+        logo.classList.add('light_login');
         recuadroLogin.classList.remove('dark');
         recuadroLogin.classList.add('light');
         btn.classList.remove('btn-dark');
@@ -226,6 +233,8 @@ function editLogin(themeValue) {
     }
 }
 
+// Función que modifica algunas clases mas generales de varios elementos en función del tema elegido.
+// Un pequeño intento por manejar el cambio de tema de forma mas global.
 function editSomeElements(themeValue) {
     var elements = document.querySelectorAll('.light_bg, .dark_bg');
         
@@ -241,6 +250,8 @@ function editSomeElements(themeValue) {
         }
     });
 }
+
+// Función que modifica elementos de la vista de registro. 
 function editRegister(themeValue) {
     const recuadroRegister = document.querySelector('.recuadro-fondo-register');
     const btn = document.querySelector('.btn');
@@ -258,7 +269,7 @@ function editRegister(themeValue) {
     }   
 }
 
-
+// Función que modifica la distribución de elementos del navBar para adaptarse a pantallas pequeñas.
 document.addEventListener('DOMContentLoaded', function() {
     const profileImgToggler = document.getElementById('profile-img-toggler');
     const navbarTogglerIcon = document.querySelector('.navbar-toggler-icon');

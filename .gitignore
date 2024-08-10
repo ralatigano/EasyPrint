@@ -160,6 +160,8 @@ Correcciones y mejoras.txt
 /media/presupuestos/graficos/
 /media/users/
 
+#Archivo que por razones de funcionamiento en ambiente local/producción mantiene diferencias
+descargar_presupuesto.html
 # PyCharm
 #  JetBrains specific template is maintained in a separate JetBrains.gitignore that can
 #  be found at https://github.com/github/gitignore/blob/main/Global/JetBrains.gitignore

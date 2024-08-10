@@ -3,6 +3,8 @@ from django.contrib.auth.models import User, Group
 from django.contrib.auth.forms import UserCreationForm
 from .models import Usuario
 
+# Formulario para registrar usuarios.
+
 
 class RegistroUsuarioForm(UserCreationForm):
     grupos = forms.ModelChoiceField(

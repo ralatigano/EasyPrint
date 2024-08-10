@@ -1,5 +1,9 @@
 /* Login */
 .recuadro-fondo-login {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
     position: absolute;
     top: 40%;
     left: 50%;
@@ -39,4 +43,25 @@
     flex-direction: column;
     background-color: transparent;
     z-index: 1000;
+}
+
+.brand_login{
+    position: absolute;
+    top: 20%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width:500px; 
+    height:55px;
+    margin:10px;
+    padding:5px;
+    background-size: cover;
+    z-index: 2;
+}
+
+.light_login{
+    background-image: url(/static/core/img/light/Isologotipo_easy_light.png);
+}
+
+.dark_login{
+    background-image: url(/static/core/img/dark/Isologotipo_easy_dark.png);
 }

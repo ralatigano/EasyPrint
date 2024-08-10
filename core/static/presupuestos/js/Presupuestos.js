@@ -1,7 +1,7 @@
 
 let dataTable;
 let dataTableIsInitilized=false;
-
+//Lógica que inicializa la dataTable Presupuestos.
 const initDataTable=async() => {
     if(dataTableIsInitilized){
         dataTable.destroy();

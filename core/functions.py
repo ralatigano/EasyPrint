@@ -24,6 +24,8 @@ def generar_contrasena():
     contrasena = ''.join(random.choice(caracteres) for _ in range(10))
     return contrasena
 
+# Vista que envía el correo con la contraseña para que el usuario pueda ingresar al sistema.
+
 
 def notificar_contrasena(correo, usuario, contrasena):
 
@@ -147,6 +149,8 @@ def obtener_datos(request):
             'factor': prod.factor,
             })
 
+# Función que toma datos del formulario inicial para calcular el precio de un producto al iniciar una cotización.
+
 
 def calc_precio(diccionario):
     costo_produccion = float(Producto.objects.get(codigo=125).precio)
@@ -178,6 +182,8 @@ def calc_precio(diccionario):
         'empaquetado': empaquetado,
         't_produccion': t_prod,
     })
+
+# Lógica que genera un nuevo número de pedido en función de la fecha.
 
 
 def armar_numero_pedido():

@@ -18,6 +18,8 @@ def profile_picture_path(instance, filename):
     extension = os.path.splitext(filename)[1]
     return 'users/{0}/{1}{2}'.format(instance.user.username, random_filename, extension)
 
+# Usuario extendido de la clase User.
+
 
 class Usuario(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
@@ -72,6 +74,8 @@ class Usuario(models.Model):
     def nombre_completo(self):
         return f"{self.user.first_name} {self.user.last_name}"
 
+# Lógica que genera una imagen de perfil por defecto en base a la imagen default.png.
+
 
 def generate_random_color_image(base_image_path, size=(300, 300)):
     color = tuple(random.randint(0, 255) for _ in range(3))
@@ -82,6 +86,8 @@ def generate_random_color_image(base_image_path, size=(300, 300)):
 
     background.paste(base_image, (0, 0), base_image)
     return background
+
+# Lógica que completa la creación de usuarios.
 
 
 @receiver(post_save, sender=User)

@@ -1,7 +1,7 @@
 
 let dataTable;
 let dataTableIsInitilized=false;
-
+// Lógica que inicializa la dataTable Productos.
 const initDataTable=async() => {
     if(dataTableIsInitilized){
         dataTable.destroy();
@@ -30,7 +30,7 @@ window.addEventListener("load", async() => {
     await initDataTable();
     document.getElementById("nav_item_productos").style.fontWeight = "bold";
 });
-
+// Lógica que evita la eliminación de objetos listados en la cotización por un click involuntario.
 (function () {
     const btnEliminacion = document.querySelectorAll(".btnEliminacion");
     btnEliminacion.forEach(btn=>{
@@ -43,7 +43,7 @@ window.addEventListener("load", async() => {
     });
 })();
 
-
+// Lógica que escucha el evento click del botón para editar un producto a trevés de un modal.
 const editarProductoModal = document.getElementById('editarProductoModal');
 editarProductoModal.addEventListener('show.bs.modal', event => {
   // Botón que lanza el modal
@@ -95,7 +95,7 @@ editarProductoModal.addEventListener('show.bs.modal', event => {
     }
   });
 });
-
+// Lógica que escucha el evento click del botón para agregar un nuevo producto a trevés de un modal.
 const agregarProductoModal = document.getElementById('agregarProductoModal')
 
 function handleShowModal(event) {

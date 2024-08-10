@@ -1,0 +1,118 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+<!DOCTYPE html>
+<html>
+    <head>
+        {% block head %}
+        <!-- Custom Css -->
+        {% endblock %}
+        
+        <title>{% block title %}Usuaries{% endblock %}</title>
+    </head>
+    <body>
+        {% block header %}
+        <div class="titulo">
+            <h1>Usuaries registrades</h1>
+            <a href="/registrar"><button type="button" class="btn btn-dark btn-fuente"><i class="fa-solid fa-user-plus"></i> Crear nuevo usuario </button></a>
+        </div>
+        {% endblock %}
+        {% block content %}
+        <div class="container">
+            <div class="row">
+                <div class="col-sm-12 col-md-12 col-lg-12 col-xl-12">
+
+                    <table id="Usuarios" class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th class="centered">Nombre de usuario</th>
+                                <th class="centered">Nombre Completo</th>
+                                <th class="centered">Correo</th>
+                                <th class="centered">Teléfono</th>
+                                <th class="centered">Grupo</th>
+                                {% if autorizado %}
+                                    <th class="centered">Editar/Borrar</th>
+                                {% endif %}
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody_Usuarios">
+                        {% for u in Usus %}
+                            <tr>
+                                <td>{{u.username}}</td>
+                                <td>{{u.first_name}} {{u.last_name}}</td>
+                                <td>{{u.email}}</td>
+                                {% if u.usuario.telefono == None %}
+                                    <td>Sin telefono</td>
+                                {% else %}
+                                    <td><a href="https://wa.me/{{u.usuario.telefono}}" target="_blank" rel="noopener noreferrer">{{u.usuario.telefono}}</a></td>
+                                {% endif %}
+                                <td>
+                                    {% for group in u.groups.all %}
+                                        {{ group.name }}{% if not forloop.last %}, {% endif %}
+                                    {% endfor %}
+                                </td>
+                                {% if autorizado %}
+                                    <td>
+                                        <button type="button" class="btn btn-dark btn-xs" data-bs-toggle="modal" data-bs-target="#editarUsuarioModal" data-bs-whatever="{{ u.recipient_data }}" onclick=""><i class="fa-solid fa-user-pen sm"></i></button>
+                                        <a href="/borrarUsuario/{{u.id}}" class="btn btn-dark btn-xs btnEliminacion"><i class="fa-solid fa-person-rifle"></i></a>
+                                    </td>
+                                {% endif %}
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Modal Editar Producto -->
+        <div class="modal fade" id="editarUsuarioModal" tabindex="-1" aria-labelledby="editarUsuarioModalLabel" data-bs-backdrop="static" aria-hidden="true">   
+            <form action="/editarUsuario" method="POST">
+                {% csrf_token %}
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h1 class="modal-title-prod fs-5" id="editarUsuarioModalLabel">Modal title</h1>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <input type="text" id="id" name="id" hidden>
+                            
+                            <label for="username" style="font-weight: bold">Nombre de usuario:</label>
+                            <input type="text" id="username" name="username" data-bs-toggle="tooltip" title="Te recomendamos que uses la inicial del nombre + apellido para que lo recuerdes."></textarea>
+
+                            <label for="nombre" style="font-weight: bold">Nombre:</label>
+                            <input type="text" id="nombre" name="nombre">
+                            
+                            <label for="apellido" style="font-weight: bold">Apellido:</label>
+                            <input type="text" id="apellido" name="apellido">
+                            
+                            <label for="email" style="font-weight: bold">Correo electrónico:</label>
+                            <input type="email" id="email" name="email">
+                            
+                            <label for="telefono" style="font-weight: bold">Teléfono:</label>
+                            <input type="text" id="telefono" name="telefono">
+
+                            <label for="grupo" style="font-weight: bold">Grupo/s:</label>
+                            <select id="grupo" name="grupo"  multiple data-bs-toggle="tooltip" title="Haz click para cambiar el grupo.">
+                            </select>
+                        
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-dark btn-fuente" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-dark btn-fuente">Guardar cambios</a></button> 
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Custom Js -->
+        <script src="{% static 'core/js/registro.js' %}"></script>
+        {% endblock %}
+        {% block footer %}
+
+        {% endblock %}
+    </body>
+</html>

@@ -1,6 +1,6 @@
 let dataTable;
 let dataTableIsInitilized=false;
-
+// Lógica que inicializa la dataTable Pedidos.
 const initDataTable=async() => {
     if(dataTableIsInitilized){
         dataTable.destroy();
@@ -32,7 +32,7 @@ window.addEventListener("load", async() => {
     document.getElementById("nav_item_pedidos").style.fontWeight = "bold";
 });
 
-
+// Lógica que escucha el evento de click del botón para editar el pedido en relación al estado del mismo.
 const cambiarEstadoModal = document.getElementById('cambiarEstadoModal')
 cambiarEstadoModal.addEventListener('show.bs.modal', event => {
   // Button that triggered the modal
@@ -48,7 +48,7 @@ cambiarEstadoModal.addEventListener('show.bs.modal', event => {
   modalTitle.textContent = `Nuevo estado para el pedido: ${recipient}`
   modalBodyInput.value = recipient
 });
-
+// Lógica que escucha el evento de click del botón para editar el pedido en relación al encargado del mismo.
 const cambiarEncargadoModal = document.getElementById('cambiarEncargadoModal')
 cambiarEncargadoModal.addEventListener('show.bs.modal', event => {
   const button = event.relatedTarget
@@ -82,7 +82,7 @@ cambiarEncargadoModal.addEventListener('show.bs.modal', event => {
   })
   .catch(error => console.error('Error al obtener los usuarios:', error));
 });
-
+// Lógica que escucha el evento de click del botón para editar la descripción del pedido.
 const agregarDescripcionModal = document.getElementById('agregarDescripcionModal')
 agregarDescripcionModal.addEventListener('show.bs.modal', event => {
   const button = event.relatedTarget
@@ -99,7 +99,7 @@ agregarDescripcionModal.addEventListener('show.bs.modal', event => {
   modalBodyTextArea.value = descripcion
   modalPedidoInput.value = numero
 });
-
+// Lógica que escucha el evento de click del botón para agregar la seña del pedido.
 const agregarSeniaModal = document.getElementById('agregarSeniaModal')
 agregarSeniaModal.addEventListener('show.bs.modal', event => {
   const button = event.relatedTarget

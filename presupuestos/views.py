@@ -99,7 +99,7 @@ def calcular_cantidad_por_hoja(request):
         'cant_hojas': cantidad_hojas,
         'area_ocupada': area_ocupada})
 
-# Vista que procesa una llamadas desde el frontend para borrar una imagen generada en el modal de cálculo de cantidad de hojas.
+# Vista que procesa una llamada desde el frontend para borrar una imagen generada en el modal de cálculo de cantidad de hojas.
 
 
 @csrf_exempt
@@ -128,6 +128,8 @@ def borrar_imagen_generada(request):
             return JsonResponse({'message': 'No se proporcionó la ruta de la imagen a eliminar.'}, status=400)
     else:
         return JsonResponse({'message': 'Método no permitido.'}, status=405)
+
+# Vista que muestra la tabla de presupuestos.
 
 
 @login_required

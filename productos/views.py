@@ -12,6 +12,8 @@ from django.http import HttpResponse
 # Create your views here.
 app_name = 'productos'
 
+# Muestra la tabla de productos.
+
 
 @login_required
 def productos(request):
@@ -30,7 +32,7 @@ def productos(request):
     return render(request, 'productos/productos.html', data)
 
 # Vista que se usa a traves de una petición AJAX desde el frontend para obtener la información de los usuarios y de los proyectos en formato JSON.
-# y utilizarla para completar un modal de edición de tareas.
+# y utilizarla para completar un modal de edición de productos.
 
 
 @login_required
@@ -42,6 +44,8 @@ def info_editar_producto(request):
         'Cate': Cate_data,
     }
     return JsonResponse(data)
+
+# Vista que recibe la información de los modales de editar y agregar producto para luego actualizar la base de datos.
 
 
 @login_required
@@ -96,6 +100,8 @@ def editar_producto(request):
                 messages.error(
                     request, f'No se ha podido agregar el nuevo producto. Error({e})')
     return redirect('/productos', messages)
+
+# Vista que permite borrar un producto de la base de datos.
 
 
 @login_required
@@ -160,9 +166,8 @@ def cargar_productos(request):
     return redirect('/productos', messages)
 
 
-login_required
-
-
+# Vista que permite general un excel con los productos de la base de datos.
+@login_required
 def exportar_productos(request):
     # Crear un libro de trabajo y una hoja
     wb = openpyxl.Workbook()
@@ -199,6 +204,8 @@ def exportar_productos(request):
     response['Content-Disposition'] = 'attachment; filename=productos.xlsx'
 
     return response
+
+# Vista que permite borrar todos los productos.
 
 
 def borrar_todos_productos(request):

@@ -7,6 +7,8 @@ from datetime import date
 # Create your views here.
 app_name = 'clientes'
 
+# Vista que presenta la tabla de clientes.
+
 
 @login_required
 def clientes(request):
@@ -23,6 +25,8 @@ def clientes(request):
     }
 
     return render(request, 'clientes/clientes.html', data)
+
+# Vista que recibe el POST del modal de edición de cliente y actualiza la base de datos.
 
 
 def editar_cliente(request):

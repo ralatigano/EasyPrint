@@ -3,8 +3,8 @@ from .views import clientes, editar_cliente
 
 
 urlpatterns = [
-    # Tabla productos
+    # Tabla clientes
     path('', clientes, name='clientes'),
-    # CRUD productos
+    # CRUD clientes
     path('editarCliente', editar_cliente, name='editar_clientes'),
 ]

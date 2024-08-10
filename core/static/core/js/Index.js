@@ -50,7 +50,8 @@ const initDataTable=async() => {
     });
 })();
 
-
+// Lógica que controla el modal que ayuda a calcular la cantidad de elementos que entran por página
+// según las dimensiones especificadas por el usuario.
 const calcularCantPorHojaModal = document.getElementById('calcularCantPorHojaModal')
 calcularCantPorHojaModal.addEventListener('show.bs.modal', event => {
   //botón que lanza el modal
@@ -79,7 +80,7 @@ calcularCantPorHojaModal.addEventListener('show.bs.modal', event => {
 
 
 });
-// Función que calcula la cantidad de hojas para un presupuesto según lo que se quiera imprimir en esa hoja.
+// Función que recibe el POST del modal del cálculo de cantidad/hoja y luego actualiza el modal con la información.
 function submitCalculation() {
     const form = document.getElementById('calcular_cantidad_por_hoja_form');
     const formData = new FormData(form);
