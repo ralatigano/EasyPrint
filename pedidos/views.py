@@ -7,6 +7,7 @@ from clientes.models import Cliente
 from django.contrib.auth.models import User
 from django.contrib import messages
 from core.functions import *
+from django.http import JsonResponse
 # Create your views here.
 app_name = 'pedidos'
 
@@ -202,3 +203,20 @@ def confirmar_pedido(request):
                 request, 'Hubo un error al registrar el pedido. ' + str(e))
 
         return redirect(url)
+
+    # """
+    # Retrieves product information based on the provided presupuesto_id.
+
+    # Args:
+    #     request: The HTTP request object containing the presupuesto_id parameter.
+
+    # Returns:
+    #     A JsonResponse containing a list of products with their nombre, info_adic, empaquetado, and cantidad.
+    # """
+
+
+def get_productos_info(request):
+    presupuesto_id = request.GET.get('presupuesto_id')
+    productos = Producto.objects.filter(presupuesto=presupuesto_id).values(
+        'nombre', 'info_adic', 'empaquetado', 'cantidad')
+    return JsonResponse({'productos': list(productos)})

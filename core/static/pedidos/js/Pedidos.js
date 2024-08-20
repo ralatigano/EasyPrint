@@ -110,3 +110,36 @@ agregarSeniaModal.addEventListener('show.bs.modal', event => {
   modalTitle.textContent = `Agregar seña para el pedido: ${recipient}`
   modalBodyInput.value = recipient
 })
+
+//Función que maneja la apertura del modal de detalles haciendo una petición ajax al backend para obtener información de los productos de un pedido.
+$('#detallesModal').on('show.bs.modal', function (event) {
+  var button = $(event.relatedTarget);  // Botón que activó el modal
+  var info = button.data('info').split('|');  // Separar los valores
+  var numero = info[0];  // p.numero
+  var presupuestoId = info[1];  // p.presupuesto
+
+  // Actualizar el título del modal dinámicamente
+  var modal = $(this);
+  modal.find('.modal-title-detalles').text('Detalles del pedido: ' + numero);
+
+  // Hacer la petición AJAX
+  $.ajax({
+      url: '/pedidos/obtenerDatosProductos',
+      type: 'GET',
+      data: {
+          'presupuesto_id': presupuestoId
+      },
+      success: function (data) {
+          // Limpiar la tabla antes de llenarla
+          $('#productosTableBody').empty();
+
+          // Llenar la tabla con los datos obtenidos
+          data.productos.forEach(function (producto) {
+            var empaquetado = producto.empaquetado ? 'Si' : 'No';
+            $('#productosTableBody').append(
+                '<tr><td>' + producto.nombre + '</td><td>' + producto.info_adic + '</td><td>' + empaquetado + '</td><td>' + producto.cantidad + '</td></tr>'
+            );
+        });
+      }
+  });
+});

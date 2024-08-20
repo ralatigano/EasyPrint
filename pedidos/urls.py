@@ -1,7 +1,7 @@
 from django.urls import path
 from .views import (
     pedidos, cambiar_estado, cambiar_enc, agregar_descripcion,
-    agregar_senia, completar_pedido, confirmar_pedido
+    agregar_senia, completar_pedido, confirmar_pedido, get_productos_info
 )
 
 
@@ -16,4 +16,7 @@ urlpatterns = [
     path('cambiarEncargado', cambiar_enc, name='cambiarEncargado'),
     path('agregarDescripcion', agregar_descripcion, name='agregar_descripcion'),
     path('agregarSenia', agregar_senia, name='agregar_senia'),
+    # responde a una petición ajax para cargar un modal con información de los productos de un pedido
+    path('obtenerDatosProductos', get_productos_info,
+         name='obtenerDatosProductos'),
 ]

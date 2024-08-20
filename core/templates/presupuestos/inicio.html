@@ -28,7 +28,7 @@
                         {% csrf_token %}
 
                         <div class="form-group cliente">
-                            <label for="cliente" style="font-weight: bold">Cliente</label>
+                            <label for="cliente" style="font-weight: bold" data-bs-toggle="tooltip" data-bs-placement="top" title="El nombre debe coincidir con el cliente de tu base de datos a menos que sea un cliente nuevo.">Cliente</label>
                             {% if cli %}
                                 <input type="text" id="cliente" name="cliente" class="form-control" value="{{cli}}" readonly>
                             {% else %}
@@ -37,13 +37,13 @@
                         </div>
 
                         <div class="form-group n_presupuesto">
-                            <label for="n_presupuesto" style="font-weight: bold;">N° Presupusto</label>
+                            <label for="n_presupuesto" style="font-weight: bold;" data-bs-toggle="tooltip" data-bs-placement="top" title="Este número se genera automáticamente. No tienes que hacer nada aquí.">N° Presupusto</label>
                             <input type="text" id="n_presupuesto" name="n_presupuesto" class="form-control" value="{{np}}" readonly>
                         </div>
                         <br>
 
                         <div class="form-group categoria">
-                            <label for="categoria" style="font-weight: bold;">Categoría</label>
+                            <label for="categoria" style="font-weight: bold;" data-bs-toggle="tooltip" data-bs-placement="top" title="Haz click para desplegar el menú y seleccionar una categoría.">Categoría</label>
                             <select name="categoria" id="categoria" class="form-select">
                                 <option value="0">Selecciona una categoría</option>
                                 {% for c in Cat %}
@@ -56,20 +56,20 @@
 
 
                         <div class="form-group producto">
-                            <label for="producto" style="font-weight: bold;">Producto</label>
+                            <label for="producto" style="font-weight: bold;" data-bs-toggle="tooltip" data-bs-placement="top" title="Cuando elijas una categoría, se cargarán los productos correspondientes para que puedas elegir.">Producto</label>
                             <select name="producto" id="producto" class="form-select">
-                                <option value="">Selecciona un producto</option>
+                                <option value="">Primero selecciona una categoría</option>
                             </select>
                         </div>
 
                         <div class="form-group cantidad-ancho-alto" name="cantidad-ancho-alto">
-                            <label for="cantidad" style="font-weight: bold;">Cantidad/Repetición: </label>
+                            <label for="cantidad" style="font-weight: bold;" data-bs-toggle="tooltip" data-bs-placement="top" title="Este dato normalmente será 1 a menos que el pedido incluya varias veces lo mismo. Por ej.: '10 lonas de ## metros'. Este datos es el que se verá en el presupuesto.">Cantidad/Repetición: </label>
                             <input type="text" id="cantidad" name="cantidad" class="form-control" value="1" required>
-                            <label for="cant_area" style="font-weight: bold;">Cantidad/Área: </label>
+                            <label for="cant_area" style="font-weight: bold;" data-bs-toggle="tooltip" data-bs-placement="top" title="Este dato representa la cantidad real que se usará para el cálculo del precio y no se verá reflejado en el presupuesto. Aquí deberías colocar el resultado que obtuviste en el cálculo de la cantidad de hojas o el área. Por ej.: Si tu pedido requiere que se impriman 12 hojas de un determinado papel, ese es el número que deberías poner.">Cantidad/Área: </label>
                             <input type="text" id="cant_area" name="cant_area" class="form-control" value="1">
-                            <label for="empaquetado" style="font-weight: bold">Empaquetado</label>
+                            <label for="empaquetado" style="font-weight: bold" data-bs-toggle="tooltip" data-bs-placement="top" title="Indica si quieres incluir el costo del empaquetado en el precio del producto.">Empaquetado</label>
                             <input type="checkbox" id="empaquetado" name="empaquetado" class="form-check-input" checked>
-                            <label for="t_produccion" style="font-weight: bold;">Tiempo de producción [hs]: </label>
+                            <label for="t_produccion" style="font-weight: bold;" data-bs-toggle="tooltip" data-bs-placement="top" title="Aquí deberías indicar el tiempo de mano de obra que crees que tomará el pedido.">Tiempo de producción [hs]: </label>
                             <input type="text" id="t_produccion" name="t_produccion" class="form-control" value="1"> 
                         </div>
 
@@ -79,14 +79,23 @@
                         </div>
 
                         <div class="form-group info_adic">
-                            <label for="info_adic" style="font-weight: bold;">Información adicional</label>
+                            <label for="info_adic" style="font-weight: bold;" data-bs-toggle="tooltip" data-bs-placement="top" title="En este campo puedes indicar detalles adicionales sobre el producto como podría ser algún pedido especial que haya hecho el cliente. También puede usarse para que se refleje en el presupuesto exactamente lo que el cliente pide.">Información adicional</label>
                             <input type="textarea" id="info_adic" name="info_adic" class="form-control" placeholder="Información adicional">
                         </div>
 
                         <div class="form-group btn_agregar">
-                            <a href="/presupuestos/inicio"><button type="button" class="btn btn_agregar btn-dark btn-fuente"><i class="fa-solid fa-eraser"></i> Limpiar formulario</button></a>
-                            <button type="button" class="btn btn-dark btn-xs btn-fuente" data-bs-toggle="modal" data-bs-target="#calcularCantPorHojaModal" data-bs-whatever=""><i class="fa-solid fa-grip"></i> Calcular Unid/hoja </button>
-                            <button type="button" class="btn btn_agregar btn-dark btn-fuente" onclick="previoModal()"><i class="fa-solid fa-calculator"></i> Calcular $ </button>
+                            <a href="/presupuestos/inicio"><button type="button" class="btn btn_agregar btn-dark btn-fuente" data-bs-toggle="tooltip" data-bs-placement="top" title="Este botón refresca la página devolviendo el formulario a su estado inicial.">
+                                <i class="fa-solid fa-eraser"></i> 
+                                Limpiar formulario
+                            </button></a>
+                            <button type="button" class="btn btn-dark btn-xs btn-fuente" data-bs-toggle="modal" data-bs-target="#calcularCantPorHojaModal" data-bs-toggle="tooltip" data-bs-placement="top" title="Este botón abre una ventana para calcular la cantidad de hojas o el área que necesitas para producir un determinado producto. Por ej.: cuantas hojas de X x Y cm necesitas para 100 tarjetas de A x B cm ó cual es el área que usarás para hacer un vinilo de X x Y cm.">
+                                <i class="fa-solid fa-grip"></i> 
+                                Calcular Unid/hoja 
+                            </button>
+                            <button type="button" class="btn btn_agregar btn-dark btn-fuente" onclick="previoModal()" data-bs-toggle="tooltip" data-bs-placement="top" title="Este botón realiza el cálculo del precio con la información cargada y muestra una ventana con el resultado donde podrás agregar el producto al presupuesto o descartarlo.">
+                                <i class="fa-solid fa-calculator"></i> 
+                                Calcular $ 
+                            </button>
                         </div>
                     </form>
                 </div>
@@ -127,8 +136,8 @@
                                             <td>$ {{c.desc_plata}}</td>
                                             <td>$ {{c.resultado}}</td>
                                             <td>
-                                                <button type="button" class="btn btn-dark btn-xs" data-bs-toggle="modal" data-bs-target="#editarProductoModal" data-bs-whatever="{{c.codigo}} | {{c.nombre}} | {{c.info_adic}} | {{c.cantidad}} | {{c.cant_area}} | {{c.desc_porcentaje}} | {{c.empaquetado}} | {{c.t_produccion}}"><i class="fa-solid fa-pencil"></i></button>
-                                                <a href="/presupuestos/deleteCalc_Presupuesto/{{c.codigo}}" class="btn btn-dark btn-xs btnEliminacion"><i class="fa-solid fa-trash-can"></i></a>
+                                                <button type="button" class="btn btn-dark btn-xs" data-bs-toggle="modal" data-bs-target="#editarProductoModal" data-bs-whatever="{{c.codigo}} | {{c.nombre}} | {{c.info_adic}} | {{c.cantidad}} | {{c.cant_area}} | {{c.desc_porcentaje}} | {{c.empaquetado}} | {{c.t_produccion}}" data-bs-toggle="tooltip" data-bs-placement="top" title="Permite editar este producto."><i class="fa-solid fa-pencil"></i></button>
+                                                <a href="/presupuestos/deleteCalc_Presupuesto/{{c.codigo}}" class="btn btn-dark btn-xs btnEliminacion" data-bs-toggle="tooltip" data-bs-placement="top" title="Borra este producto de la cotización actual."><i class="fa-solid fa-trash-can"></i></a>
                                             </td>
                                         </tr>
                                         
@@ -153,12 +162,12 @@
                     </div>
                     <div class="buttons">
                         {% if cli %}
-                            <a href="/presupuestos" class="btn btn-outline-dark btn-dark btn-fuente"><i class="fa-regular fa-circle-left"></i> Volver atras </a>
+                            <a href="/presupuestos" class="btn btn-outline-dark btn-dark btn-fuente" data-bs-toggle="tooltip" data-bs-placement="top" title="Volver a la lista de presupuestos."><i class="fa-regular fa-circle-left"></i> Volver atras </a>
                         {% else %}
-                            <a href="/presupuestos/borrarTodo" class="btn btn-outline-dark btn-dark btn-fuente"><i class="fa-solid fa-trash-can"></i> Borrar todo </a>
+                            <a href="/presupuestos/borrarTodo" class="btn btn-outline-dark btn-dark btn-fuente" data-bs-toggle="tooltip" data-bs-placement="top" title="Borra TODOS los productos de la cotización actual."><i class="fa-solid fa-trash-can"></i> Borrar todo </a>
                         {% endif %}
-                        <a href="/presupuestos/guardarPresupuesto" class="btn btn-outline-dark btn-dark"><i class="fa-solid fa-sd-card"></i> Guardar presupuesto </a>
-                        <a href="/pedidos/completarPedido" class="btn btn-outline-dark btn-dark"><i class="fa-solid fa-check"></i> Confirmar pedido </a>
+                        <a href="/presupuestos/guardarPresupuesto" class="btn btn-outline-dark btn-dark" data-bs-toggle="tooltip" data-bs-placement="top" title="Guarda el presupuesto para poder descargarlo o editarlo después."><i class="fa-solid fa-sd-card"></i> Guardar presupuesto </a>
+                        <a href="/pedidos/completarPedido" class="btn btn-outline-dark btn-dark" data-bs-toggle="tooltip" data-bs-placement="top" title="Este botón guarda el presupuesto y muestra un formulario para completar el pedido en el caso de que el cliente ya esté seguro de lo que quiere."><i class="fa-solid fa-check"></i> Confirmar pedido </a>
                     </div>
                 </div>
             </div>

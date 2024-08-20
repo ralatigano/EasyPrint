@@ -44,7 +44,10 @@
                                 <tr>
                                     <td>{{p.numero}}</td>
                                     <td>{{p.cliente}}</td>
-                                    <td>{{p.producto}}</td>
+                                    <td>
+                                        {{p.producto}}
+                                        <button type="button" class="btn btn-info btn-xs" data-bs-toggle="modal" data-bs-target="#detallesModal" data-info="{{p.numero}}|{{ p.presupuesto }}" data-bs-toggle="tooltip" data-bs-placement="top" title="Haz click para ver más detalles del pedido"><i class="fa-solid fa-eye sm"></i></button>
+                                    </td>
                                     <td>
                                         {{p.descripcion}}
                                         <button type="button" class="btn btn-dark btn-xs" data-bs-toggle="modal" data-bs-target="#agregarDescripcionModal" data-bs-whatever="{{p.numero}}|{{p.descripcion}}"><i class="fa-solid fa-pencil sm"></i></button>
@@ -74,7 +77,36 @@
                 </div>
             </div>
         </div>
-                    
+        <!-- Modal Ver Detalles -->
+        <div class="modal fade" id="detallesModal" tabindex="-1" aria-labelledby="detallesModalLabel" data-bs-backdrop="static" aria-hidden="true">   
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h1 class="modal-title-detalles fs-5" id="detallesModalLabel">Modal Title</h1>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <table class="table">
+                            <thead>
+                              <tr>
+                                <th>Nombre</th>
+                                <th>Información Adicional</th>
+                                <th>Empaquetado</th>
+                                <th>Cantidad</th>
+                              </tr>
+                            </thead>
+                            <tbody id="productosTableBody">
+                              <!-- Aquí se cargará la tabla mediante AJAX -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-dark btn-fuente" data-bs-dismiss="modal">Volver atras</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Modal Cambiar Estado -->
         <div class="modal fade" id="cambiarEstadoModal" tabindex="-1" aria-labelledby="cambiarEstadoModalLabel" data-bs-backdrop="static" aria-hidden="true">   
             <form action="/pedidos/cambiarEstado" method="POST">

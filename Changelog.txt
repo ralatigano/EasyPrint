@@ -1,3 +1,12 @@
+****************** 20/8/2024 ******************
+Versión 2.0.3
+Commit 93L4U1Qg
+    -Inicio
+        *Se agregan algunos tooltips para facilitar el uso del formulario inciail.
+    -Presupuestos
+        *Se corrigen errores que impedían la formación correcta de un presupuesto al descargarlo.
+    -Pedidos
+        *Se incorpora una funcionalidad en la tabla de pedidos que permite ver los detalles de cada producto cargados oportunamente en información adicional.
 ****************** 10/8/2024 ******************
 Versión 2.0.2
 Commit cNs8%jJ$
