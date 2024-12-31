@@ -30,8 +30,8 @@ Commit ^bCrsG3$
     -inicio y ver presupuestos
         *Se mejora el contraste del formulario que sirve para cotizar agregando dinámicamente (de acuerdo al tema seleccionado) un color de fondo con transparencia.
 
-****************** #/#/2024 ******************
-Versión 2.5.0
+****************** 30/12/2024 ******************
+Versión 2.5.5
     -Productos
         *Se agrega un CRUD para crear categorías accesible desde la vista de productos.
         *Se cambia la posición de los botones de agregar productos a la parte superior de la vista para mejorar la accesibilidad.
