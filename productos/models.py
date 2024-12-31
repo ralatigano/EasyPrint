@@ -5,8 +5,8 @@ from django.contrib.auth.models import User
 
 
 class Categoria(models.Model):
-    nombre = models.CharField(
-        max_length=50, blank=True, default=None, primary_key=True)
+    id = models.AutoField(primary_key=True)  # Agregar un campo id
+    nombre = models.CharField(max_length=50, blank=True, default=None)
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now_add=True)
 
@@ -25,7 +25,7 @@ class Producto(models.Model):
         decimal_places=2, max_digits=10, null=True, blank=True, default=0)
     factor = models.FloatField(null=True, blank=True, default=1)
     categoria = models.ForeignKey(
-        on_delete=models.CASCADE, to=Categoria, default=None, blank=True)
+        on_delete=models.SET_NULL, to=Categoria, null=True, default=None, blank=True)
     ancho = models.FloatField(null=True, blank=True, default=0)
     alto = models.FloatField(null=True, blank=True, default=0)
     created = models.DateTimeField(auto_now_add=True)

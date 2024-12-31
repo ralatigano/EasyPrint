@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.http.response import JsonResponse
 from .models import Producto, Categoria
@@ -39,67 +39,79 @@ def productos(request):
 def info_editar_producto(request):
     Cate = Categoria.objects.all()
 
-    Cate_data = list(Cate.values('nombre'))
+    Cate_data = list(Cate.values('id', 'nombre'))
     data = {
         'Cate': Cate_data,
     }
     return JsonResponse(data)
 
+
+def obtener_producto(request, producto_id):
+    try:
+        producto = Producto.objects.get(pk=producto_id)
+        data = {
+            'nombre': producto.nombre,
+            'codigo': producto.codigo,
+            'precio': producto.precio,
+            'categoria_id': producto.categoria.id,
+            'ancho': producto.ancho,
+            'alto': producto.alto,
+            'factor': producto.factor,
+        }
+        return JsonResponse(data)
+    except Producto.DoesNotExist:
+        return JsonResponse({'error': 'Producto no encontrado.'}, status=404)
+
 # Vista que recibe la información de los modales de editar y agregar producto para luego actualizar la base de datos.
 
 
 @login_required
-def editar_producto(request):
-    if request.method == 'POST':
-        if request.POST['codigo'] != '':
-            cambios = False
-            try:
-                info = "|".join(request.POST.values())
-                info = info.split('|')
-                p = Producto.objects.get(pk=request.POST['codigo'])
-                if p.nombre != info[2]:
-                    p.nombre = info[2]
-                    cambios = True
-                if p.ancho != info[5]:
-                    p.ancho = info[5].replace(',', '.')
-                    cambios = True
-                if p.alto != info[6]:
-                    p.alto = info[6].replace(',', '.')
-                    cambios = True
-                if p.precio != info[3]:
-                    p.precio = info[3].replace(',', '.')
-                    cambios = True
-                if p.categoria.nombre != info[4]:
-                    p.categoria = Categoria.objects.get(nombre=info[4])
-                    cambios = True
-                if p.factor != info[7]:
-                    p.factor = info[7].replace(',', '.')
-                    cambios = True
-                if cambios:
-                    p.save()
-                    messages.success(
-                        request, 'Los datos del producto se han actualizado correctamente.')
-            except Exception as e:
-                messages.error(
-                    request, f'No se ha podido actualizar los datos del producto. Error({e})')
+def guardar_producto(request):
+    if request.method == "POST":
+        codigo = request.POST.get('codigo', None)
+        nombre = request.POST['nombre']
+        precio = request.POST['precio']
+        ancho = request.POST['ancho']
+        alto = request.POST['alto']
+        factor = request.POST.get('factor_edit', 1)
+        nueva_categoria = request.POST.get('nueva_categoria', '').strip()
+        categoria_id = request.POST.get('categ')
+
+        # Determinar la categoría
+        if nueva_categoria:
+            # Verificar si la categoría ya existe
+            categoria, created = Categoria.objects.get_or_create(
+                nombre=nueva_categoria)
         else:
-            try:
-                p = Producto.objects.create(
-                    presupuesto=None,
-                    nombre=request.POST['nombre_add'],
-                    ancho=request.POST['ancho_add'],
-                    alto=request.POST['alto_add'],
-                    precio=request.POST['precio_add'],
-                    categoria=Categoria.objects.get(
-                        nombre=request.POST['categ_add']),
-                    factor=request.POST['factor_add'],
-                )
-                messages.success(
-                    request, 'El nuevo producto se ha agregado correctamente.')
-            except Exception as e:
-                messages.error(
-                    request, f'No se ha podido agregar el nuevo producto. Error({e})')
-    return redirect('/productos', messages)
+            # Si no se ingresó una nueva categoría, usar la seleccionada del select
+            categoria = Categoria.objects.get(
+                id=categoria_id) if categoria_id else None
+
+        if codigo:  # Editar producto existente
+            producto = get_object_or_404(Producto, codigo=codigo)
+            producto.nombre = nombre
+            producto.precio = precio
+            producto.ancho = ancho
+            producto.alto = alto
+            producto.factor = factor
+            producto.categoria = categoria
+            producto.save()
+        else:  # Crear nuevo producto
+            Producto.objects.create(
+                nombre=nombre,
+                precio=precio,
+                ancho=ancho,
+                alto=alto,
+                factor=factor,
+                categoria=categoria
+            )
+
+        # Redirigir o devolver respuesta
+        messages.success(request, "Producto guardado correctamente.")
+        return redirect('productos')
+    else:
+        return JsonResponse({'error': 'Método no permitido'}, status=405)
+
 
 # Vista que permite borrar un producto de la base de datos.
 
@@ -113,7 +125,7 @@ def borrar_producto(request, producto_id):
     except Exception as e:
         messages.error(
             request, f'No se ha podido borrar el producto. Error({e})')
-    return redirect('/Productos', messages)
+    return redirect('/productos', messages)
 
 # Función que carga productos desde un archivo excel.
 
@@ -217,3 +229,67 @@ def borrar_todos_productos(request):
         messages.error(
             request, f'No se han podido borrar todos los productos. Error({e})')
     return redirect('/productos', messages)
+
+
+@login_required
+def categorias(request):
+    autorizado = request.session.get('autorizado')
+    usuario_nombre = request.session.get('usuario_nombre')
+    img = request.session.get('img')
+    categorias = Categoria.objects.all()
+
+    data = {
+        'usuario': usuario_nombre,
+        'autorizado': autorizado,
+        'img': img,
+        'categorias': categorias,
+    }
+
+    return render(request, 'productos/categorias.html', data)
+
+
+def obtener_categoria(request, categoria_id):
+    try:
+        categoria = Categoria.objects.get(id=categoria_id)
+        return JsonResponse({'id': categoria.id, 'nombre': categoria.nombre})
+    except Categoria.DoesNotExist:
+        return JsonResponse({'error': 'Categoría no encontrada'}, status=404)
+
+
+def guardar_categoria(request):
+    if request.method == 'POST':
+        categoria_id = request.POST.get('id')
+        nombre = request.POST.get('nombre')
+
+        if categoria_id:  # Si hay un ID, estamos en modo edición
+            try:
+                categoria = Categoria.objects.get(id=categoria_id)
+                categoria.nombre = nombre
+                categoria.save()
+                messages.success(
+                    request, f'Categoría "{nombre}" actualizada con éxito.')
+            except Categoria.DoesNotExist:
+                messages.error(request, 'La categoría no existe.')
+        else:  # No hay ID, creamos una nueva categoría
+            try:
+                Categoria.objects.create(nombre=nombre)
+                messages.success(
+                    request, f'Nueva categoría "{nombre}" creada con éxito.')
+            except Exception as e:
+                messages.error(
+                    request, f'Error al crear la categoría: {str(e)}')
+
+        return redirect('categorias')  # Redirigir a la vista de categorías
+
+    return redirect('categorias')  # Si no es POST, redirigir
+
+
+def borrar_categoria(request, categoria_id):
+    try:
+        cat = Categoria.objects.get(id=categoria_id)
+        cat.delete()
+        messages.success(request, 'La categoria se ha borrado correctamente.')
+    except Exception as e:
+        messages.error(
+            request, f'No se ha podido borrar la categoria. Error({e})')
+    return redirect('/productos/categorias', messages)

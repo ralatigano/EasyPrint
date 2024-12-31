@@ -114,34 +114,35 @@ def calcular_cant_etiquetas_por_superficie(ancho_hoja, alto_hoja, ancho_elemento
 
 
 def obtener_datos(request):
-    np = request.POST['n_presupuesto']
-    if request.POST['cliente'] == '':
-        cliente = 'Consumidor final'
-    else:
-        cliente = request.POST['cliente']
+    np = request.POST['presupuesto']
+    # if request.POST['cliente'] == '':
+    #     cliente = 'Consumidor final'
+    # else:
+    # cliente = request.POST['cliente']
     prod_cod = request.POST['producto']
     categoria = request.POST['categoria']
-    cat = Categoria.objects.get(nombre=categoria)
+    cat = Categoria.objects.get(id=categoria)
     prod = Producto.objects.filter(resultado=0).get(codigo=prod_cod)
     info_adic = request.POST['info_adic']
-    cantidad = float(request.POST['cantidad'])
-    cant_area = float(request.POST['cant_area'])
+    cantidad_repeticion = float(request.POST['cantidad_repeticion'])
+    cantidad_area = float(request.POST['cantidad_area'])
     t_produccion = float(request.POST['t_produccion'])
     if request.POST.get('empaquetado') == 'on':
         empaq = True
     else:
         empaq = False
     precio = float(prod.precio)
-    descuento = int(request.POST['descuento'])
+    descuento = int(request.POST['descuento']
+                    ) if request.POST['descuento'] else 0
     return ({
             'np': np,
-            'cliente': cliente,
+            # 'cliente': cliente,
             'codigo': prod.codigo,
             'producto': prod.nombre,
             'categoria': cat.nombre,
             'info_adic': info_adic,
-            'cantidad': cantidad,
-            'cant_area': cant_area,
+            'cantidad_repeticion': cantidad_repeticion,
+            'cantidad_area': cantidad_area,
             't_produccion': t_produccion,
             'empaquetado': empaq,
             'precio': precio,
@@ -155,20 +156,19 @@ def obtener_datos(request):
 def calc_precio(diccionario):
     costo_produccion = float(Producto.objects.get(codigo=125).precio)
     t_prod = diccionario['t_produccion'] if diccionario['t_produccion'] else 0
-    cant_area = diccionario['cant_area'] if diccionario['cant_area'] else 1
-    print(f'cant_area: {cant_area}')
+    cant_area = diccionario['cantidad_area'] if diccionario['cantidad_area'] else 1
     empaquetado_precio = 0
     empaquetado = 'No'
     if diccionario['empaquetado']:
         empaquetado_precio = float(Producto.objects.get(codigo=123).precio)
         empaquetado = 'Si'
-    precio = round(diccionario['precio'] * diccionario['cantidad'] * cant_area * diccionario['factor'] +
+    precio = round(diccionario['precio'] * cant_area * diccionario['factor'] +
                    t_prod * costo_produccion + empaquetado_precio, 2)
     desc_plata = float(precio * diccionario['descuento'] / 100)
     resultado = precio - desc_plata
     producto = diccionario['producto']
     info_adic = diccionario['info_adic']
-    cantidad = diccionario['cantidad']
+    cantidad_repeticion = diccionario['cantidad_repeticion']
     descuento = diccionario['descuento']
     return ({
         'precio': precio,
@@ -176,7 +176,7 @@ def calc_precio(diccionario):
         'resultado': resultado,
         'producto': producto,
         'info_adic': info_adic,
-        'cantidad': cantidad,
+        'cantidad_repeticion': cantidad_repeticion,
         'cant_area': cant_area,
         'descuento': descuento,
         'empaquetado': empaquetado,

@@ -2,8 +2,8 @@ from django.urls import path
 from django.conf import settings
 from django.conf.urls.static import static
 from .views import (
-    Inicio, presupuestos,  calcular_cantidad_por_hoja, agregar_descartar_producto,
-    borrar_imagen_generada, obtener_productos, calculo_rapido, delete_calc_presupuesto,
+    Inicio, presupuestos, agregar_descartar_producto,
+    borrar_imagen_generada, productos_por_categoria, calculo_rapido, delete_calc_presupuesto,
     destroy_calc_presupuesto, edit_producto_cotizado, guardar_presupuesto, editar_presupuesto,
     generar_presupuesto_pdf,
 )
@@ -14,11 +14,9 @@ urlpatterns = [
     path('inicio/', Inicio, name="inicio"),
     # Tabla presupuestos
     path('', presupuestos, name='presupuestos'),
-    # vista llamada desde el frontend para obtener los productos pertenecientes a una categoría.
-    path('obtenerProductos', obtener_productos, name='obtenerProductos'),
-    # vista que hace cálculos y se comunica con el frontend para mostrar los resultados en un modal.
-    path('calcularCantHojas', calcular_cantidad_por_hoja,
-         name='calcularCantHojas'),
+    # vista llamada desde el frontend para obtener los productos pertenecientes a una categoría y otras chauchas.
+    path('productosPorCategoria/', productos_por_categoria,
+         name='productosPorCategoria'),
     # vista que es llamada desde el frontend y borra la imagen que se genera con los cálculos.
     path('borrarImagenGenerada', borrar_imagen_generada,
          name='borrarImagenGenerada'),

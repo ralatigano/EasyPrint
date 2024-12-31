@@ -330,3 +330,71 @@ function adaptRecuadroFondo() {
 
 window.addEventListener('resize', () => adaptRecuadroFondo());
 window.addEventListener('load', () => adaptRecuadroFondo());
+
+// Función que se dispara al abrir el modal
+function cargarCategoriasYProducto(idProducto = null) {
+    // Cargar las categorías
+    $.ajax({
+        url: '/productos/infoEditarProducto', // URL para obtener las categorías
+        type: 'GET',
+        success: function(data) {
+            var categorias = data.Cate;
+            var select = $('#categ');
+            
+            // Limpiar y llenar el select de categorías
+            select.empty();
+            select.append('<option value="">Seleccione una categoría</option>');
+            categorias.forEach(function(categoria) {
+                select.append('<option value="' + categoria.id + '">' + categoria.nombre + '</option>');
+            });
+  
+            // Si es edición, cargar los datos del producto
+            if (idProducto) {
+                $.ajax({
+                    url: '/productos/obtenerProducto/' + idProducto, // URL para obtener los datos del producto
+                    type: 'GET',
+                    success: function(data) {
+                        // Rellenar los campos del formulario con los datos del producto
+                        $('#codigo').val(data.codigo);
+                        $('#nombre').val(data.nombre);
+                        $('#precio').val(data.precio);
+                        $('#ancho').val(data.ancho);
+                        $('#alto').val(data.alto);
+                        $('#factor_edit').val(data.factor);
+                        // Seleccionar la categoría correcta en el select
+                        $('#categ').val(data.categoria_id);
+                    }
+                });
+                
+                // Cambiar el título del modal para edición
+                $('#editarProductoModalLabel').text('Editar producto');
+            } else {
+                // Si es creación, limpiar todos los campos del formulario
+                $('#codigo').val('');
+                $('#nombre').val('');
+                $('#precio').val('');
+                $('#ancho').val('');
+                $('#alto').val('');
+                $('#factor_edit').val('');
+                $('#nueva_categoria').val(''); // Limpiar también el campo para nueva categoría
+  
+                // Cambiar el título del modal para creación
+                $('#editarProductoModalLabel').text('Agregar producto');
+            }
+        }
+    });
+}
+  
+// Evento que se dispara al abrir el modal
+$('#editarProductoModal').on('show.bs.modal', function(event) {
+    var button = $(event.relatedTarget); // Botón que disparó el modal
+    var idProducto = button.data('bs-whatever');  // Extrae el id del producto del atributo data-bs-whatever
+
+    // Si el valor de idProducto es " " (vacío), lo tratamos como creación
+    if (idProducto === " ") {
+        idProducto = null;
+    }
+
+    // Llama a la función con el idProducto (null si es creación)
+    cargarCategoriasYProducto(idProducto);
+});

@@ -61,71 +61,89 @@ def Inicio(request):
 
     return render(request, 'presupuestos/inicio.html', data)
 
-# Vista llamada desde el frontend que genera un JsonResponse con los productos de una determinada categoria para poder cargarlos en el elemento select correspondiente.
+# Vista llamada desde el frontend que genera un JsonResponse con los productos de una determinada categoria para poder cargarlos en el elemento select correspondiente
+# además de realizar algunos cálculos para brindar información de utilidad durante la cotización.
 
 
 @login_required
-def obtener_productos(request):
-    categoria_nombre = request.GET.get('categoria_nombre')
-    categoria = get_object_or_404(Categoria, nombre=categoria_nombre)
-    productos = Producto.objects.filter(
-        categoria=categoria).filter(presupuesto=None).filter(vendedor=None).values('codigo', 'nombre')
-    return JsonResponse({'productos': list(productos)})
+def productos_por_categoria(request):
+    if request.method == 'POST':
+        categoria = request.POST.get('categoria')
+        cantidad_repeticion = int(request.POST.get('cantidad_repeticion'))
+        ancho_elemento = float(request.POST.get('ancho'))
+        alto_elemento = float(request.POST.get('alto'))
+        separacion = float(request.POST.get('separacion'))
+        algoritmo = request.POST.get('algoritmo', 'MaxRects')
+        # Obtener productos de la categoría seleccionada
+        productos = Producto.objects.filter(categoria__id=categoria)
 
-# Vista que procesa la información ingresada en el modal que sirve para calcular la cantidad de hojas/pliegos que se requieren
-# para imprimir una determinada cantidad de etiquetas.
+        if productos.exists():
+            # Tomamos el primer producto para realizar el cálculo del gráfico
+            producto = productos.first()
+            ancho = producto.ancho
+            alto = producto.alto
+
+            # Llama a la función que genera el gráfico y calcula los resultados
+            cant_elementos_empaquetados, grafico_url, area_ocupada = calcular_cant_etiquetas_por_superficie(
+                ancho_hoja=ancho, alto_hoja=alto, ancho_elemento=ancho_elemento,
+                alto_elemento=alto_elemento, separacion=separacion, cantidad_deseada=cantidad_repeticion, algoritmo=algoritmo
+            )
+            # En función de cuantos elementos entran por pliego calcula la cantidad de pliegos que serán necesarios para cumplir con el pedido
+            if cantidad_repeticion != 0:
+                cantidad_hojas = math.ceil(
+                    cantidad_repeticion / cant_elementos_empaquetados)
+
+            # Formar la respuesta con los productos y los resultados del cálculo
+            productos_data = [{'id': p.codigo, 'nombre': p.nombre}
+                              for p in productos]
+            response_data = {
+                'productos': productos_data,
+                'grafico_url': grafico_url,
+                'area_ocupada': area_ocupada,
+                'cant_elementos_empaquetados': cant_elementos_empaquetados,
+                'cantidad_hojas': cantidad_hojas,
+            }
+
+            return JsonResponse(response_data)
+        else:
+            return JsonResponse({'error': 'No se encontraron productos en esta categoría'}, status=400)
+
+    return JsonResponse({'error': 'Método no permitido'}, status=405)
 
 
-@login_required
-def calcular_cantidad_por_hoja(request):
-    alto_hoja = int(request.POST.get('alto_hoja'))
-    ancho_hoja = int(request.POST.get('ancho_hoja'))
-    ancho_elemento = int(request.POST.get('ancho_elemento'))
-    alto_elemento = int(request.POST.get('alto_elemento'))
-    separacion = float(request.POST.get('separacion'))
-    cant_deseada = int(request.POST.get('cant_deseada'))
-
-    cant_resultado, relative_path, area_ocupada = calcular_cant_etiquetas_por_superficie(
-        ancho_hoja, alto_hoja, ancho_elemento, alto_elemento, separacion, cant_deseada)
-
-    img_path = os.path.join(settings.MEDIA_URL, relative_path)
-
-    if cant_deseada != 0:
-        cantidad_hojas = math.ceil(cant_deseada / cant_resultado)
-
-    return JsonResponse({
-        'img_hoja': img_path,
-        'cant_resultado': cant_resultado,
-        'cant_hojas': cantidad_hojas,
-        'area_ocupada': area_ocupada})
-
-# Vista que procesa una llamada desde el frontend para borrar una imagen generada en el modal de cálculo de cantidad de hojas.
+# Vista que procesa una llamada desde el frontend para borrar todos los gráficos que se generan durante la cotización.
 
 
 @csrf_exempt
 def borrar_imagen_generada(request):
     if request.method == 'POST':
-        data = json.loads(request.body)
-        img_path = data.get('imgPath', '')
-        img_path = unquote(img_path)
-        img_name = img_path.split('/media/')[-1]
+        try:
+            # Directorio donde están guardadas las imágenes generadas
+            directorio_graficos = os.path.join(
+                settings.MEDIA_ROOT, 'presupuestos/graficos')
 
-        if img_name:
-            try:
-                # Construye el path absoluto en el servidor
-                img_abs_path = os.path.abspath(
-                    os.path.join(settings.MEDIA_ROOT, img_name))
+            # Verificar si el directorio existe
+            if os.path.exists(directorio_graficos):
+                # Lista todos los archivos en el directorio
+                archivos = os.listdir(directorio_graficos)
 
-                # Verifica si el archivo existe y lo borra
-                if os.path.exists(img_abs_path):
-                    os.remove(img_abs_path)
-                    return JsonResponse({'message': f'Imagen {img_path} eliminada correctamente.'})
-                else:
-                    return JsonResponse({'message': f'La imagen {img_path} no existe en el servidor.'}, status=404)
-            except Exception as e:
-                return JsonResponse({'message': f'Error al intentar eliminar la imagen: {str(e)}'}, status=500)
-        else:
-            return JsonResponse({'message': 'No se proporcionó la ruta de la imagen a eliminar.'}, status=400)
+                # Contador para saber cuántos archivos se han eliminado
+                archivos_eliminados = 0
+
+                # Itera y elimina cada archivo
+                for archivo in archivos:
+                    archivo_path = os.path.join(directorio_graficos, archivo)
+                    # Asegurarse de que sea un archivo y no un directorio
+                    if os.path.isfile(archivo_path):
+                        os.remove(archivo_path)
+                        archivos_eliminados += 1
+
+                return JsonResponse({'message': f'{archivos_eliminados} imágenes eliminadas correctamente.'})
+            else:
+                return JsonResponse({'message': 'El directorio de imágenes no existe.'}, status=404)
+
+        except Exception as e:
+            return JsonResponse({'message': f'Error al intentar eliminar las imágenes: {str(e)}'}, status=500)
     else:
         return JsonResponse({'message': 'Método no permitido.'}, status=405)
 
@@ -162,7 +180,7 @@ def calculo_rapido(request):
 
     return JsonResponse({
         'producto': costo['producto'],
-        'cantidad': costo['cantidad'],
+        'cantidad_repeticion': costo['cantidad_repeticion'],
         'cant_area': costo['cant_area'],
         'precio': costo['resultado'],
         'descuento': costo['descuento'],
@@ -186,12 +204,12 @@ def agregar_descartar_producto(request, str):
         if editando_presup:
             Producto.objects.create(
                 presupuesto=Presupuesto.objects.get(numero=np_global),
-                cliente=datos_producto['cliente'],
+                cliente=None,
                 nombre=costo['producto'],
                 categoria=Categoria.objects.get(
                     nombre=datos_producto['categoria']),
                 info_adic=costo['info_adic'],
-                cantidad=costo['cantidad'],
+                cantidad=costo['cantidad_repeticion'],
                 cant_area=costo['cant_area'],
                 precio=costo['precio'],
                 desc_porcentaje=costo['descuento'],
@@ -205,12 +223,12 @@ def agregar_descartar_producto(request, str):
         else:
             Producto.objects.create(
                 presupuesto=None,
-                cliente=datos_producto['cliente'],
+                cliente=None,
                 nombre=costo['producto'],
                 categoria=Categoria.objects.get(
                     nombre=datos_producto['categoria']),
                 info_adic=costo['info_adic'],
-                cantidad=costo['cantidad'],
+                cantidad=costo['cantidad_repeticion'],
                 cant_area=costo['cant_area'],
                 precio=costo['precio'],
                 desc_porcentaje=costo['descuento'],
@@ -245,35 +263,64 @@ def edit_producto_cotizado(request):
         cambios_precio = False
         cambios = False
         prod = Producto.objects.get(codigo=int(request.POST['cod_edit']))
-        if prod.cantidad != request.POST['cant_edit']:
-            prod.cantidad = float(request.POST['cant_edit'])
+        cantidad_edit = int(request.POST['cant_edit'].replace(',', '.'))
+        cantidad_area_edit = float(
+            request.POST['cant_area_edit'].replace(',', '.'))
+        desc_edit = int(request.POST['desc_edit'])
+        precio_edit = float(request.POST['precio_edit'].replace(',', '.'))
+        t_produccion_edit = float(
+            request.POST['t_produccion_edit'].replace(',', '.'))
+        if prod.cantidad != cantidad_edit:
+            print(
+                f'prod.cantidad: {prod.cantidad}, request.POST["cant_edit"]: {cantidad_edit}')
+            prod.cantidad = cantidad_edit
             cambios_precio = True
-        if prod.cant_area != request.POST['cant_area_edit']:
-            prod.cant_area = float(request.POST['cant_area_edit'])
+        if prod.cant_area != cantidad_area_edit:
+            print(
+                f'prod.cant_area: {prod.cant_area}, request.POST["cant_area_edit"]: {cantidad_area_edit}')
+            prod.cant_area = cantidad_area_edit
             cambios_precio = True
-        if prod.desc_porcentaje != request.POST['desc_edit']:
-            prod.desc_porcentaje = int(request.POST['desc_edit'])
+        if prod.desc_porcentaje != desc_edit:
+            print(
+                f'prod.desc_porcentaje: {prod.desc_porcentaje}, request.POST["desc_edit"]: {desc_edit}')
+            prod.desc_porcentaje = desc_edit
+            cambios_precio = True
+        if prod.precio != precio_edit:
+            print(
+                f'prod.precio: {prod.precio}, request.POST["precio_edit"]: {precio_edit}')
             cambios_precio = True
         if request.POST.get('empaq_edit'):
+            print('5')
             empaquetado_precio = float(Producto.objects.get(codigo=123).precio)
             prod.empaquetado = True
             cambios_precio = True
         else:
             empaquetado_precio = 0
             prod.empaquetado = False
-        if prod.t_produccion != request.POST['t_prod_edit']:
-            tiempo = str(request.POST['t_prod_edit']).replace(',', '.')
-            prod.t_produccion = float(tiempo)
+        if prod.t_produccion != t_produccion_edit:
+            prod.t_produccion = t_produccion_edit
             costo_produccion = float(Producto.objects.get(
-                codigo=125).precio) * float(tiempo)
+                codigo=125).precio) * t_produccion_edit
             cambios_precio = True
         if cambios_precio:
-            p_precio = float(Producto.objects.filter(
-                nombre=prod.nombre).filter(resultado=0).values_list('precio', flat=True).first())
-            prod.precio = round(p_precio * prod.cantidad * prod.cant_area +
-                                costo_produccion + empaquetado_precio, 2)
-            prod.desc_plata = float(prod.precio * prod.desc_porcentaje / 100)
-            prod.resultado = round(prod.precio - prod.desc_plata, 2)
+            if prod.precio != request.POST['precio_edit'].replace(',', '.'):
+                print('7')
+                prod.precio = float(
+                    request.POST['precio_edit'].replace(',', '.'))
+                prod.desc_plata = float(
+                    prod.precio * prod.desc_porcentaje / 100)
+                prod.resultado = round(prod.precio - prod.desc_plata, 2)
+            else:
+                print('8')
+                p_precio = float(Producto.objects.filter(
+                    nombre=prod.nombre).filter(resultado=0).values_list('precio', flat=True).first())
+                p_factor = float(Producto.objects.filter(
+                    nombre=prod.nombre).filter(resultado=0).values_list('factor', flat=True).first())
+                prod.precio = round(p_precio * prod.cant_area * p_factor +
+                                    costo_produccion + empaquetado_precio, 2)
+                prod.desc_plata = float(
+                    prod.precio * prod.desc_porcentaje / 100)
+                prod.resultado = round(prod.precio - prod.desc_plata, 2)
         if prod.info_adic != request.POST['detalle_edit']:
             prod.info_adic = request.POST['detalle_edit']
             cambios = True

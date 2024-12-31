@@ -129,12 +129,59 @@
             {% block footer %}
               <!--Aquí va el pie del contenido de cada plantilla-->
             {% endblock %}
-            <div class="version"> Cotizador Easyprint v2.0.3 </div>
+            <div class="version"> Cotizador Easyprint v2.5.0 </div>
           </div>
         </footer>
       </div>
     </div>
     
+    <!-- Modal Editar Producto -->
+    <div class="modal fade" id="editarProductoModal" tabindex="-1" aria-labelledby="editarProductoModalLabel" data-bs-backdrop="static" aria-hidden="true">   
+      <form action="/productos/guardarProducto" method="POST">
+        {% csrf_token %}
+        <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h1 class="modal-title-prod fs-5" id="editarProductoModalLabel">Modal title</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body">
+                <input type="text" id="codigo" name="codigo" readonly="true" hidden>
+                
+                <label for="nombre" style="font-weight: bold">Nombre:</label>
+                <textarea rows="2" cols="50" id="nombre" name="nombre" data-bs-toggle="tooltip" title="Utiliza un nombre descriptivo."></textarea>
+
+                <label for="precio" style="font-weight: bold">Precio:</label>
+                <input type="text" id="precio" name="precio"> 
+
+                <label for="categ" style="font-weight: bold">Categoría:</label>
+                <select id="categ" name="categ" data-bs-toggle="tooltip" title="Haz click para cambiar la categoría.">
+                </select>
+                
+                <!-- Nuevo input para crear categoría -->
+                <label for="nueva_categoria" style="font-weight: bold">Nueva Categoría (opcional):</label>
+                <input type="text" id="nueva_categoria" name="nueva_categoria" placeholder="Si prefieres, puedes escribir el nombre de una nueva categoría aquí.">
+
+                <label for="ancho" style="font-weight: bold">Ancho (cm):</label>
+                <input type="text" id="ancho" name="ancho">
+
+                <label for="alto" style="font-weight: bold">Alto (cm):</label>
+                <input type="text" id="alto" name="alto">
+                
+                <label for="factor_edit" style="font-weight: bold">Factor:</label>
+                <input type="text" id="factor_edit" name="factor_edit">
+              
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-dark btn-fuente" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" class="btn btn-dark btn-fuente">Guardar</a></button> 
+              </div>
+            </div>
+        </div>
+      </form>
+    </div>
+
+
     <!-- Bootstrap dropdowns, popovers and tooltips -->
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous"></script>
     <!-- Bootstrap -->

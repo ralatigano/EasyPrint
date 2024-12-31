@@ -1,69 +1,275 @@
-
-.FormularioInicial {
-    border-radius: 10px;
-    padding: 30px;
+/* Estilos para el formulario */
+#nueva_cotizacion_form {
     width: 100%;
+    /* max-width: 800px; */
+    margin: 0 auto;
+    padding: 20px;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+    position: relative;
 }
 
-/* Asegurarse de que los elementos del formulario ocupen todo el ancho disponible */
-.form-group {
+/* Estilos para el contenedor del N° Presupuesto */
+.presupuesto-container {
+    display: flex;
+    justify-content: flex-end; /* Alinear todo al lado derecho */
+    align-items: center; /* Centrar verticalmente el label y el input */
+    margin-bottom: 15px; /* Espacio debajo del contenedor */
+}
+
+/* Estilo del label */
+.presupuesto-container label {
+    margin-right: 10px; /* Espacio entre el label y el input */
+}
+
+/* Input del N° Presupuesto alineado a la derecha y más pequeño */
+#nueva_cotizacion_form #presupuesto {
+    width: 200px;
+    text-align: right;
+    float: right;
     margin-bottom: 15px;
 }
 
-.form-group label {
-    display: block;
-    margin-bottom: 5px;
-}
-
-.form-group input,
-.form-group select {
-    width: 100%;
-    box-sizing: border-box; /* Incluye padding y border en el ancho total */
-}
-
-.cantidad-ancho-alto {
+/* Ajustes generales para asegurar el tamaño uniforme y alineación */
+.datos_cantidad .form-group {
     display: flex;
-    flex-wrap: wrap; /* Permite que los elementos se envuelvan en lugar de estar en una sola línea */
-    gap: 10px; /* Espacio entre los elementos */
+    flex-direction: column; /* Asegura que el label esté encima del input */
+    justify-content: flex-start;
+    align-items: stretch; /* Asegura que los inputs ocupen todo el ancho disponible */
 }
 
-.cantidad-ancho-alto > * {
-    flex: 1 1 calc(50% - 10px); /* Ajusta el ancho de los elementos en base al espacio disponible */
-}
-@media (max-width: 768px) {
-    .cantidad-ancho-alto > * {
-        flex: 1 1 100%; /* Cada input ocupará el 100% en pantallas pequeñas */
-    }
-}
-
-/* Si necesitas ajustar específicamente ciertos inputs */
-input#cantidad,
-input#cant_area,
-input#t_produccion {
-    max-width: 75px; /* Cambia el valor según tus necesidades */
-    max-height: 50px;
-}
-
-/* Ajustar el tamaño del checkbox */
-.form-check-input {
-    height: 25px;
-    width: 25px !important;
-}
-.contenedor_formulario {
+/* Asegura que los inputs tengan el mismo ancho */
+.datos_cantidad .form-control {
     width: 100%;
-    display: grid;
-    grid-gap: 20px;
-    grid-template-columns: repeat(4, 1fr);
-    grid-template-rows: repeat(5,auto);
-    grid-template-areas:    "cliente cliente nothing n_presupuesto"
-                            "categoria categoria producto producto"
-                            "cantidad-ancho-alto cantidad-ancho-alto cantidad-ancho-alto cantidad-ancho-alto"
-                            "info_adic info_adic info_adic descuento"
-                            "btn_agregar btn_agregar btn_agregar btn_agregar";
-    opacity: 0.9;
-    border-radius: 10px;
-    margin: 5px 5px 5px 5px;
-    padding: 20px 20px 20px 20px;
+}
+
+/* Ajusta el tamaño y espacio de los labels */
+.datos_cantidad label {
+    white-space: nowrap; /* Evita que el texto del label se divida en dos líneas */
+    overflow: hidden; /* Evita que se desborde el contenido del label */
+    text-overflow: ellipsis; /* Agrega "..." si el texto del label es demasiado largo */
+    margin-bottom: 5px; /* Espacio entre el label y el input */
+}
+
+/* Agrega espacio extra entre las columnas para evitar solapamiento */
+.datos_cantidad .form-group {
+    padding-right: 10px;
+}
+
+/* Hacer que todos los elementos tengan el mismo tamaño */
+.datos_cantidad .form-group.col-md-2 {
+    flex: 1; /* Todos los elementos ocupan el mismo espacio */
+    min-width: 150px; /* Ajusta el tamaño mínimo si es necesario */
+}
+
+/* Asegurar que los form-groups se alineen correctamente en columna */
+.agregados .form-group {
+    display: flex;
+    flex-direction: column; /* Asegura que el label esté encima del input */
+    justify-content: flex-start;
+    align-items: stretch;
+}
+
+/* Asegurar el tamaño uniforme de los inputs */
+.agregados .form-control {
+    width: 100%; /* Asegura que los inputs ocupen todo el ancho disponible */
+}
+
+/* Espaciado y alineación de los labels */
+.agregados label {
+    white-space: nowrap; /* Evita que el texto se divida en varias líneas */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 5px; /* Espacio entre el label y el input */
+}
+
+/* Estilo especial para el checkbox */
+.agregados .form-group input[type="checkbox"] {
+    transform: scale(1.5); /* Aumenta el tamaño del checkbox */
+    margin-top: 8px; /* Alinea verticalmente con el label */
+}
+
+/* Ajustar el tamaño mínimo de los form-groups */
+.agregados .form-group.col-md-4 {
+    flex: 1; /* Todos los elementos ocupan el mismo espacio */
+    min-width: 150px; /* Ajusta el tamaño mínimo para evitar que se achiquen demasiado */
+}
+
+/* Ajuste adicional para evitar que los elementos se solapen */
+.agregados .form-group {
+    padding-right: 10px;
+}
+
+/* Estilos para los elementos dentro del formulario */
+#nueva_cotizacion_form .form-group {
+    margin-bottom: 15px;
+}
+
+#nueva_cotizacion_form label {
+    font-weight: bold;
+}
+
+#nueva_cotizacion_form input[type="text"],
+#nueva_cotizacion_form input[type="number"],
+#nueva_cotizacion_form select {
+    width: 100%;
+    padding: 8px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+}
+
+
+/* Ajuste del tamaño de los inputs para que sean iguales */
+#nueva_cotizacion_form .form-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 15px;
+} 
+
+#nueva_cotizacion_form .form-group.col-md-2 {
+    flex: 1;
+    min-width: 100px;
+}
+
+/* Espacio para el gráfico inicialmente oculto */
+#nueva_cotizacion_form #grafico {
+    height: 300px;
+    background-color: #eaeaea;
+    border: 1px solid #ccc;
+    margin-bottom: 15px;
+    display: none; /* Oculto por defecto */
+}
+
+/* Estilos para los botones */
+#nueva_cotizacion_form button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+#nueva_cotizacion_form button.btn-secondary {
+    background-color: #6c757d;
+    color: white;
+}
+
+#nueva_cotizacion_form button.btn-primary {
+    background-color: #007bff;
+    color: white;
+}
+
+/* Asegura que los botones se mantengan uno al lado del otro */
+#nueva_cotizacion_form .form-group:last-child {
+    display: flex;
+    justify-content: space-between;
+}
+
+/* Checkbox empaquetado más grande */
+#nueva_cotizacion_form input[type="checkbox"] {
+    transform: scale(2);
+    margin-right: 10px;
+}
+
+/* Inputs de tiempo de producción y descuento iguales */
+#nueva_cotizacion_form .form-group.produccion,
+#nueva_cotizacion_form .form-group.descuento {
+    flex: 1;
+    min-width: 200px;
+}
+
+/* Quitar decoraciones del botón de limpiar */
+#nueva_cotizacion_form a.btn-limpiar {
+    padding: 10px 20px;
+    text-decoration: none;
+    border-radius: 4px;
+    background-color: #f8f9fa;
+    color: #212529;
+    border: 1px solid #ccc;
+}
+
+/* Alineación del botón */
+.btn_agregar {
+    display: flex;
+    justify-content: flex-start;
+    gap: 20px;
+    margin-top: 20px;
+}
+
+/* Botones */
+.btn {
+    padding: 10px 20px;
+    border-radius: 5px;
+    font-size: 1rem;
+}
+
+.btn-fuente {
+    font-family: 'Roboto', sans-serif;
+    font-size: 14px;
+}
+
+/* Estilo para la tabla de productos */
+table.table-hover {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+table.table-hover thead {
+    background-color: #343a40;
+    color: white;
+}
+
+table.table-hover tbody tr:hover {
+    background-color: #f1f3f5;
+}
+
+table th, table td {
+    padding: 12px 15px;
+    text-align: center;
+    border: 1px solid #dee2e6;
+}
+
+/* Tooltip personalizado */
+[data-bs-toggle="tooltip"] {
+    position: relative;
+    cursor: pointer;
+}
+
+[data-bs-toggle="tooltip"]::after {
+    content: attr(title);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(0, 0, 0, 0.75);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 0.875rem;
+    display: none;
+    white-space: nowrap;
+}
+
+[data-bs-toggle="tooltip"]:hover::after {
+    display: block;
+}
+
+/* Responsividad */
+@media (max-width: 768px) {
+    .contenedor_formulario {
+        flex-direction: column;
+    }
+    
+    .form-group {
+        flex: 1 1 100%;
+    }
+    
+    .btn_agregar {
+        flex-direction: column;
+        align-items: flex-start;
+    }
 }
 .light_bg {
     background-color: var(--fondo-light);
@@ -75,95 +281,59 @@ input#t_produccion {
     color: white;
 }
 
-.contenedor_formulario .form-control,
-.contenedor_formulario .form-select {
-    width: 100%;
-    max-width: 100%;
-    box-sizing: border-box; /* Asegura que el padding se incluya en el ancho total */
-}
-
-.contenedor_formulario .form-group.cliente {
-    grid-area : cliente;
-}
-.contenedor_formulario .form-group.n_presupuesto {
-    grid-area : n_presupuesto;
-}
-.contenedor_formulario .form-group.categoria {
-    grid-area : categoria;
-}
-.contenedor_formulario .form-group.producto {
-    grid-area : producto;
-}
-.contenedor_formulario .form-group.cantidad-ancho-alto {
-    display: grid;
-    grid-template-columns: repeat(8, 1fr);
-    grid-template-rows: 1;
-    grid-gap: 30px;
-    grid-area : cantidad-ancho-alto;
-}
-
-.contenedor_formulario .form-group.info_adic {
-    grid-area : info_adic;
-}
-.contenedor_formulario .form-group.descuento {
-    grid-area : descuento;
-}
-.contenedor_formulario .form-group.btn_agregar {
-    grid-area : btn_agregar;
-}
-
-.buttons {
-    max-width: 80%;
-    margin: 0 auto; /* Centra el contenedor de botones horizontalmente */
-    display: flex;
-    justify-content: center;
-    gap: 10px; /* Espacio entre los botones */
-}
-
-.buttons a {
-    flex: 1; /* Los botones se ajustan al tamaño del contenedor */
-    max-width: calc((80% / 3) - 10px); /* Ajusta el tamaño máximo de cada botón */
-}
 
 
-
-@media (max-width: 1200px) {
-    .contenedor_formulario {
-        grid-template-columns: repeat(2, 1fr);
-        grid-template-areas: 
-            "cliente cliente"
-            "n_presupuesto n_presupuesto"
-            "categoria categoria"
-            "producto producto"
-            "cantidad-ancho-alto cantidad-ancho-alto"
-            "info_adic info_adic"
-            "descuento descuento"
-            "btn_agregar btn_agregar";
-    }
-}
-
-@media (max-width: 768px) {
-    .contenedor_formulario {
-        grid-template-columns: 1fr;
-        grid-template-areas: 
-            "cliente"
-            "n_presupuesto"
-            "categoria"
-            "producto"
-            "cantidad-ancho-alto"
-            "cantidad-ancho-alto"
-            "info_adic"
-            "descuento"
-            "btn_agregar";
-    }
-    .contenedor_formulario .form-group.cantidad-ancho-alto {
-        grid-template-columns: 1fr;
-    }
-}
-
-#calcularCantPorHojaModal #cant_resultado,
+/* #calcularCantPorHojaModal #cant_resultado,
 #calcularCantPorHojaModal #cant_hojas,
 #calcularCantPorHojaModal #area_ocupada{
     font-weight: bold;
     font-size: 1.5rem;
+} */
+
+/* #grafico_contenedor {
+    max-width: 100%;  
+    height: auto;     
+    display: block;
+    margin: 0 auto;   
+    gap: 5px;
+} */
+
+.hidden {
+    display: none;
 }
+
+.grafico_botones_contenedor {
+    max-width: 100%;  /* Asegura que el contenedor no exceda el ancho del formulario */
+    display: flex;
+    flex-wrap: wrap;  /* Permite que los elementos se acomoden en varias filas si es necesario */
+    justify-content: space-between;  /* Asegura que los elementos se distribuyan de manera uniforme */
+    align-items: flex-start;  /* Alinea los elementos al principio del eje vertical */
+    margin: 0 auto;
+    gap: 10px;
+}
+
+.grafico-img {
+    max-width: 80%;  /* Limita el ancho de la imagen para que no ocupe todo el espacio */
+    height: auto;
+    display: block;
+}
+
+.botones-grafico {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 10px;  /* Añade espacio entre los botones */
+    max-width: 25%;  /* Limita el ancho del contenedor de botones */
+}
+
+.btn-grafico {
+    margin-bottom: 10px;
+}
+
+/* .btn-plus {
+    background-color: transparent;
+    border: none;
+    color: #000;
+    font-size: 1.2em;
+    cursor: pointer;
+} */

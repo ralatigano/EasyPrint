@@ -1,0 +1,83 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+<!DOCTYPE html>
+<html>
+    <head>
+        {% block head %}
+        <!-- Custom Css -->
+        <!-- <link rel="stylesheet" href="{% static 'clientes/css/Clientes.css' %}"> -->
+        <title>{% block title %}Categorías{% endblock %}</title>
+        {% endblock %}
+    </head>
+    <body>
+        {% block header %}
+        <div class="titulo">
+            <h1>Categorías</h1>
+            <div class="btn-group">
+                <button type="button" class="btn btn-dark btn-xs" data-bs-toggle="modal" data-bs-target="#editarCategoriaModal" data-bs-whatever=""><i class="fa-regular fa-folder-open"></i>Nueva categoría </button>
+            </div>
+        </div>
+        {% endblock %}
+        {% block content %}
+        <div class="row">    
+            <div class="container">
+                <div class="col-sm-12 col-md-12 col-lg-12 col-xl-12">
+                    <table id="Categorias" class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th class="centered">Nombre</th>
+                                <th class="centered">Editar/Borrar</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody_Clientes">
+                            {% for c in categorias %}
+                                <tr>
+                                    <td>{{c.nombre}}</td>
+                                    <td>
+                                        <button type="button" class="btn btn-dark btn-xs" data-bs-toggle="modal" data-bs-target="#editarCategoriaModal" data-bs-whatever="{{c.id}}"><i class="fa-solid fa-pencil sm"></i></button>
+                                        <a href="/productos/borrarCategoria/{{c.id}}" class="btn btn-dark btn-xs btnEliminacion"><i class="fa-solid fa-trash-can"></i></a>
+                                    </td>
+                                </tr>
+                            {% endfor %} 
+
+                        </tbody>
+
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Editar Categoria -->
+        <div class="modal fade" id="editarCategoriaModal" tabindex="-1" aria-labelledby="editarCategoriaModalLabel" data-bs-backdrop="static" aria-hidden="true">   
+            <form action="/productos/guardarCategoria/" method="POST">
+                {% csrf_token %}
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h1 class="modal-title fs-5" id="editarClienteModal">Modal title</h1>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <input id="id" name="id" hidden>
+
+                            <label for="nombre" style="font-weight: bold">Nombre:</label>
+                            <input id="nombre" name="nombre" required>
+                        
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-dark btn-xs btn-fuente" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-dark btn-xs btn-fuente">Guardar</a></button> 
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <!-- Custom Js -->
+        <script src="{% static 'productos/js/Categorias.js' %}"></script>
+        {% endblock %}
+        {% block footer %}
+        
+        {% endblock %}
+    </body>
+</html>
