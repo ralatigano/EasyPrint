@@ -178,7 +178,7 @@
                                             <td>$ {{c.desc_plata}}</td>
                                             <td>$ {{c.resultado}}</td>
                                             <td>
-                                                <button type="button" class="btn btn-dark btn-xs" data-bs-toggle="modal" data-bs-target="#editarProductoPresupuestoModal" data-bs-whatever="{{c.codigo}} | {{c.nombre}} | {{c.info_adic}} | {{c.cantidad}} | {{c.cant_area}} | {{c.desc_porcentaje}} | {{c.empaquetado}} | {{c.t_produccion}} | {{c.precio}}" data-bs-toggle="tooltip" data-bs-placement="top" title="Permite editar este producto."><i class="fa-solid fa-pencil"></i></button>
+                                                <button type="button" class="btn btn-dark btn-xs" data-bs-toggle="modal" data-bs-target="#editarProductoPresupuestoModal" data-bs-whatever="{{c.codigo}} | {{c.nombre}} | {{c.info_adic}} | {{c.cantidad|floatformat:0}} | {{c.cant_area}} | {{c.desc_porcentaje}} | {{c.empaquetado}} | {{c.t_produccion}} | {{c.precio}}" data-bs-toggle="tooltip" data-bs-placement="top" title="Permite editar este producto."><i class="fa-solid fa-pencil"></i></button>
                                                 <a href="/presupuestos/deleteCalc_Presupuesto/{{c.codigo}}" class="btn btn-dark btn-xs btnEliminacion" data-bs-toggle="tooltip" data-bs-placement="top" title="Borra este producto de la cotización actual."><i class="fa-solid fa-trash-can"></i></a>
                                             </td>
                                         </tr>

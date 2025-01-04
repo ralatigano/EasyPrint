@@ -263,34 +263,26 @@ def edit_producto_cotizado(request):
         cambios_precio = False
         cambios = False
         prod = Producto.objects.get(codigo=int(request.POST['cod_edit']))
-        cantidad_edit = int(request.POST['cant_edit'].replace(',', '.'))
+        cantidad_edit = int(request.POST['cant_edit'])
         cantidad_area_edit = float(
             request.POST['cant_area_edit'].replace(',', '.'))
         desc_edit = int(request.POST['desc_edit'])
         precio_edit = float(request.POST['precio_edit'].replace(',', '.'))
         t_produccion_edit = float(
-            request.POST['t_produccion_edit'].replace(',', '.'))
+            request.POST['t_prod_edit'].replace(',', '.'))
         if prod.cantidad != cantidad_edit:
-            print(
-                f'prod.cantidad: {prod.cantidad}, request.POST["cant_edit"]: {cantidad_edit}')
             prod.cantidad = cantidad_edit
             cambios_precio = True
         if prod.cant_area != cantidad_area_edit:
-            print(
-                f'prod.cant_area: {prod.cant_area}, request.POST["cant_area_edit"]: {cantidad_area_edit}')
             prod.cant_area = cantidad_area_edit
             cambios_precio = True
         if prod.desc_porcentaje != desc_edit:
-            print(
-                f'prod.desc_porcentaje: {prod.desc_porcentaje}, request.POST["desc_edit"]: {desc_edit}')
             prod.desc_porcentaje = desc_edit
             cambios_precio = True
         if prod.precio != precio_edit:
-            print(
-                f'prod.precio: {prod.precio}, request.POST["precio_edit"]: {precio_edit}')
             cambios_precio = True
         if request.POST.get('empaq_edit'):
-            print('5')
+
             empaquetado_precio = float(Producto.objects.get(codigo=123).precio)
             prod.empaquetado = True
             cambios_precio = True
@@ -304,14 +296,12 @@ def edit_producto_cotizado(request):
             cambios_precio = True
         if cambios_precio:
             if prod.precio != request.POST['precio_edit'].replace(',', '.'):
-                print('7')
                 prod.precio = float(
                     request.POST['precio_edit'].replace(',', '.'))
                 prod.desc_plata = float(
                     prod.precio * prod.desc_porcentaje / 100)
                 prod.resultado = round(prod.precio - prod.desc_plata, 2)
             else:
-                print('8')
                 p_precio = float(Producto.objects.filter(
                     nombre=prod.nombre).filter(resultado=0).values_list('precio', flat=True).first())
                 p_factor = float(Producto.objects.filter(

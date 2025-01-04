@@ -37,3 +37,13 @@ Versión 2.5.5
         *Se cambia la posición de los botones de agregar productos a la parte superior de la vista para mejorar la accesibilidad.
         *Se incorpora un botón de "Categorías" en la vista de producto para acceder a las funcionalidades del CRUD de este modelo.
         *Se modifica el modelo de Categorías para que las instancias se identifiquen por id en lugar de por nombre.
+
+****************** 3/1/2025 ******************
+Versión 2.5.6
+    -base
+        *Se corrige el número de versión.
+    -Presupuestos
+        *Se corrigen algunos errores que impedían la correcta edición de los productos cotizados en el nuevo presupuesto.
+        *Se corrige en entorno de producción la ruta a los archivos estáticos que intervienen en la descarga de presupuesto como pdf. 
+    -Clientes
+        *Se corrige un error que impedía la edición de un cliente en la base de datos.
