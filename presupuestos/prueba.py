@@ -11,7 +11,6 @@ def calcular_cant_etiquetas_por_superficie(ancho_hoja, alto_hoja, ancho_elemento
     # Ajustamos las dimensiones del elemento para considerar la separación si es que hubiera
     ancho_elemento_ajustado = ancho_elemento + separacion
     alto_elemento_ajustado = alto_elemento + separacion
-    print(f'algoritmo: {algoritmo}')
     # Elegir el algoritmo de empaquetado
     if algoritmo == 'Guillotine':
         packer = newPacker(pack_algo=GuillotineBssfMaxas,
@@ -44,7 +43,6 @@ def calcular_cant_etiquetas_por_superficie(ancho_hoja, alto_hoja, ancho_elemento
             rectangulo_ajustado = (
                 rect.x, rect.y, rect.width - separacion, rect.height - separacion)
             elementos_empaquetados.append(rectangulo_ajustado)
-
     # Usamos len para averiguar cuantos elementos entraron.
     cant_elementos_empaquetados = len(elementos_empaquetados)
 
@@ -53,12 +51,10 @@ def calcular_cant_etiquetas_por_superficie(ancho_hoja, alto_hoja, ancho_elemento
     for rect in elementos_empaquetados:
         altura_max_ocupada = max(
             altura_max_ocupada, rect[1] + rect[3] + separacion / 2)
-
     if alto_hoja == 10000:
         alto_hoja = altura_max_ocupada * 1.1
     # Calcular el área ocupada
     area_ocupada = (ancho_hoja * altura_max_ocupada) / 10000
-
     # Crea una imagen de la superficie de la hoja con las etiquetas ubicadas
     fig, ax = plt.subplots()
     ax.set_xlim(0, ancho_hoja)

@@ -72,7 +72,7 @@ def productos_por_categoria(request):
         cantidad_repeticion = int(request.POST.get('cantidad_repeticion'))
         ancho_elemento = float(request.POST.get('ancho'))
         alto_elemento = float(request.POST.get('alto'))
-        separacion = float(request.POST.get('separacion'))
+        separacion = float(request.POST.get('separacion', 0))
         algoritmo = request.POST.get('algoritmo', 'MaxRects')
         # Obtener productos de la categoría seleccionada
         productos = Producto.objects.filter(categoria__id=categoria)
@@ -372,72 +372,53 @@ def guardar_presupuesto(request):
     t = 0
     d = 0
     n_presupuesto = 3000000000 + Presupuesto.objects.count()
+
+    # Obtengo la instancia del cliente "Consumidor final"
+    consumidor_final = Cliente.objects.get(nombre="Consumidor final")
+
     if editando_presup:
         # Busco el presupuesto que estoy editando con ayuda de la variable global
         pre_v = Presupuesto.objects.get(numero=np_global)
-        # Creo un nuevo presupuesto con el mismo cliente que el del presupuesto que estaba editando
+        # Creo un nuevo presupuesto con el mismo cliente que el anterior, o con "Consumidor final"
         pre_n = Presupuesto.objects.create(
             numero=n_presupuesto,
-            cliente=pre_v.cliente,
+            cliente=pre_v.cliente if pre_v.cliente else consumidor_final
         )
         Prods = Producto.objects.filter(presupuesto=np_global)
         for p in Prods:
-            p.presupuesto = Presupuesto.objects.get(numero=n_presupuesto)
-            t = t + p.resultado
-            d = d + p.desc_plata
-            c = p.cliente
+            p.presupuesto = pre_n
+            t += p.resultado
+            d += p.desc_plata
             p.save()
-        # Actualizo el presupuesto con el valor total
         pre_n.total = t
+        pre_n.desc_plata = d
         pre_n.save()
 
     else:
-        c = ''
-        # Creo el presupuesto solo con el número de modo de poder asignárselo a los productos que perteneceran al nuevo presupuesto
-        Presupuesto.objects.create(
+        # Creo el presupuesto con "Consumidor final" por defecto
+        pre = Presupuesto.objects.create(
             numero=n_presupuesto,
-            cliente=None,
+            cliente=consumidor_final
         )
-        Prods = Producto.objects.all()
+        Prods = Producto.objects.filter(presupuesto=None, resultado__gt=0)
         for p in Prods:
-            if p.presupuesto == None and p.resultado != 0:
-                p.presupuesto = Presupuesto.objects.get(numero=n_presupuesto)
-                t = t + p.resultado
-                d = d + p.desc_plata
-                c = p.cliente
-                p.save()
-        # Traigo el cliente desde la base de datos si es que existe y si no lo creo solo con nombre
-        try:
-            cli = Cliente.objects.get(nombre=c)
-            # Actualizo el presupuesto con el valor total y el nombre del cliente
-            pre = Presupuesto.objects.get(numero=n_presupuesto)
-            pre.cliente = Cliente.objects.get(nombre=cli)
-            pre.total = t
-            pre.desc_plata = d
-            pre.save()
-            messages.success(
-                request, f'Se ha creado y guardado el presupuesto {n_presupuesto} correctamente.')
-        # Si el cliente no existe en la base de datos lo crea y actualiza la info del presupuesto
-        except:
-            Cliente.objects.create(
-                nombre=c
-            )
-            messages.success(
-                request, f'Se ha agregado el cliente {c} a la base de datos.')
-            # Actualizo el presupuesto con el valor total y el nombre del cliente
-            pre = Presupuesto.objects.get(numero=n_presupuesto)
-            pre.cliente = Cliente.objects.get(nombre=c)
-            pre.total = t
-            pre.desc_plata = d
-            pre.save()
-            messages.success(
-                request, f'Se ha creado y guardado el presupuesto {n_presupuesto} correctamente.')
-        # Si se utiliza el botón de generar pedido desde la vista de Inicio la bandera confirma es True para renderizar el template 'Completar_Pedido'.
-        if confirma:
-            return redirect('/pedidos')
+            p.presupuesto = pre
+            t += p.resultado
+            d += p.desc_plata
+            p.save()
 
-            # si no se utiliza el botón de generar pedido se redirecciona a la vista de Inicio después de crear el presupuesto con el botón 'Guardar presupuesto'.
+        pre.total = t
+        pre.desc_plata = d
+        pre.save()
+
+        messages.success(
+            request, f'Se ha creado y guardado el presupuesto {n_presupuesto} correctamente con el cliente "Consumidor final".')
+
+    if confirma:
+        return redirect('/pedidos')
+
     return redirect('/presupuestos')
+
 
 # Vista que conduce a la vista del inicial del cotizador para agregar o modificar items en un presupuesto particular.
 
