@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
 from . models import Presupuesto
 from django.contrib.auth.models import User
@@ -9,13 +10,12 @@ from core.functions import *
 from .prueba import calcular_cant_etiquetas_por_superficie
 from productos.models import Producto, Categoria
 from clientes.models import Cliente
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse, Http404
 from django.conf import settings
 import json
 import os
 from urllib.parse import unquote
 from django.contrib.sessions.models import Session
-from django.http import HttpResponse
 from django.template.loader import render_to_string
 from weasyprint import HTML
 from datetime import date
@@ -395,10 +395,22 @@ def guardar_presupuesto(request):
         pre_n.save()
 
     else:
-        # Creo el presupuesto con "Consumidor final" por defecto
+        # Procesamos el campo "cliente" enviado en el POST (se espera que sea un nombre)
+        client_input = request.GET.get('cliente', '').strip()
+        if client_input:
+            # Se busca en la DB por nombre (sin distinguir mayúsculas/minúsculas)
+            client_obj = Cliente.objects.filter(
+                nombre__iexact=client_input).first()
+            if not client_obj:
+                # Si no se encuentra, se crea una nueva instancia de Cliente
+                client_obj = Cliente.objects.create(nombre=client_input)
+        else:
+            # Si el campo está vacío, se asigna el cliente "Consumidor final"
+            client_obj = consumidor_final
+
         pre = Presupuesto.objects.create(
             numero=n_presupuesto,
-            cliente=consumidor_final
+            cliente=client_obj
         )
         Prods = Producto.objects.filter(presupuesto=None, resultado__gt=0)
         for p in Prods:
@@ -447,7 +459,7 @@ def editar_presupuesto(request, np):
         'usuario': usuario_nombre,
         'img': img,
         'autorizado': autorizado,
-        'cli': cli,
+        'cliente': cli,
         'np': np,
         'Cat': Cat,
         'Prods': Prods,
@@ -503,3 +515,40 @@ def generar_presupuesto_pdf(request, np):
     response['Content-Disposition'] = f'attachment; filename="Presupuesto_{np}.pdf"'
 
     return response
+
+
+@require_POST
+def cambiar_cliente(request):
+    presupuesto_numero = request.POST.get('numero')
+    nuevo_cliente_input = request.POST.get('cliente', '').strip()
+
+    # Obtenemos el presupuesto; en caso de no existir retorna 404
+    presupuesto = get_object_or_404(Presupuesto, numero=presupuesto_numero)
+
+    # Obtenemos la instancia predeterminada
+    consumidor_final = Cliente.objects.get(nombre="Consumidor final")
+
+    if nuevo_cliente_input:
+        # Buscamos por nombre sin distinguir mayúsculas/minúsculas
+        client_obj = Cliente.objects.filter(
+            nombre__iexact=nuevo_cliente_input).first()
+        if not client_obj:
+            # Si no existe, se crea uno nuevo
+            client_obj = Cliente.objects.create(nombre=nuevo_cliente_input)
+    else:
+        client_obj = consumidor_final
+
+    presupuesto.cliente = client_obj
+    presupuesto.save()
+
+    return JsonResponse({'success': True, 'nuevo_cliente': client_obj.nombre})
+
+
+def obtener_cliente(request):
+    presupuesto_numero = request.GET.get('numero')
+    try:
+        presupuesto = Presupuesto.objects.get(numero=presupuesto_numero)
+        cliente_name = presupuesto.cliente.nombre if presupuesto.cliente else ""
+        return JsonResponse({'cliente': cliente_name})
+    except Presupuesto.DoesNotExist:
+        raise Http404("Presupuesto no encontrado")

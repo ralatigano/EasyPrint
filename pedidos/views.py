@@ -44,8 +44,12 @@ def completar_pedido(request):
     t_d = 0
     c = ''
     if editando_presup:
+        pre = Presupuesto.objects.get(numero=np_global)
+        cli = pre.cliente
         Prods = Producto.objects.filter(presupuesto=np_global)
     else:
+        client_input = request.GET.get('cliente', '').strip()
+        cli = client_input
         Prods = Producto.objects.filter(
             presupuesto=None).filter(vendedor=vendedor)
     lista = []
@@ -53,7 +57,7 @@ def completar_pedido(request):
         lista.append(f'{p.cantidad} {p.nombre}')
         t = t + p.resultado
         d = d + p.desc_plata
-        c = p.cliente
+        c = cli
     t_d = round(t - d, 2)
     data = {
         'editando_presup': editando_presup,
@@ -177,12 +181,20 @@ def confirmar_pedido(request):
             url = '/presupuestos/guardarPresupuesto'
         for p in Prods:
             list_p.append(f'{p.cantidad} {p.nombre}')
-        try:
-            cliente = Cliente.objects.get(nombre=request.POST['cliente'])
-        except:
-            cliente = Cliente.objects.create(
-                nombre=request.POST['cliente'],
-            )
+
+        # Procesamos el campo "cliente" enviado en el POST (se espera que sea un nombre)
+        consumidor_final = Cliente.objects.get(nombre="Consumidor final")
+        client_input = request.POST['cliente'].strip()
+        if client_input:
+            # Se busca en la DB por nombre (sin distinguir mayúsculas/minúsculas)
+            client_obj = Cliente.objects.filter(
+                nombre__iexact=client_input).first()
+            if not client_obj:
+                # Si no se encuentra, se crea una nueva instancia de Cliente
+                client_obj = Cliente.objects.create(nombre=client_input)
+        else:
+            # Si el campo está vacío, se asigna el cliente "Consumidor final"
+            client_obj = consumidor_final
         try:
             Pedido.objects.create(
                 numero=request.POST['n_pedido'],
@@ -194,7 +206,7 @@ def confirmar_pedido(request):
                             float(se.replace(',', '.')), 2),
                 estado=request.POST['estado'],
                 presupuesto=request.POST['n_presupuesto'],
-                cliente=cliente,
+                cliente=client_obj,
             )
             messages.success(
                 request, f'El pedido {request.POST["n_pedido"]} se ha registrado exitosamente.')

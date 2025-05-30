@@ -6,6 +6,7 @@ from .views import (
     borrar_imagen_generada, productos_por_categoria, calculo_rapido, delete_calc_presupuesto,
     destroy_calc_presupuesto, edit_producto_cotizado, guardar_presupuesto, editar_presupuesto,
     generar_presupuesto_pdf,
+    obtener_cliente, cambiar_cliente,
 )
 
 
@@ -37,5 +38,6 @@ urlpatterns = [
     path('verPresupuesto/<int:np>', editar_presupuesto, name='verPresupuesto'),
     path('descargarPresupuesto/<int:np>',
          generar_presupuesto_pdf, name='descargarPresupuestoPDF'),
-
+    path('obtenerCliente/', obtener_cliente, name='obtenerCliente'),
+    path('cambiarCliente/', cambiar_cliente, name='cambiarCliente'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

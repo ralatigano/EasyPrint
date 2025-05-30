@@ -1,6 +1,6 @@
 import webbrowser
 import matplotlib.pyplot as plt
-from rectpack import newPacker, PackingBin, SORT_AREA, GuillotineBssfMaxas, MaxRectsBssf
+from rectpack import newPacker, PackingBin, SORT_AREA, SORT_LSIDE, SORT_RATIO, GuillotineBssfMaxas, MaxRectsBssf, SkylineMwf
 import os
 from django.conf import settings
 from django.utils.timezone import now
@@ -12,19 +12,21 @@ def calcular_cant_etiquetas_por_superficie(ancho_hoja, alto_hoja, ancho_elemento
     ancho_elemento_ajustado = ancho_elemento + separacion
     alto_elemento_ajustado = alto_elemento + separacion
     # Elegir el algoritmo de empaquetado
-    if algoritmo == 'Guillotine':
-        packer = newPacker(pack_algo=GuillotineBssfMaxas,
-                           sort_algo=SORT_AREA, rotation=True)
+    if algoritmo == 'Skyline':
+        packer = newPacker(pack_algo=SkylineMwf,
+                           sort_algo=SORT_RATIO, rotation=True)
     elif algoritmo == 'MaxRects':
         # Desactivar rotación
         packer = newPacker(pack_algo=MaxRectsBssf,
-                           sort_algo=SORT_AREA, rotation=True)
+                           sort_algo=SORT_RATIO, rotation=True)
     else:
-        packer = newPacker(pack_algo=GuillotineBssfMaxas,
-                           sort_algo=SORT_AREA, rotation=True)  # Por defecto
+        packer = newPacker(pack_algo=SkylineMwf,
+                           sort_algo=SORT_RATIO, rotation=True)  # Por defecto
 
     # Creamos un emboltorio (bin) con las dimensiones de la hoja
     packer.add_bin(ancho_hoja, alto_hoja)
+
+    # Imprimir dimensiones antes de agregar elementos
 
     # Agregamos elementos al paquete. Intentamos agregar un número alto de elementos para averiguar cuantos entran.
     # Los elementos que intentamos agregar tienen que ser con las dimensiones ajustadas, de modo que se tenga en cuenta la separación si es que existe.

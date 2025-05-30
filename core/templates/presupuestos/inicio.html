@@ -84,7 +84,7 @@
                                     <button id="btnDescargarGrafico" class=" btn btn-grafico btn-dark"><i class="fa-solid fa-download" type="button"type="button"></i></button>
                                     <button id="btnBorrarGrafico" class="btn btn-grafico btn-dark"><i class="fa-solid fa-trash-can" type="button"></i></button>
                                     <button id="btn-regenerar" class="btn btn-grafico btn-dark" data-algoritmo="MaxRects" data-toggle="tooltip" title="">
-                                        <i class="fa-solid fa-scissors"></i>
+                                        <i class="fa-solid fa-arrows-rotate"></i>
                                     </button>
                                 </div>
                             </div>
@@ -141,9 +141,15 @@
                         </div>
                     </form>
                 </div>
-
+                <br>
+                <hr>
+                <br>
                 <div class="container">
                     <div class="col-sm-12 col-md-12 col-lg-12 col-xl-12">
+                        <div class="cliente-field">
+                            <label for="cliente">Cliente:</label>
+                            <input type="text" id="cliente" name="cliente" class="form-control" value="{{ cliente|default:'Consumidor final' }}" placeholder="Nombre del cliente">
+                        </div>
                         <table id="NuevoPresupuesto" class="table table-hover">
                             <thead>
                                 <tr>
@@ -208,8 +214,10 @@
                         {% else %}
                             <a href="/presupuestos/borrarTodo" class="btn btn-outline-dark btn-dark btn-fuente" data-bs-toggle="tooltip" data-bs-placement="top" title="Borra TODOS los productos de la cotización actual."><i class="fa-solid fa-trash-can"></i> Borrar todo </a>
                         {% endif %}
-                        <a href="/presupuestos/guardarPresupuesto" class="btn btn-outline-dark btn-dark" data-bs-toggle="tooltip" data-bs-placement="top" title="Guarda el presupuesto para poder descargarlo o editarlo después."><i class="fa-solid fa-sd-card"></i> Guardar presupuesto </a>
-                        <a href="/pedidos/completarPedido" class="btn btn-outline-dark btn-dark" data-bs-toggle="tooltip" data-bs-placement="top" title="Este botón guarda el presupuesto y muestra un formulario para completar el pedido en el caso de que el cliente ya esté seguro de lo que quiere."><i class="fa-solid fa-check"></i> Confirmar pedido </a>
+                        <a id="guardarPresupuestoLink" href="#" onclick="guardarPresupuesto()" class="btn btn-outline-dark btn-dark" data-bs-toggle="tooltip" data-bs-placement="top" title="Guarda el presupuesto para poder descargarlo o editarlo después.">
+                            <i class="fa-solid fa-sd-card"></i> Guardar presupuesto
+                        </a>
+                        <a id="completarPedidoLink" href="#" onclick="completarPedido()" class="btn btn-outline-dark btn-dark" data-bs-toggle="tooltip" data-bs-placement="top" title="Este botón guarda el presupuesto y muestra un formulario para completar el pedido en el caso de que el cliente ya esté seguro de lo que quiere."><i class="fa-solid fa-check"></i> Confirmar pedido </a>
                     </div>
                 </div>
             </div>

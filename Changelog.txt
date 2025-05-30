@@ -56,3 +56,18 @@ Versión 2.5.8
 Versión 2.5.9
     - Se modifica la vista de la función guardar presupuesto para que trabaje con un cliente genérico y así evitar un error al intentar
     guardar un presupuesto.
+
+****************** 27/5/2025 ******************
+Versión 2.6.0
+
+    -Presupuestos
+        *Se modifica el formulario incial para incluir un campo para introducir el nombre del cliente durante la cotización.
+        *Se agrega un botón que activa un modal en la vista de presupuestos para poder modificar el nombre de un cliente asociado a un presupuesto.
+        *Se resuelve un problema en la lógica que provocaba cálculos errados en las cantidades de elementos por hoja para algunos casos particulares.
+        *Se simplifica la interfaz cambiando el botón que regenera el gráfico haciéndolo único en cuanto a ícono, mas allá de que cambia el algoritmo
+        con el que realiza los cálculos.
+    -Productos
+        *Se suma un filtro por categorías a la tabla de productos.
+    -Pedidos
+        *Se modifica la interacción con la plantilla de completar pedido así como la vista que recibe el post de dicha plantilla para poder modificar
+        el nombre del cliente o incluso para incorporar el nombre que se usara en el formulario inicial.

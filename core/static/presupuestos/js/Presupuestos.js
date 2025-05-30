@@ -32,3 +32,66 @@ window.addEventListener("load", async() => {
 });
 
 
+// Cuando se abre el modal, obtenemos el número de presupuesto y hacemos la consulta AJAX
+var cambiarClienteModal = document.getElementById('cambiarClienteModal');
+cambiarClienteModal.addEventListener('show.bs.modal', function (event) {
+  var button = event.relatedTarget; // El botón que disparó el modal
+  var presupuestoNumero = button.getAttribute('data-bs-whatever'); // Obtiene el número de presupuesto
+  // Colocamos el número en el input oculto
+  document.getElementById('presupuestoNumero').value = presupuestoNumero;
+
+  // Realizamos una consulta AJAX para traer el nombre actual del cliente
+  fetch(`/presupuestos/obtenerCliente/?numero=${presupuestoNumero}`)
+    .then(response => response.json())
+    .then(data => {
+      // Si se obtuvo el dato, lo asignamos al input del cliente
+      document.getElementById('nuevoCliente').value = data.cliente || '';
+    })
+    .catch(error => console.error('Error obteniendo cliente:', error));
+});
+
+// Capturamos el evento submit del formulario del modal
+document.getElementById('cambiarClienteForm').addEventListener('submit', function (e) {
+  e.preventDefault(); // Prevenir el comportamiento por defecto del form
+
+  // Obtenemos los datos del formulario
+  var presupuestoNumero = document.getElementById('presupuestoNumero').value;
+  var nuevoCliente = document.getElementById('nuevoCliente').value.trim();
+  const csrftoken = getCookie('csrftoken');
+  // Enviamos la petición AJAX para actualizar al cliente
+  fetch('/presupuestos/cambiarCliente/', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      // Se requiere el token CSRF, si usás Django lo podes insertar en la plantilla
+      'X-CSRFToken': csrftoken
+    },
+    body: `numero=${encodeURIComponent(presupuestoNumero)}&cliente=${encodeURIComponent(nuevoCliente)}`
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      // Actualizamos la interfaz si es necesario, por ejemplo recargando la página
+      location.reload();
+    } else {
+      console.error('Error:', data.error);
+    }
+  })
+  .catch(error => console.error('Error al cambiar el cliente:', error));
+});
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        let cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            let cookie = cookies[i].trim();
+            // Verificamos si este cookie comienza con el nombre adecuado seguido de '='
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}

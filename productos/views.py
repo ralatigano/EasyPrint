@@ -293,3 +293,8 @@ def borrar_categoria(request, categoria_id):
         messages.error(
             request, f'No se ha podido borrar la categoria. Error({e})')
     return redirect('/productos/categorias', messages)
+
+
+def listar_categorias(request):
+    categorias = list(Categoria.objects.values_list('nombre', flat=True))
+    return JsonResponse({'categorias': categorias})

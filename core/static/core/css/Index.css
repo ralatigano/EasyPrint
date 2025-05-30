@@ -86,14 +86,16 @@
 
 /* Estilo especial para el checkbox */
 .agregados .form-group input[type="checkbox"] {
-    transform: scale(1.5); /* Aumenta el tamaño del checkbox */
+    transform: scale(1.1); /* Aumenta el tamaño del checkbox */
     margin-top: 8px; /* Alinea verticalmente con el label */
+    margin-right: 5px;
+    margin-left: 5px;
 }
 
 /* Ajustar el tamaño mínimo de los form-groups */
 .agregados .form-group.col-md-4 {
     flex: 1; /* Todos los elementos ocupan el mismo espacio */
-    min-width: 150px; /* Ajusta el tamaño mínimo para evitar que se achiquen demasiado */
+    /*min-width: 150px;  Ajusta el tamaño mínimo para evitar que se achiquen demasiado */
 }
 
 /* Ajuste adicional para evitar que los elementos se solapen */
@@ -163,12 +165,6 @@
 #nueva_cotizacion_form .form-group:last-child {
     display: flex;
     justify-content: space-between;
-}
-
-/* Checkbox empaquetado más grande */
-#nueva_cotizacion_form input[type="checkbox"] {
-    transform: scale(2);
-    margin-right: 10px;
 }
 
 /* Inputs de tiempo de producción y descuento iguales */
@@ -281,23 +277,6 @@ table th, table td {
     color: white;
 }
 
-
-
-/* #calcularCantPorHojaModal #cant_resultado,
-#calcularCantPorHojaModal #cant_hojas,
-#calcularCantPorHojaModal #area_ocupada{
-    font-weight: bold;
-    font-size: 1.5rem;
-} */
-
-/* #grafico_contenedor {
-    max-width: 100%;  
-    height: auto;     
-    display: block;
-    margin: 0 auto;   
-    gap: 5px;
-} */
-
 .hidden {
     display: none;
 }
@@ -330,10 +309,6 @@ table th, table td {
     margin-bottom: 10px;
 }
 
-/* .btn-plus {
-    background-color: transparent;
-    border: none;
-    color: #000;
-    font-size: 1.2em;
-    cursor: pointer;
-} */
+.cliente-field{
+    max-width: 25%;
+}

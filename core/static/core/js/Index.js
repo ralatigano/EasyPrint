@@ -262,27 +262,27 @@ document.addEventListener("DOMContentLoaded", function () {
         let algoritmoActual = $('#btn-regenerar').data('algoritmo');
         generarGrafico(algoritmoActual);
     });
-    //Botón que permite regenerar el gráfico utilizando el algoritmo MaxRects o Guillotine
+    //Botón que permite regenerar el gráfico utilizando el algoritmo MaxRects o Skyline
     $('#btn-regenerar').click(function (event) {
         event.preventDefault();  // Evita cualquier comportamiento predeterminado
 
         
         let algoritmoActual = $(this).data('algoritmo');
-        let nuevoAlgoritmo = algoritmoActual === 'Guillotine' ? 'MaxRects' : 'Guillotine';
+        let nuevoAlgoritmo = algoritmoActual === 'Skyline' ? 'MaxRects' : 'Skyline';
     
     
-        let nuevoTooltip = algoritmoActual === 'Guillotine' 
+        let nuevoTooltip = algoritmoActual === 'Skyline' 
             ? "Volver a graficar priorizando el posterior corte de la hoja" 
             : "Volver a graficar priorizando la cantidad de elementos que caben";
     
-        let nuevoIcono = nuevoAlgoritmo === 'Guillotine' 
-            ? '<i class="fa-solid fa-cubes-stacked"></i>' 
-            : '<i class="fa-solid fa-scissors"></i>';
+        // let nuevoIcono = nuevoAlgoritmo === 'Skyline' 
+        //     ? '<i class="fa-solid fa-cubes-stacked"></i>' 
+        //     : '<i class="fa-solid fa-scissors"></i>';
     
         // Actualiza el botón
         $(this).data('algoritmo', nuevoAlgoritmo); // Actualiza el algoritmo
         $(this).attr('title', nuevoTooltip).tooltip('show'); // Actualiza el tooltip
-        $(this).find('i').replaceWith(nuevoIcono); // Cambia el ícono en el botón
+        //$(this).find('i').replaceWith(nuevoIcono); // Cambia el ícono en el botón
     
         // Confirmar que se está invocando generarGrafico
         generarGrafico(nuevoAlgoritmo); // Regenera el gráfico con el nuevo algoritmo
@@ -340,4 +340,65 @@ function obtenerRango(cantidadHojas) {
         return '101+';
     }
     return '';
+}
+
+//Función que intercepta la llamada a guardar presupuesto para pasar el nombre del cliente al backend.
+function guardarPresupuesto() {
+  // Obtener el valor actual del input de cliente
+  var clientValue = document.getElementById('cliente').value;
+  console.log("Valor del input cliente:", clientValue);
+
+  // Construir la URL base para la petición
+  var baseUrl = "/presupuestos/guardarPresupuesto";
+  
+  // Agregar el parámetro del cliente a la URL
+  var fullUrl = baseUrl + '?cliente=' + encodeURIComponent(clientValue);
+  console.log("URL construida:", fullUrl);
+
+  // Realizar la petición fetch (GET en este caso)
+  fetch(fullUrl)
+    .then(function(response) {
+      if (!response.ok) {
+        throw new Error("Error en la respuesta HTTP: " + response.status);
+      }
+      return response.text();  // O response.json(), según lo que retorne tu vista
+    })
+    .then(function(data) {
+      console.log("Respuesta del servidor:", data);
+      // Aquí podrías redireccionar, actualizar alguna parte de la interfaz, etc.
+      // Por ejemplo, redireccionar a la lista de presupuestos:
+      window.location.href = "/presupuestos";
+    })
+    .catch(function(error) {
+      console.error("Error en la petición:", error);
+    });
+}
+
+function completarPedido() {
+  // Obtener el valor actual del input de cliente
+  var clientValue = document.getElementById('cliente').value;
+
+  // Construir la URL base para la petición
+  var baseUrl = "/pedidos/completarPedido";
+  
+  // Agregar el parámetro del cliente a la URL
+  var fullUrl = baseUrl + '?cliente=' + encodeURIComponent(clientValue);
+
+  // Realizar la petición fetch (GET en este caso)
+  fetch(fullUrl)
+    .then(function(response) {
+      if (!response.ok) {
+        throw new Error("Error en la respuesta HTTP: " + response.status);
+      }
+      return response.text();  // O response.json(), según lo que retorne tu vista
+    })
+    .then(function(data) {
+      console.log("Respuesta del servidor:", data);
+      // Aquí podrías redireccionar, actualizar alguna parte de la interfaz, etc.
+      // Por ejemplo, redireccionar a la lista de presupuestos:
+      window.location.href = "/pedidos/completarPedido";
+    })
+    .catch(function(error) {
+      console.error("Error en la petición:", error);
+    });
 }

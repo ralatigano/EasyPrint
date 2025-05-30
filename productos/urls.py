@@ -1,7 +1,7 @@
 from django.urls import path
 from .views import (
     productos, cargar_productos, borrar_producto, guardar_producto, info_editar_producto, obtener_producto, exportar_productos, borrar_todos_productos,
-    categorias, guardar_categoria, borrar_categoria, obtener_categoria,
+    categorias, guardar_categoria, borrar_categoria, obtener_categoria, listar_categorias,
 )
 
 urlpatterns = [
@@ -25,6 +25,7 @@ urlpatterns = [
     path('categorias/', categorias, name='categorias'),
     path('obtenerCategoria/<int:categoria_id>/',
          obtener_categoria, name='obtener_categoria'),
+    path('listarCategorias/', listar_categorias, name='listar_categorias'),
     path('guardarCategoria/', guardar_categoria, name='guardar_categoria'),
     path('borrarCategoria/<int:categoria_id>',
          borrar_categoria, name='borrar_categoria'),
