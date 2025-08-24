@@ -1,6 +1,6 @@
 from django.urls import path
 from .views import (
-    productos, importar_productos_excel, borrar_producto, guardar_producto, datos_insumo, insumos_select, categorias_select, info_editar_producto, obtener_producto,
+    productos, importar_productos_excel, borrar_producto, guardar_producto, datos_insumo, insumos_select, categorias_select, obtener_producto,
     exportar_productos_excel, borrar_todos_productos, obtener_dimensiones_producto, obtener_productos_categoria,
     categorias, guardar_categoria, borrar_categoria, obtener_categoria, listar_categorias,
     insumos, guardar_insumo, borrar_insumo, info_insumo, importar_insumos_excel, exportar_insumos_excel, borrar_todos_insumos,
@@ -20,8 +20,6 @@ urlpatterns = [
     # Importar o exportar productos desde o hacia un archivo excel
     path('importarProductos/', importar_productos_excel, name='importarProcutos'),
     path('exportarProductos', exportar_productos_excel, name='exportar_productos'),
-    # Envía los datos de productos al frontend para colaborar con distitnas funciones.
-    path('infoEditarProducto', info_editar_producto, name='infoEditarProducto'),
     path('obtenerProducto/<int:producto_id>',
          obtener_producto, name='obtenerProducto'),
     path('obtenerDimensiones/<int:producto_id>',
