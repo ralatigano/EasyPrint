@@ -59,6 +59,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'productos.middleware.FaltantesMiddleware',
 ]
 
 ROOT_URLCONF = 'Cotizador.urls'
@@ -115,11 +116,13 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.0/topics/i18n/
 
-LANGUAGE_CODE = 'es-ES'
+LANGUAGE_CODE = 'es-AR'
 
 TIME_ZONE = 'America/Buenos_Aires'
 
 USE_I18N = True
+
+USE_L10N = True
 
 USE_TZ = True
 
@@ -155,3 +158,10 @@ EMAIL_HOST_PASSWORD = env.str('EMAIL_HOST_PASSWORD')
 # Configuración para el manejo de sesiones.
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'
 SESSION_COOKIE_NAME = 'sessionid'
+
+if DEBUG:
+    IMG_BASE_PATH = str(env.str("IMG_BASE_PATH_DEV"))
+    CSS_PATH = str(env.str("CSS_PATH_DEV"))
+else:
+    IMG_BASE_PATH = str(env.str("IMG_BASE_PATH_PROD"))
+    CSS_PATH = str(env.str("CSS_PATH_PROD"))

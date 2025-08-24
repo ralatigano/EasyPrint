@@ -1,0 +1,78 @@
+<!-- Navbar -->
+  {% if user.is_authenticated %}
+  <div class="container-fluid">
+    <a class="navbar-brand dark" href="/presupuestos/inicio">
+      <img id="brand" alt="Logo" width="311" height="40" class="d-inline-block align-text-top">
+    </a>
+    <button id="navbar-toggler" class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation" style="border: none">
+      <img id="profile-img-toggler" class="{% if img %}d-inline{% else %}d-none{% endif %}" src="{{ img }}" alt="Profile Image" style="width: 40px; height: 40px; border-radius: 50%; border: none;">
+      <span class="navbar-toggler-icon {% if img %}d-none{% else %}d-inline{% endif %}"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav me-auto mb-4 mb-lg-0">
+        <li class="nav-item">
+          <a class="nav-link" href="/presupuestos/inicio" id="nav_item_inicio">Nuevo Presupuesto</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/productos/insumos" id="nav_item_insumos">Stock</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/productos" id="nav_item_productos">Productos</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/presupuestos" id="nav_item_presupuestos">Presupuestos</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/pedidos" id="nav_item_pedidos">Pedidos</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/pedidos/viajesCadete" id="nav_item_cadete">Viajes Cadete</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/clientes" id="nav_item_clientes">Clientes</a>
+        </li>
+        {% if autorizado %}
+          <li class="nav-item">
+            <a class="nav-link" href="/usuarios" id="nav_item_usuarios">Usuaries</a>
+          </li>
+        {% endif %}
+      </ul>
+      <ul class="navbar-nav ms-auto mb-4 mb-lg-0">
+        <li class="nav-item d-flex align-items-center">
+          {% if img %}
+            <a href="/perfil" style="border: none; background-color: transparent;"><img id="profile-img" src="{{ img }}" alt="Perfil" class="rounded-circle" width="40" height="40"></a>
+          {% endif %}
+          <a class="nav-link" href="/perfil"> ¡Bienvenide {{ usuario }}!</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" aria-current="page" href="/logout">Cerrar sesión</a>
+        </li>
+        <li class="nav-item dropdown">
+          <button class="btn btn-link nav-link py-2 px-0 px-lg-2 dropdown-toggle d-flex align-items-right" id="bd-theme" type="button" aria-expanded="false" data-bs-toggle="dropdown" data-bs-display="static" aria-label="Toggle theme (dark)">
+            <svg id="theme-button" width="20" height="20" class="bi bi-sun-fill theme-svg theme-light"></svg>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="bd-theme">
+            <li>
+              <a href="/valorDarkMode/light" style="text-decoration: none;">
+                <button type="button" class="dropdown-item d-flex align-items-right" data-bs-theme-value="light" aria-pressed="false" style="gap:10px">
+                  <svg id="active-theme-icon" width="16" height="16" class="bi bi-sun-fill theme-icon theme-svg theme-dark"></svg>
+                  Tema claro
+                  <svg id="theme-light" width="20" height="20" class="bi bi-check2 theme-svg theme-dark"></svg>
+                </button>
+              </a>
+            </li>
+            <li>
+              <a href="/valorDarkMode/dark" style="text-decoration: none;">
+                <button type="button" class="dropdown-item d-flex align-items-right" data-bs-theme-value="dark" aria-pressed="false" style="gap:10px">
+                  <svg id="active-theme-icon" width="16" height="16" class="bi bi-moon-stars-fill theme-icon theme-svg theme-light"></svg>
+                  Tema oscuro
+                  <svg id="theme-dark" width="20" height="20" class="bi bi-check2 theme-svg theme-light"></svg>
+                </button>
+              </a>
+            </li>
+          </ul>
+        </li>
+      </ul>
+    </div>
+  </div>
+  {% endif %}

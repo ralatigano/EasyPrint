@@ -8,6 +8,19 @@ const initDataTable=async() => {
     dataTable=$("#Pedidos").DataTable({
         order: [[0, 'desc']],
         responsive: true,
+        columnDefs: [
+            { responsivePriority: 1, targets: 0 }, // Número
+            { responsivePriority: 2, targets: 1 }, // Cliente
+            { responsivePriority: 3, targets: 2 }, // Productos/Servicios
+            { responsivePriority: 4, targets: 3 }, // Estado
+            { responsivePriority: 5, targets: 4 }, // Encargado
+            { responsivePriority: 6, targets: 5 }, // Observaciones
+            { responsivePriority: 7, targets: 6 }, // Total
+            { responsivePriority: 8, targets: 7 }, // Seña
+            { responsivePriority: 9, targets: 8 }, // Saldo
+            { responsivePriority: 10, targets: 9 }, // Presupuesto
+            { responsivePriority: 11, targets: 10 } // Fecha de creación
+        ],
         language: {
             lengthMenu: 'Mostrar _MENU_ pedidos por página',
             zeroRecords: 'No hay pedidos registrados',
@@ -137,9 +150,43 @@ $('#detallesModal').on('show.bs.modal', function (event) {
           data.productos.forEach(function (producto) {
             var empaquetado = producto.empaquetado ? 'Si' : 'No';
             $('#productosTableBody').append(
-                '<tr><td>' + producto.nombre + '</td><td>' + producto.info_adic + '</td><td>' + empaquetado + '</td><td>' + producto.cantidad + '</td></tr>'
+                '<tr><td>' + producto.producto + '</td><td>' + producto.info_adic + '</td><td>' + empaquetado + '</td><td>' + producto.cantidad + '</td></tr>'
             );
         });
       }
   });
 });
+
+/* Funcionalidad para evitar la eliminación de objetos listados en la vista por un click involuntario. */
+(function () {
+    const btnEliminacion = document.querySelectorAll(".btnEliminacion");
+    btnEliminacion.forEach(btn=>{
+        btn.addEventListener("click", (e)=>{
+            const confirmacion = confirm("¿Está segur@ de que desea eliminar este elemento?");
+            if(!confirmacion){
+                e.preventDefault();
+            }    
+        });
+    });
+})();
+
+// Función que evita que se cancele un pedido sin confirmación.
+(function () {
+    const formularioEstado = document.querySelector('#cambiarEstadoModal form');
+    const selectEstado = document.querySelector('#estado');
+
+    if (formularioEstado && selectEstado) {
+        formularioEstado.addEventListener('submit', function (e) {
+            const estadoSeleccionado = selectEstado.value;
+
+            if (estadoSeleccionado === 'Cancelado') {
+                const confirmacion = confirm(
+                    "⚠️ Atención: estás por cancelar este pedido.\n\nEsta acción es irreversible.\nSi luego necesitás reactivarlo, deberás crear uno nuevo.\n\n¿Deseás continuar?"
+                );
+                if (!confirmacion) {
+                    e.preventDefault();
+                }
+            }
+        });
+    }
+})();

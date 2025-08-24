@@ -1,113 +1,205 @@
 {% extends 'core/base.html' %}
 {% load static %}
+{% load l10n %}
+<!--------------------------------------------------------------------------- Block head --------------------------------------------------------------------------->
+{% block head %}
+<!-- Custom Css -->
+<link rel="stylesheet" href="{% static 'productos/css/Products.css' %}">
+{% endblock %}
+<!--------------------------------------------------------------------------- Block title --------------------------------------------------------------------------->      
+{% block title %}Productos{% endblock %}
+<!--------------------------------------------------------------------------- Block header --------------------------------------------------------------------------->
+{% block header %}
+<div class="container">
+    <div class="titulo">
+        <h1>Productos</h1>
+    </div>
+    {% if autorizado %}
+    <div class="grupo-botones">
+        <button type="button" class="btn btn-dark btn-fuente btn-xs" data-bs-toggle="modal" data-bs-target="#crearProductoModal" data-bs-whatever="nuevo">
+            <i class="fa-solid fa-square-plus"></i> Agregar un producto 
+        </button> &nbsp;
+    
+        <a href="{% url 'exportar_productos' %}">
+            <button type="button" class="btn btn-dark btn-xs btn-fuente">
+                <i class="fa-solid fa-download"></i> Hacer una copia de seguridad de Lista de productos 
+            </button>
+        </a> &nbsp;
+    
+        <a href="{% url 'borrar_todos_productos' %}">
+            <button type="button" class="btn btn-dark btnEliminacion btn-xs btn-fuente">
+                <i class="fa-solid fa-land-mine-on"></i> Borrar Lista de productos 
+            </button>
+        </a>
+    
+        <a href="/productos/categorias">
+            <button type="button" class="btn btn-dark btn-xs" data-bs-toggle="modal" data-bs-target="#editarCategoriaModal" data-bs-whatever=" ">
+                <i class="fa-regular fa-folder-open"></i> Categorías
+            </button>
+        </a>
 
-<!DOCTYPE html>
-<html>
-    <head>
-        {% block head %}
-        <!-- Custom Css -->
-        <link rel="stylesheet" href="{% static 'productos/css/Products.css' %}">
-        {% endblock %}
-        
-        <title>{% block title %}Productos{% endblock %}</title>
-    </head>
-    <body>
-        {% block header %}
-        <div class="container">
-            <div class="titulo">
-                <h1>Productos y Servicios</h1>
-            </div>
-            {% if autorizado %}
-            <div class="row botones_productos" name="botones_productos" id="botones_productos">
-                <button type="button" class="btn btn-dark btn-fuente btn-xs" data-bs-toggle="modal" data-bs-target="#editarProductoModal" data-bs-whatever=" ">
-                    <i class="fa-solid fa-square-plus"></i> Agregar un producto 
-                </button> &nbsp;
-            
-                <a href="{% url 'exportar_productos' %}">
-                    <button type="button" class="btn btn-dark btn-xs btn-fuente">
-                        <i class="fa-solid fa-download"></i> Hacer una copia de seguridad de Lista de productos 
-                    </button>
-                </a> &nbsp;
-            
-                <a href="{% url 'borrar_todos_productos' %}">
-                    <button type="button" class="btn btn-dark btnEliminacion btn-xs btn-fuente">
-                        <i class="fa-solid fa-land-mine-on"></i> Borrar Lista de productos 
-                    </button>
-                </a>
-            
-                <a href="/productos/categorias">
-                    <button type="button" class="btn btn-dark btn-xs" data-bs-toggle="modal" data-bs-target="#editarCategoriaModal" data-bs-whatever=" ">
-                        <i class="fa-regular fa-folder-open"></i> Categorías
-                    </button>
-                </a>
-            
-                <!-- Formulario en la segunda línea -->
-                <div class="btn btn-primary">
-                    <form action="cargarProductos" method="POST" enctype="multipart/form-data">
-                        {% csrf_token %}
-                        <input type="file" name="excel_file">
-                        <button class="btn btn-dark btn-fuente" type="submit">
-                            <i class="fa-solid fa-file-circle-plus"></i> Cargar productos desde un libro de excel 
-                        </button>
-                    </form>
-                </div>             
+        <form action="importarProductos/" method="POST" enctype="multipart/form-data" id="formCargaAuto">
+            {% csrf_token %}
+            <input type="file" name="excel_file" id="excelFileInput" class="btn btn-dark btn-xs btn-fuente">
+        </form>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+<!--------------------------------------------------------------------------- Block content --------------------------------------------------------------------------->
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-sm-12 col-md-12 col-lg-12 col-xl-12">
+            <div class="tabla-scroll">
+                <table id="Productos" class="table table-hover">
+                    <div class="row mb-3">
+                        <div class="buscador col-md-6">
+                            <!-- buscador -->
+                        </div>
+                        <div class="categoria-filter col-md-6 text-end">
+                            <!-- filtro por categoría -->
+                        </div>
+                    </div>
+                    <thead>
+                        <tr>
+                            <th class="centered">Código</th>
+                            <th class="centered">Descripción</th>
+                            <th class="centered">Dimensiones [cm]</th>
+                            <th class="centered">Precio</th>
+                            <th class="centered">Categoría</th>
+                            <th class="centered">Tercerizado</th>
+                            {% if autorizado %}
+                                <th class="centered">Editar/Borrar</th>
+                            {% endif %}
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody_Productos">
+                    {% for p in prods %}
+                        <tr>
+                            <td>{{p.id}}</td>
+                            <td>{{p.nombre}}</td>
+                            <td>{{p.ancho}}*{{p.alto}}</td>
+                            <td>$ {% if p.tercerizado %}{{p.precio_proveedor|localize}} {% else %}{{p.precio|localize}}{% endif %}</td>
+                            <td>{{p.categoria}}</td>
+                            <td>{% if p.tercerizado %}Si{% else %}No{% endif %}</td>
+                            {% if autorizado %}
+                                <td>
+                                    <button type="button" class="btn btn-dark btn-xs" data-bs-toggle="modal" data-bs-target="#crearProductoModal" data-bs-whatever="{{p.id}}" onclick=""><i class="fa-solid fa-pencil sm"></i></button>
+                                    <a href="borrarProducto/{{p.id}}" class="btn btn-dark btn-xs btnEliminacion"><i class="fa-solid fa-trash-can"></i></a>
+                                </td>
+                            {% endif %}
+                        </tr>                
+                    {% endfor %}
+                    </tbody>
+                </table>
             </div>
         </div>
-        {% endif %}
-        {% endblock %}
-        {% block content %}
-        <div class="container">
-            <div class="row">
-                <div class="col-sm-12 col-md-12 col-lg-12 col-xl-12">
-                    
-                    <table id="Productos" class="table table-hover">
-                        <!-- <label for="categoriaFilter">Filtrar por categoría:</label>
-                        <select id="categoriaFilter">
-                        </select> -->
-                        <thead>
-                            <tr>
-                                <th class="centered">Código</th>
-                                <th class="centered">Descripción</th>
-                                <th class="centered">Dimensiones [cm]</th>
-                                <th class="centered">Precio</th>
-                                <th class="centered">Categoría</th>
-                                {% if autorizado %}
-                                    <th class="centered">Editar/Borrar</th>
-                                {% endif %}
-                            </tr>
-                        </thead>
-                        <tbody id="tableBody_Productos">
-                        {% for p in prods %}
-                            {% if p.resultado == 0%}
-                            <tr>
-                                <td>{{p.codigo}}</td>
-                                <td>{{p.nombre}}</td>
-                                <td>{{p.ancho}}*{{p.alto}}</td>
-                                <td>$ {{p.precio}}</td>
-                                <td>{{p.categoria}}</td>
-                                {% if autorizado %}
-                                    <td>
-                                        <button type="button" class="btn btn-dark btn-xs" data-bs-toggle="modal" data-bs-target="#editarProductoModal" data-bs-whatever="{{p.codigo}}" onclick=""><i class="fa-solid fa-pencil sm"></i></button>
-                                        <a href="borrarProducto/{{p.codigo}}" class="btn btn-dark btn-xs btnEliminacion"><i class="fa-solid fa-trash-can"></i></a>
-                                    </td>
-                                {% endif %}
-                            </tr>
-                            {% endif %}
-                        
-                        {% endfor %}
-                        </tbody>
-                    </table>
+    </div>
+</div>
+{% endblock %}
+<!--------------------------------------------------------------------------- Block modal --------------------------------------------------------------------------->
+{% block modal %}
+<div class="modal fade" id="crearProductoModal" tabindex="-1" aria-labelledby="crearProductoModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="crearProductoModalLabel">Nuevo producto</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                {% csrf_token %}
+                <input type="hidden" name="id_producto" value="0">
+
+                <div class="mb-3">
+                    <label class="form-label">Nombre</label>
+                    <input type="text" id="productoNombre" name="productoNombre" class="form-control">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Categoría</label>
+                    <select id="productoCategoria" name="productoCategoria" class="form-select">
+                        <!-- Opciones dinámicas -->
+                    </select>
+                </div>
+                <div class="row mb-2">
+                    <div class="col">
+                        <label for="productoAncho" class="form-label">Ancho (cm)</label>
+                        <input type="number" step="0.01" class="form-control" id="productoAncho" name="productoAncho"
+                            title="Para productos por unidad, usar ancho=1 y alto=1. Si se comercializa por m² o fracción, indicar dimensiones reales.">
+                    </div>
+                    <div class="col">
+                        <label for="productoAlto" class="form-label">Alto (cm)</label>
+                        <input type="number" step="0.01" class="form-control" id="productoAlto" name="productoAlto"
+                            title="Para productos por unidad, usar ancho=1 y alto=1. Si se comercializa por m² o fracción, indicar dimensiones reales.">
+                    </div>
+                </div>
+
+                <!-- ❓ Checkbox para tercerización -->
+                <div class="mb-3 form-check">
+                    <input type="checkbox" class="form-check-input" id="tercerizado-checkbox"  name="tercerizado" onchange="toggleInsumos(this.checked)" checked>
+                    <label class="form-check-label" for="tercerizado-checkbox">Producto tercerizado</label>
+                </div>
+                <div class="mb-2" id="precioProveedorWrapper">
+                    <label for="productoPrecioProveedor" class="form-label">Precio de proveedor</label>
+                    <input type="number" step="0.01" class="form-control" id="productoPrecioProveedor" name="productoPrecioProveedor"
+                            title="Precio fijo que nos cobra el proveedor por unidad. Solo se usa si el producto es tercerizado.">
+                </div>
+
+                <!-- 🔩 Sección de insumos -->
+                <div id="seccion-insumos" style="display: none;">
+                    <h6>Insumos del producto</h6>
+                    <div id="insumos-container" class="d-flex flex-column gap-2"></div>
+                    <button type="button" class="btn btn-outline-primary mt-2" onclick="agregarFilaInsumo()">➕ Agregar insumo</button>
+                </div>
+                <div class="mb-2">
+                    <label for="productoMargen" class="form-label">Margen de rentabilidad</label>
+                    <input type="number" step="0.01" class="form-control" id="productoMargen" name="productoMargen" value="1"
+                            title="Multiplica el costo base (por insumos o proveedor) para obtener el precio final del producto. Ej: 1.3 → 30% margen">
+                </div>
+
+                <!-- 📊 Resumen de costos -->
+                <div id="resumen-costos" class="mt-4">
+                    <p><strong>Costo total insumos:</strong> <span id="costo-total" name="costo-total">$0.00</span></p>
+                    <p><strong>Costo final (con factor):</strong> <span id="costo-final">$0.00</span></p>
                 </div>
             </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-success" onclick="guardarProducto()">Guardar producto</button>
+            </div>
         </div>
+    </div>
+</div>
+{% endblock %}
+{% block footer %}
+<!--------------------------------------------------------------------------- Block footer --------------------------------------------------------------------------->
+{% endblock %}
+<!--------------------------------------------------------------------------- Block scripts --------------------------------------------------------------------------->
+{% block scripts %}
+<!-- Custom Js -->
+<script src="{% static 'productos/js/Products.js' %}"></script>
+<script>
+  const msg = sessionStorage.getItem("flashMensaje");
+  const tipo = sessionStorage.getItem("flashTipo");
 
+  if (msg) {
+    const contenedor = document.getElementById("mensaje-django");
+    if (contenedor) {
+      const alerta = document.createElement("div");
+      alerta.className = "alert alert-" + (tipo === "success" ? "success" : "danger");
+      alerta.role = "alert";
+      alerta.textContent = msg;
+      contenedor.appendChild(alerta);
 
+      sessionStorage.removeItem("flashMensaje");
+      sessionStorage.removeItem("flashTipo");
 
-        <!-- Custom Js -->
-        <script src="{% static 'productos/js/Products.js' %}"></script>
-        {% endblock %}
-        {% block footer %}
+      // Desaparecer como lo hacés con los mensajes normales
+      setTimeout(() => {
+        alerta.style.display = "none";
+      }, 7000);
+    }
+  }
+</script>
+{% endblock %}
 
-        {% endblock %}
-    </body>
-</html>

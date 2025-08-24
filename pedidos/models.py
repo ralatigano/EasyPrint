@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from clientes.models import Cliente
+from django.utils import timezone
 
 # Create your models here.
 estado_pedido = [('Sin seña', 'Sin seña'), ('Señado', 'Señado'),
@@ -17,6 +18,7 @@ class Pedido(models.Model):
     saldo = models.FloatField(null=True, blank=True)
     estado = models.TextField(choices=estado_pedido,
                               default='Sin seña', max_length=100)
+    bloqueado_cancelado = models.BooleanField(default=False)
     cliente = models.ForeignKey(
         on_delete=models.CASCADE, to=Cliente, default=None, blank=True)
     presupuesto = models.IntegerField(null=True, blank=True)
@@ -39,3 +41,20 @@ class Pedido(models.Model):
         ordering = ["-created"]
         verbose_name = "Pedido"
         verbose_name_plural = "Pedidos"
+
+
+class ViajeCadete(models.Model):
+    fecha = models.DateField(default=timezone.now)
+    origen = models.CharField(max_length=255)
+    destino = models.CharField(max_length=255)
+    precio = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    pagado = models.BooleanField(default=False)
+    fecha_pago = models.DateField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-fecha']
+        verbose_name = "Viaje de cadete"
+        verbose_name_plural = "Viajes de cadete"
+
+    def __str__(self):
+        return f"{self.fecha} | {self.origen} → {self.destino} | ${self.precio:.2f}"

@@ -6,6 +6,7 @@ const initDataTable=async() => {
         dataTable.destroy();
     }
     dataTable=$("#Categorias").DataTable({
+        responsive: true,
         language: {
             lengthMenu: 'Mostrar _MENU_ categorías por página',
             zeroRecords: 'No hay categorías registradas',

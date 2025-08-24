@@ -2,23 +2,20 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
-from . models import Presupuesto
+from .models import Presupuesto
 from django.contrib.auth.models import User
-from core.models import Usuario
 from django.contrib import messages
-from core.functions import *
-from .prueba import calcular_cant_etiquetas_por_superficie
-from productos.models import Producto, Categoria
+from .functions import *
+from productos.models import ProductoCotizado, Categoria, Producto
 from clientes.models import Cliente
 from django.http import HttpResponse, JsonResponse, Http404
 from django.conf import settings
-import json
 import os
 from urllib.parse import unquote
-from django.contrib.sessions.models import Session
 from django.template.loader import render_to_string
 from weasyprint import HTML
 from datetime import date
+from decimal import Decimal, InvalidOperation
 
 # Create your views here.
 app_name = 'presupuestos'
@@ -40,10 +37,10 @@ def Inicio(request):
     pres = Presupuesto.objects.all()
     np = max(p.numero for p in pres) + 1 if pres else 1
     request.session['np_global'] = np
-    Prods = Producto.objects.filter(
+    Prods = ProductoCotizado.objects.filter(
         presupuesto=None).filter(vendedor=vendedor)
     for p in Prods:
-        total += p.precio
+        total += p.precio_bruto
         descuento += p.desc_plata
         totalNeto = total-descuento
     Cat = Categoria.objects.all()
@@ -61,56 +58,115 @@ def Inicio(request):
 
     return render(request, 'presupuestos/inicio.html', data)
 
-# Vista llamada desde el frontend que genera un JsonResponse con los productos de una determinada categoria para poder cargarlos en el elemento select correspondiente
-# además de realizar algunos cálculos para brindar información de utilidad durante la cotización.
 
+def generar_grafico(request):
 
-@login_required
-def productos_por_categoria(request):
-    if request.method == 'POST':
-        categoria = request.POST.get('categoria')
-        cantidad_repeticion = int(request.POST.get('cantidad_repeticion'))
-        ancho_elemento = float(request.POST.get('ancho'))
-        alto_elemento = float(request.POST.get('alto'))
-        separacion = float(request.POST.get('separacion', 0))
-        algoritmo = request.POST.get('algoritmo', 'MaxRects')
-        # Obtener productos de la categoría seleccionada
-        productos = Producto.objects.filter(categoria__id=categoria)
+    tipo = request.POST.get("tipo")
+    algoritmo = request.POST.get("algoritmo")
 
-        if productos.exists():
-            # Tomamos el primer producto para realizar el cálculo del gráfico
-            producto = productos.first()
-            ancho = producto.ancho
-            alto = producto.alto
-
-            # Llama a la función que genera el gráfico y calcula los resultados
-            cant_elementos_empaquetados, grafico_url, area_ocupada = calcular_cant_etiquetas_por_superficie(
-                ancho_hoja=ancho, alto_hoja=alto, ancho_elemento=ancho_elemento,
-                alto_elemento=alto_elemento, separacion=separacion, cantidad_deseada=cantidad_repeticion, algoritmo=algoritmo
-            )
-            # En función de cuantos elementos entran por pliego calcula la cantidad de pliegos que serán necesarios para cumplir con el pedido
-            if cantidad_repeticion != 0:
-                cantidad_hojas = math.ceil(
-                    cantidad_repeticion / cant_elementos_empaquetados)
-
-            # Formar la respuesta con los productos y los resultados del cálculo
-            productos_data = [{'id': p.codigo, 'nombre': p.nombre}
-                              for p in productos]
-            response_data = {
-                'productos': productos_data,
-                'grafico_url': grafico_url,
-                'area_ocupada': area_ocupada,
-                'cant_elementos_empaquetados': cant_elementos_empaquetados,
-                'cantidad_hojas': cantidad_hojas,
-            }
-
-            return JsonResponse(response_data)
+    try:
+        ancho_hoja = float(request.POST.get("anchoHoja"))
+        if request.POST.get("altoHoja") == "Según cálculo":
+            alto_hoja = 100000
         else:
-            return JsonResponse({'error': 'No se encontraron productos en esta categoría'}, status=400)
+            alto_hoja = float(request.POST.get("altoHoja"))
+        ancho_elemento = float(request.POST.get("anchoElemento"))
+        alto_elemento = float(request.POST.get("altoElemento"))
+        separacion = float(request.POST.get("separacionElementos"))
+        cantidad_deseada = int(request.POST.get("cantidadElementos"))
+    except Exception as e:
+        print("❌ Error al parsear datos:", e)
+        return JsonResponse({"error": "Datos inválidos"}, status=400)
 
-    return JsonResponse({'error': 'Método no permitido'}, status=405)
+    resultado = procesar_cotizacion_con_grafico(
+        tipo_calculo=tipo,
+        ancho_hoja=ancho_hoja,
+        alto_hoja=alto_hoja,
+        ancho_elemento=ancho_elemento,
+        alto_elemento=alto_elemento,
+        separacion=separacion,
+        cantidad_deseada=cantidad_deseada,
+        algoritmo=algoritmo
+    )
+    if resultado.get("tipo") == "X":
+        return JsonResponse(resultado, status=400)
+    return JsonResponse(resultado)
 
 
+@csrf_exempt
+def calcular_cotizacion_final(request):
+    if request.method == "POST":
+        print(request.POST)
+        producto_id = int(request.POST.get("producto_id"))
+        cantidad = int(request.POST.get("cantidadElementos"))
+        empaquetado = request.POST.get("empaquetado") == "true"
+        extra = request.POST.get("inputExtra", "")
+        tipo_cotizacion = request.POST.get("tipoCotizacion", "D")
+        cantidad_producto = 0
+        # Conversión segura
+        try:
+            tiempo = Decimal(request.POST.get("inputTiempo", "0"))
+        except InvalidOperation:
+            tiempo = Decimal("0")
+        try:
+            descuento = Decimal(request.POST.get("descuento", "0"))
+        except InvalidOperation:
+            descuento = Decimal("0")
+        try:
+            resultado_grafico = round(Decimal(request.POST.get(
+                "resultado_grafico", "0")), 3)
+        except InvalidOperation:
+            resultado_grafico = Decimal("1")
+
+        # Determinar el factor según tipo
+        if tipo_cotizacion == "D":
+            cantidad_producto = cantidad
+        else:
+            cantidad_producto = resultado_grafico if resultado_grafico > 0 else cantidad
+
+        # Consultas a la DB
+        producto = Producto.objects.get(id=producto_id)
+        if producto.tercerizado:
+            precio_producto = producto.precio_proveedor
+        else:
+            precio_producto = producto.precio
+        margen = producto.factor
+
+        precio_hora = Producto.objects.get(
+            nombre="Mano de obra").precio_proveedor
+        precio_empaquetado = Producto.objects.get(
+            nombre="Empaquetado").precio_proveedor if empaquetado else 0
+
+        # Cálculo
+        subtotal = cantidad_producto * precio_producto * margen
+        costo_produccion = tiempo * precio_hora
+        total_bruto = subtotal + costo_produccion + precio_empaquetado
+        total_con_descuento = total_bruto * \
+            (1 - descuento / 100) if descuento > 0 else total_bruto
+        print(f'resultado_grafico: {resultado_grafico} precio_producto: {precio_producto} subtotal: {subtotal} costo_produccion: {costo_produccion} total_con_descuento: {total_con_descuento} total_bruto: {total_bruto}')
+        # Guardar en sesión
+        request.session["cotizacion_previa"] = {
+            "producto_id": producto_id,
+            "cantidad": cantidad,
+            "resultado_grafico": float(resultado_grafico),
+            "tiempo_produccion": float(tiempo),
+            "empaquetado": empaquetado,
+            "descuento": float(descuento),
+            "total_bruto": float(total_bruto),
+            "precio_total": float(total_con_descuento),
+            "detalle": extra
+        }
+
+        return JsonResponse({
+            "producto": producto.nombre,
+            "cantidad": cantidad,
+            "resultado_grafico": resultado_grafico,
+            "precio_total": round(total_con_descuento, 2),
+            "descuento": f"{descuento}%",
+            "empaquetado": f"SI" if empaquetado else "NO",
+            "tiempo_produccion": float(tiempo),
+            "detalle": extra
+        })
 # Vista que procesa una llamada desde el frontend para borrar todos los gráficos que se generan durante la cotización.
 
 
@@ -147,12 +203,84 @@ def borrar_imagen_generada(request):
     else:
         return JsonResponse({'message': 'Método no permitido.'}, status=405)
 
+
+@login_required
+def agregar_producto(request):
+    editando_presup = request.session.get('editando_presup', False)
+    np_global = request.session.get('np_global', 0)
+    vendedor = User.objects.get(id=request.session.get('vendedor'))
+    datos = request.session.get("cotizacion_previa")
+    url = ''
+    if not datos:
+        messages.error(
+            request, "No se encontraron datos para agregar el producto.")
+        return redirect("/presupuestos")
+
+    if editando_presup:
+        try:
+            producto = Producto.objects.get(id=datos["producto_id"])
+            total_bruto = Decimal(str(datos["total_bruto"]))
+            desc_porcentaje = Decimal(str(datos["descuento"]))
+            desc_plata = Decimal(total_bruto * desc_porcentaje /
+                                 100 if desc_porcentaje > 0 else 0)
+            ProductoCotizado.objects.create(
+                presupuesto=Presupuesto.objects.get(numero=np_global),
+                cliente=None,
+                producto=producto,
+                cantidad=datos["cantidad"],
+                resultado=Decimal(str(datos["precio_total"])),
+                desc_plata=desc_plata,
+                desc_porcentaje=desc_porcentaje,
+                t_produccion=datos["tiempo_produccion"],
+                empaquetado=datos["empaquetado"],
+                info_adic=datos["detalle"],
+                vendedor=vendedor
+            )
+            messages.success(request, "Producto agregado al presupuesto.")
+            url = f'/presupuestos/verPresupuesto/{np_global}'
+            del request.session["cotizacion_previa"]
+        except Exception as e:
+            messages.error(request, f"Error al agregar producto: {str(e)}")
+
+    else:
+        try:
+            producto = Producto.objects.get(id=datos["producto_id"])
+            total_bruto = Decimal(str(datos["total_bruto"]))
+            desc_porcentaje = Decimal(str(datos["descuento"]))
+            desc_plata = Decimal(total_bruto * desc_porcentaje /
+                                 100 if desc_porcentaje > 0 else 0)
+            ProductoCotizado.objects.create(
+                producto=producto,
+                cantidad=datos["cantidad"],
+                resultado=Decimal(str(datos["precio_total"])),
+                desc_plata=desc_plata,
+                desc_porcentaje=desc_porcentaje,
+                t_produccion=datos["tiempo_produccion"],
+                empaquetado=datos["empaquetado"],
+                info_adic=datos["detalle"],
+                vendedor=request.user
+            )
+            messages.success(request, "Producto agregado al presupuesto.")
+            url = '/presupuestos/inicio'
+            del request.session["cotizacion_previa"]
+        except Exception as e:
+            messages.error(request, f"Error al agregar producto: {str(e)}")
+
+    return redirect(url)
+
+
+@login_required
+def descartar_producto(request):
+    request.session.pop("cotizacion_previa", None)
+    return JsonResponse({"status": "ok"})
+
+
 # Vista que muestra la tabla de presupuestos.
 
 
 @login_required
 def presupuestos(request):
-    Pres = Presupuesto.objects.order_by('-numero').all()
+    Pres = Presupuesto.objects.all()
     autorizado = request.session.get('autorizado')
     usuario_nombre = request.session.get('usuario_nombre')
     img = request.session.get('img')
@@ -166,92 +294,6 @@ def presupuestos(request):
     return render(request, 'presupuestos/presupuestos.html', data)
 
 
-@login_required
-@csrf_exempt
-# Recibe el diccionario desde ObetenerDatos y envía la información al frontend para mostrarla en un modal donde se decide si se agrega el producto al presupuesto o se descarta.
-def calculo_rapido(request):
-
-    # Obtener datos del formulario
-    diccionario = obtener_datos(request)
-    # Almacenar los datos en la sesión
-    request.session['datos_producto'] = diccionario
-    # Calcular el costo
-    costo = calc_precio(diccionario)
-
-    return JsonResponse({
-        'producto': costo['producto'],
-        'cantidad_repeticion': costo['cantidad_repeticion'],
-        'cant_area': costo['cant_area'],
-        'precio': costo['resultado'],
-        'descuento': costo['descuento'],
-        'detalle': costo['info_adic'],
-        'empaquetado': costo['empaquetado'],
-        't_produccion': costo['t_produccion'],
-    })
-
-# Vista que permite agregar o descartar un producto desde el modal de cálculo rápido.
-
-
-def agregar_descartar_producto(request, str):
-    # Agregar la URL en caso de edición
-    editando_presup = request.session.get('editando_presup', False)
-    np_global = request.session.get('np_global', 0)
-    vendedor = User.objects.get(id=request.session.get('vendedor'))
-    if str == 'add':
-        datos_producto = request.session.get('datos_producto')
-        costo = calc_precio(datos_producto)
-        empaq_booleano = True if costo['empaquetado'] == 'Si' else False
-        if editando_presup:
-            Producto.objects.create(
-                presupuesto=Presupuesto.objects.get(numero=np_global),
-                cliente=None,
-                nombre=costo['producto'],
-                categoria=Categoria.objects.get(
-                    nombre=datos_producto['categoria']),
-                info_adic=costo['info_adic'],
-                cantidad=costo['cantidad_repeticion'],
-                cant_area=costo['cant_area'],
-                precio=costo['precio'],
-                desc_porcentaje=costo['descuento'],
-                desc_plata=costo['desc_plata'],
-                resultado=costo['resultado'],
-                empaquetado=empaq_booleano,
-                t_produccion=costo['t_produccion'],
-                vendedor=vendedor,
-            )
-            url = f'/presupuestos/verPresupuesto/{np_global}'
-        else:
-            Producto.objects.create(
-                presupuesto=None,
-                cliente=None,
-                nombre=costo['producto'],
-                categoria=Categoria.objects.get(
-                    nombre=datos_producto['categoria']),
-                info_adic=costo['info_adic'],
-                cantidad=costo['cantidad_repeticion'],
-                cant_area=costo['cant_area'],
-                precio=costo['precio'],
-                desc_porcentaje=costo['descuento'],
-                desc_plata=costo['desc_plata'],
-                resultado=costo['resultado'],
-                empaquetado=empaq_booleano,
-                t_produccion=costo['t_produccion'],
-                vendedor=vendedor,
-            )
-            url = '/presupuestos/inicio'
-        messages.success(request, 'El producto se ha agregado correctamente.')
-        # Limpiar los datos de la sesión
-        request.session.pop('datos_producto', None)
-    if str == 'del':
-        messages.warning(
-            request, 'El producto se ha descartado correctamente.')
-        if editando_presup:
-            url = f'/presupuestos/verPresupuesto/{np_global}'
-        else:
-            url = '/presupuestos/inicio'
-        request.session.pop('datos_producto', None)
-    return redirect(url)
-
 # Vista que permite editar un producto de la cotización actual.
 
 
@@ -262,7 +304,8 @@ def edit_producto_cotizado(request):
     try:
         cambios_precio = False
         cambios = False
-        prod = Producto.objects.get(codigo=int(request.POST['cod_edit']))
+        prod = ProductoCotizado.objects.get(
+            codigo=int(request.POST['cod_edit']))
         cantidad_edit = int(request.POST['cant_edit'])
         cantidad_area_edit = float(
             request.POST['cant_area_edit'].replace(',', '.'))
@@ -335,10 +378,10 @@ def delete_calc_presupuesto(request, r):
     editando_presup = request.session.get('editando_presup', False)
     np_global = request.session.get('np_global', 0)
     try:
-        prod = Producto.objects.get(codigo=r)
+        prod = ProductoCotizado.objects.get(id=r)
         prod.delete()
         messages.success(
-            request, f'El producto {r} se ha borrado correctamente.')
+            request, f'El producto {prod.producto} se ha borrado correctamente.')
     except Exception as e:
         messages.error(
             request, f'No se ha podido borrar el producto. Error({e})')
@@ -351,7 +394,8 @@ def delete_calc_presupuesto(request, r):
 
 def destroy_calc_presupuesto(request):
     vendedor = request.session.get('vendedor')
-    Calcs = Producto.objects.filter(presupuesto=None).filter(vendedor=vendedor)
+    Calcs = ProductoCotizado.objects.filter(
+        presupuesto=None).filter(vendedor=vendedor)
     contador = 0
     for c in Calcs:
         if c.presupuesto != 0:
@@ -371,7 +415,7 @@ def guardar_presupuesto(request):
     confirma = request.session.get('confirma', False)
     t = 0
     d = 0
-    n_presupuesto = 3000000000 + Presupuesto.objects.count()
+    n_presupuesto = 3000001090 + Presupuesto.objects.count()
 
     # Obtengo la instancia del cliente "Consumidor final"
     consumidor_final = Cliente.objects.get(nombre="Consumidor final")
@@ -379,21 +423,28 @@ def guardar_presupuesto(request):
     if editando_presup:
         # Busco el presupuesto que estoy editando con ayuda de la variable global
         pre_v = Presupuesto.objects.get(numero=np_global)
+        cliente = pre_v.cliente if pre_v.cliente else consumidor_final
         # Creo un nuevo presupuesto con el mismo cliente que el anterior, o con "Consumidor final"
-        pre_n = Presupuesto.objects.create(
-            numero=n_presupuesto,
-            cliente=pre_v.cliente if pre_v.cliente else consumidor_final
-        )
-        Prods = Producto.objects.filter(presupuesto=np_global)
-        for p in Prods:
-            p.presupuesto = pre_n
-            t += p.resultado
-            d += p.desc_plata
-            p.save()
-        pre_n.total = t
-        pre_n.desc_plata = d
-        pre_n.save()
-
+        try:
+            pre_n = Presupuesto.objects.create(
+                numero=n_presupuesto,
+                cliente=cliente
+            )
+            Prods = ProductoCotizado.objects.filter(presupuesto=np_global)
+            for p in Prods:
+                p.presupuesto = pre_n
+                t += p.resultado
+                d += p.desc_plata
+                p.save()
+            pre_n.total = t
+            pre_n.desc_plata = d
+            pre_n.save()
+            messages.success(
+                request, f'Se ha creado y guardado el presupuesto {n_presupuesto} correctamente con el cliente {cliente}].')
+        except Exception as e:
+            messages.error(
+                request, f'No se ha podido editar el presupuesto. Error({e})')
+            return redirect('/presupuestos/inicio')
     else:
         # Procesamos el campo "cliente" enviado en el POST (se espera que sea un nombre)
         client_input = request.GET.get('cliente', '').strip()
@@ -407,25 +458,29 @@ def guardar_presupuesto(request):
         else:
             # Si el campo está vacío, se asigna el cliente "Consumidor final"
             client_obj = consumidor_final
+        try:
+            pre = Presupuesto.objects.create(
+                numero=n_presupuesto,
+                cliente=client_obj
+            )
+            Prods = ProductoCotizado.objects.filter(
+                presupuesto=None, resultado__gt=0)
+            for p in Prods:
+                p.presupuesto = pre
+                t += p.resultado
+                d += p.desc_plata
+                p.save()
 
-        pre = Presupuesto.objects.create(
-            numero=n_presupuesto,
-            cliente=client_obj
-        )
-        Prods = Producto.objects.filter(presupuesto=None, resultado__gt=0)
-        for p in Prods:
-            p.presupuesto = pre
-            t += p.resultado
-            d += p.desc_plata
-            p.save()
+            pre.total = t
+            pre.desc_plata = d
+            pre.save()
 
-        pre.total = t
-        pre.desc_plata = d
-        pre.save()
-
-        messages.success(
-            request, f'Se ha creado y guardado el presupuesto {n_presupuesto} correctamente con el cliente "Consumidor final".')
-
+            messages.success(
+                request, f'Se ha creado y guardado el presupuesto {n_presupuesto} correctamente.')
+        except Exception as e:
+            messages.error(
+                request, f'No se ha podido guardar el presupuesto. Error({e})')
+            return redirect('/presupuestos/inicio')
     if confirma:
         return redirect('/pedidos')
 
@@ -447,9 +502,9 @@ def editar_presupuesto(request, np):
     descuento = 0
     totalNeto = 0
     Cat = Categoria.objects.all()
-    Prods = Producto.objects.filter(presupuesto=np)
+    Prods = ProductoCotizado.objects.filter(presupuesto=np)
     for p in Prods:
-        total += p.precio
+        total += p.precio_bruto
         descuento += p.desc_plata
         totalNeto = total-descuento
     pres = Presupuesto.objects.get(numero=np)
@@ -480,16 +535,17 @@ def generar_presupuesto_pdf(request, np):
     descuento = 0
     total_neto = 0
     fecha = date.today()
-    Prods = Producto.objects.filter(presupuesto=np)
+    Prods = ProductoCotizado.objects.filter(presupuesto=np)
     for p in Prods:
-        total += p.precio
+        total += p.precio_bruto
         descuento += p.desc_plata
         total_neto = total-descuento
     pres = Presupuesto.objects.get(numero=np)
     cli = pres.cliente
 
     # Construir la URL base
-    base_url = request.build_absolute_uri('/')
+    img_base = settings.IMG_BASE_PATH
+    css_path = settings.CSS_PATH
     data = {
         'cliente': cli,
         'np': np,
@@ -500,7 +556,8 @@ def generar_presupuesto_pdf(request, np):
         'total': total,
         'descuento': descuento,
         'total_neto': total_neto,
-        'base_url': base_url,
+        'img_base': img_base,
+        'css_path': css_path
     }
     # Renderizar la plantilla HTML
     html_string = render_to_string(
@@ -552,3 +609,88 @@ def obtener_cliente(request):
         return JsonResponse({'cliente': cliente_name})
     except Presupuesto.DoesNotExist:
         raise Http404("Presupuesto no encontrado")
+
+
+def info_prod_cotizado(request, producto_id):
+    try:
+        producto = ProductoCotizado.objects.get(id=producto_id)
+        precio_hora = Producto.objects.get(
+            nombre="Mano de obra").precio_proveedor
+        precio_empaquetado = Producto.objects.get(
+            nombre="Empaquetado").precio_proveedor
+        data = {
+            'producto_nombre': producto.producto.nombre,
+            'info_adicional': producto.info_adic,
+            'precio': producto.precio_bruto,
+            'resultado': producto.resultado,
+            'descuento': producto.desc_porcentaje,
+            'tiempo_estimado': producto.t_produccion,
+            'empaquetado': producto.empaquetado,
+            'precio_hora': precio_hora,
+            'precio_empaquetado': precio_empaquetado,
+        }
+        return JsonResponse(data)
+    except ProductoCotizado.DoesNotExist:
+        raise Http404("Producto no encontrado")
+
+
+def editar_producto_cotizado(request):
+    editando_presup = request.session.get('editando_presup', False)
+    np_global = request.session.get('np_global', 0)
+    if request.method == 'POST':
+        try:
+            producto_id = request.POST.get('id_producto')
+            producto = get_object_or_404(ProductoCotizado, id=producto_id)
+
+            # Inputs del formulario
+            info_adicional = request.POST.get('info_adicional', '').strip()
+            precio = request.POST.get('precio')
+            descuento = request.POST.get('descuento')
+            tiempo = request.POST.get('tiempo')
+            subtotal = request.POST.get('subtotal')
+            resultado = request.POST.get('resultado')
+            empaquetado = request.POST.get('empaquetado') == 'on'
+            precio_arb = request.POST.get('precio_arb_checkbox') == 'on'
+            # Conversión segura
+            precio = float(precio) if precio else 0
+            subtotal = float(subtotal) if subtotal else 0
+            resultado = float(resultado) if resultado else 0
+            descuento = float(descuento) if descuento else 0
+            tiempo = float(tiempo) if tiempo else 0
+
+            # Lógica de edición
+            producto.info_adic = info_adicional
+            producto.empaquetado = empaquetado
+
+            if precio_arb:
+                producto.resultado = precio
+                producto.desc_plata = 0
+                producto.desc_porcentaje = 0
+                producto.t_produccion = 0
+                messages.success(
+                    request, f'Producto editado con precio arbitrario: ${precio:.2f}')
+            else:
+                producto.desc_porcentaje = descuento
+                producto.t_produccion = tiempo
+                producto.desc_plata = round(subtotal * descuento / 100, 2)
+                producto.resultado = resultado
+                messages.success(
+                    request, f'Producto editado correctamente. Precio final: ${resultado:.2f}')
+
+            producto.save()
+
+        except Exception as e:
+            messages.error(request, f'Error al editar el producto: {str(e)}')
+    if editando_presup:
+        return redirect(f'/presupuestos/verPresupuesto/{np_global}')
+    else:
+        return redirect('/presupuestos/inicio')
+
+
+def productos_por_presupuesto(request, presupuesto_numero):
+    productos = ProductoCotizado.objects.filter(presupuesto=presupuesto_numero)
+    data = [
+        {"nombre": p.producto.nombre, "cantidad": p.cantidad}
+        for p in productos
+    ]
+    return JsonResponse({"data": data})

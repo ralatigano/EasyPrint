@@ -1,0 +1,64 @@
+<div class="modal fade" id="editarProductoPresupuestoModal" tabindex="-1" aria-labelledby="editarProductoLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <form id="formEditarProductoPresupuesto" action="/presupuestos/editarProductoCotizado/" method="post">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title" id="editarProductoLabel">Editar producto: <span id="nombre_producto_editar"></span></h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+          <div class="modal-body">
+            <input type="hidden" id="id_producto_editar" name="id_producto">
+
+            <div class="mb-3">
+              <label for="info_adicional_editar" class="form-label">Información adicional</label>
+              <textarea class="form-control" id="info_adicional_editar" name="info_adicional" rows="2"></textarea>
+            </div>
+
+            <div class="row mb-3">
+              <div class="col-md-8">
+                <label for="precio_editar" class="form-label">Precio</label>
+                <input type="number" class="form-control" id="precio_editar" name="precio" step="0.01" readonly>
+              </div>
+              <div class="col-md-4 d-flex align-items-end">
+                <div class="form-check">
+                  <input type="checkbox" class="form-check-input" id="precio_arb_checkbox" name="precio_arb_checkbox">
+                  <label class="form-check-label" for="precio_arb_checkbox">Precio arb.</label>
+                </div>
+              </div>
+            </div>
+
+            <div class="row mb-3">
+              <div class="col-md-4">
+                <label for="descuento_editar" class="form-label">Descuento (%)</label>
+                <input type="number" class="form-control" id="descuento_editar" name="descuento" step="0.01">
+              </div>
+              <div class="col-md-4">
+                <label for="tiempo_editar" class="form-label">Tiempo producción (hs)</label>
+                <input type="number" class="form-control" id="tiempo_editar" name="tiempo" step="0.1">
+              </div>
+              <div class="col-md-4 d-flex align-items-end">
+                <div class="form-check">
+                  <input type="checkbox" class="form-check-input" id="empaquetado_editar" name="empaquetado">
+                  <label class="form-check-label" for="empaquetado_editar">Empaquetado</label>
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-4 p-3 border rounded bg-dark">
+              <input type="hidden" id="subtotal_calculado" name="subtotal">
+              <input type="hidden" id="resultado_calculado" name="resultado">
+              <strong>Nuevo precio:</strong> <span id="nuevo_precio_calculado" class="text-info" title="">$ —</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-dark" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-dark">Guardar cambios</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

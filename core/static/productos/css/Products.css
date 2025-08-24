@@ -3,26 +3,111 @@
     vertical-align: middle !important;
 }
 
-.modal-body {
-    display: grid;
-    gap: 15px;
+.tabla-scroll {
+  overflow-x: auto;
+  display: block;
+  width: 100%;
+  margin-top: 1rem;
 }
 
-#botones_productos {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    gap: 5px;
+.grupo-botones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  justify-content: flex-start;
+  align-items: center;
 }
 
-#botones_productos > button, 
-#botones_productos > a {
-    flex: 1 1 5%; 
-    /* max-width: 150px; */
-    text-align: center;
-    white-space: nowrap; /* Evita que el texto se divida en varias líneas */
+.grupo-botones > * {
+  margin: 0 !important;
+  flex-shrink: 0;
 }
 
-#botones_productos > .btn-primary {
-    flex-basis: 100%; /* Formulario en una nueva fila completa */
+.form-carga {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
 }
+
+input[type="file"]::file-selector-button {
+  background-color: #343a40;
+  color: #fff;
+  border: none;
+  padding: 0.4rem 0.6rem;
+  font-size: 0.8rem;
+  border-radius: 0.25rem;
+  font-family: inherit;
+  cursor: pointer;
+  max-width: 100%;
+}
+
+input[type="file"] {
+  width: auto;
+}
+
+input[type="file"]:hover::file-selector-button {
+  background-color: #212529;
+}
+
+.grupo-botones .btn,
+.grupo-botones a,
+.grupo-botones form button {
+  max-width: 220px;
+  white-space: normal;   
+  word-break: break-word;
+  text-align: left;      
+}
+
+.grupo-botones form {
+  flex: 1 0 auto;
+  min-width: fit-content;
+} 
+
+#categoriaFilter{
+  margin-bottom: 1rem;
+  margin-top: 1rem;
+}
+
+label[for="categoriaFilter"] {
+  margin-right: 0.5rem;
+}
+
+/* 🧱 Modal content: limitar ancho en móvil sin romper desktop */
+@media (max-width: 576px) {
+  .modal-content {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 1rem;
+  }
+}
+
+/* 🧩 Fila de insumo */
+.fila-insumo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+/* 📱 Campos internos */
+.fila-insumo > * {
+  flex: 1 1 100%;
+  min-width: 0;
+}
+
+@media (min-width: 576px) {
+  .fila-insumo > * {
+    flex: 1 1 auto;
+  }
+}
+
+/* 💰 Spans con control de ancho */
+.pu-insumo,
+.subtotal-insumo {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 80px;
+}
+
+

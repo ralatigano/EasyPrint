@@ -71,3 +71,38 @@ Versión 2.6.0
     -Pedidos
         *Se modifica la interacción con la plantilla de completar pedido así como la vista que recibe el post de dicha plantilla para poder modificar
         el nombre del cliente o incluso para incorporar el nombre que se usara en el formulario inicial.
+
+****************** 23/8/2024 ******************
+Versión 3.0.0
+
+    -General
+        *Se reestructura la interfaz para adaptarla mejor a pantallas pequeñas.
+        *Se construye una única estructura para las plantillas hijas de la plantilla padre para facilitar su comprensión y generar homogeneidad.
+        *Se configuran todas las tablas para que se comporten de forma responsiva mostrando ciertas columnas y permitiendo que el resto de la información
+        sea visible mediante un desplegable.
+    -Insumos
+        *Se crea el modelo para agregar funcionalidad de control de stock en productos que utilizan consumibles del negocio.
+    -Productos
+        *Se cambia la estructura del modelo Producto a Insumo -> Producto -> ProductoCotizado para incorporar funcionalidad de control de stock y mejorar el
+        proceso de formación de precio de productos elaborados en el negocio.
+        *Se adaptan todas las vistas relacionadas al modelo de producto para que mantengan su funcionalidad pese a la estructuración anteriormente mencionada.
+    -Presupuestos
+        *Se reestructura la pantalla inicial y la forma en la que se realizan cotizaciones para facilitar el uso y control del resultado por parte del usuario.
+        Ahora se puede indicar que tipo de cálculo se requiere en lugar de que la app realice todos los cálculos posibles y que el usuario deba elegir con que
+        valor calcular el precio final.
+        *La edición de presupuestos tiene un autoguardado implícito porque los nuevos productos cotizados se crean directamente con el número del presupuesto
+        en cuestión lo que genera que cada vez que se "llame" al presupuesto, ya contenga los productos agregados/modificados. El botón de guardar presupuesto
+        funciona pero genera un nuevo presupuesto número actual + 1 en la base de datos.
+        *Se modifica el modal y la funcionalidad que permite editar un producto ya cotizado, limitando la edición a algunos factores y permitiendo ver en tiempo
+        real como éstos afectan al precio.
+        *Se agrega un modal a la vista de presupuestos que permite verificar rápidamente que productos componen un presupuesto y proporciona caminos para acceder
+        a la edición de dicho presupuesto o a la confirmación de un pedido vinculado a este.
+        *Se agrega un botón en la vista de presupuestos que permite acceder a la confirmación de un pedido a partir de un presupuesto de forma directa.
+    -Pedidos
+        *Se corrige un pequeño error en la vista de completar pedido que evitaba que los elementos se rendericen apropiadamente.
+        *Se incorpora la funcionalidad del control de stock en relación a la confirmación de pedidos de modo que al hacerlo, se descuentan del stock los productos
+        que no son tercerizados y utilizan consumibles del negocio.
+        *Se crean notificaciones a modo de alerta cuando existen pedidos con insumos faltantes que se muestran al navegar por determinadas páginas.
+    -Viajes de cadete
+        *Se crea una interfaz que permite registrar y administrar los viajes del catede y su estado en relación al pago.
+        

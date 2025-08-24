@@ -1,308 +1,319 @@
 {% extends 'core/base.html' %}
 {% load static %}
+{% load l10n %}
+<!--------------------------------------------------------------------------- Block head --------------------------------------------------------------------------->
+{% block head %}
+{% endblock %}
+<!--------------------------------------------------------------------------- Block title --------------------------------------------------------------------------->
+{% block title %}Cotizador{% endblock %}
+<!--------------------------------------------------------------------------- Block header --------------------------------------------------------------------------->
+{% block header %}
 
-<!DOCTYPE html>
-<html>
-    <head>
-        {% block head %}
-            <meta name="viewport" content="width=device-width, initial-scale=1">
-            <title>{% block title %}Nueva Cotización{% endblock %}</title>
-            <link rel="stylesheet" href="{% static 'core/css/Index.css' %}">
-        {% endblock %} 
-    </head>
-    <body>
-        {% block header%}
-            <div class="titulo">
-            {% if cli %}
-            <h1>Ver Presupuesto {{np}}</h1>
-                {% else %}
-                    <h1>Nuevo Presupuesto</h1>
-                {% endif %}
-            {% endblock %}
-            </div>
-        {% block content %}
- 
-            <div class="row">   
-                <div class="FormularioInicial">
-                    <form action="" method="POST" class="contenedor_formulario dark_bg" id="nueva_cotizacion_form">
-                        {% csrf_token %}
-                         <!-- Línea 1: Número de Presupuesto -->
-                        <div class="presupuesto-container">
-                            <label for="presupuesto">N° Presupuesto:</label>
-                            <input type="text" id="presupuesto" name="presupuesto" class="form-control" value="{{np}}" readonly>
-                        </div>
+{% endblock %}
+<!--------------------------------------------------------------------------- Block content --------------------------------------------------------------------------->
+{% block content %}
 
-                        <!-- Línea 2: Cantidad, Área, Ancho, Alto, Separación -->
-                        <div class="form-row datos_cantidad">
-                            <div class="form-group col-md-2">
-                            <label for="cantidad_repeticion">Cantidad/Repetición:</label>
-                            <input type="number" id="cantidad_repeticion" name="cantidad_repeticion" class="form-control" value="1">
-                            </div>
-                            <div class="form-group col-md-2">
-                            <label for="cantidad_area">Cantidad/Área:</label>
-                            <input type="number" id="cantidad_area" name="cantidad_area" class="form-control" value="1">
-                            </div>
-                            <div class="form-group col-md-2">
-                            <label for="ancho">Ancho (impresión en cm):</label>
-                            <input type="number" id="ancho" name="ancho" class="form-control" value="1">
-                            </div>
-                            <div class="form-group col-md-2">
-                            <label for="alto">Alto (impresión en cm):</label>
-                            <input type="number" id="alto" name="alto" class="form-control" value="1">
-                            </div>
-                            <div class="form-group col-md-2">
-                            <label for="separacion">Separación:</label>
-                            <input type="number" id="separacion" name="separacion" value="0" class="form-control">
-                            </div>
-                        </div>
+<!-- 🧾 Formulario inicial reorganizado -->
+<div class="container-fluid">
 
-                        <!-- Línea 1: Select de categoría -->
-                        <div class="form-group">
-                            <label for="categoria">Categoría:</label>
-                            <select id="categoria" name="categoria" class="form-control">
-                                <option value="0">Selecciona una categoría</option>
-                                {% for c in Cat %}
-                                    {% if c.nombre != 'Misceláneos' %}
-                                        <option value="{{c.id}}">{{c.nombre}}</option>
-                                    {% endif %}
-                                {% endfor %}
-                            </select>
-                        </div>
+  <!-- 🎯 Tipo de cálculo -->
+  <div class="row mt-4">
+    <div class="col">
+      <label class="form-label"><strong>Tipo de cálculo</strong></label>
+      <div class="d-grid gap-2">
+        <!-- 📦 Ajustar elementos en un formato -->
+        <div class="form-check d-flex flex-column flex-sm-row justify-content-between align-items-start p-2 mb-2">
+          <div class="flex-grow-1">
+            <input class="form-check-input" type="radio" name="tipoProducto" id="tipoA" value="A">
+            <label class="form-check-label" for="tipoA">
+              <i class="fa-solid fa-box me-1"></i> Ajustar elementos en un formato
+              <small class="d-block text-muted">Calcular cuántos entran y cuántos necesito</small>
+            </label>
+          </div>
+          <div class="form-check mt-2 mt-sm-0 ms-sm-3">
+            <input class="form-check-input" type="checkbox" id="defaultTipoA" onchange="guardarDefault('A')">
+            <label class="form-check-label small" for="defaultTipoA">Opción por defecto</label>
+          </div>
+        </div>
 
-                        <!-- Separador -->
-                        <hr>
+        <!-- 📐 Calcular por superficie impresa -->
+        <div class="form-check d-flex flex-column flex-sm-row justify-content-between align-items-start p-2 rounded mb-2">
+          <div class="flex-grow-1">
+            <input class="form-check-input" type="radio" name="tipoProducto" id="tipoB" value="B">
+            <label class="form-check-label" for="tipoB">
+              <i class="fa-solid fa-ruler me-1"></i> Calcular por superficie impresa
+              <small class="d-block text-muted">Estimar área ocupada y precio por m²</small>
+            </label>
+          </div>
+          <div class="form-check mt-2 mt-sm-0 ms-sm-3">
+            <input class="form-check-input" type="checkbox" id="defaultTipoB" onchange="guardarDefault('B')">
+            <label class="form-check-label small" for="defaultTipoB">Opción por defecto</label>
+          </div>
+        </div>
 
-                        <!-- Línea 4: Espacio para el gráfico -->
-                        <!-- Aquí aparecerá el gráfico generado -->
-                        <div id="grafico_contenedor" class="form-group hidden">
-                            <h4 id="tituloGrafico">Representación gráfica</h4>
-                            <!-- Contenedor para gráfico y botones alineados -->
-                            <div class="grafico_botones_contenedor">
-                                <img alt="Gráfico de material" id="img_hoja" class="grafico-img">
-                                <!-- Botones alineados a un costado -->
-                                <div class="botones-grafico">
-                                    <button id="btnDescargarGrafico" class=" btn btn-grafico btn-dark"><i class="fa-solid fa-download" type="button"type="button"></i></button>
-                                    <button id="btnBorrarGrafico" class="btn btn-grafico btn-dark"><i class="fa-solid fa-trash-can" type="button"></i></button>
-                                    <button id="btn-regenerar" class="btn btn-grafico btn-dark" data-algoritmo="MaxRects" data-toggle="tooltip" title="">
-                                        <i class="fa-solid fa-arrows-rotate"></i>
-                                    </button>
-                                </div>
-                            </div>
-                            <!-- Resultados -->
-                            <p id="resultado">
-                                Entran <span id="cant_resultado"></span> elementos por hoja.
-                                Necesitarás <span id="cant_hojas"></span> <button type="button" class="btn btn-dark" onclick="enviarCantidadHojas()"><i class="fa-solid fa-hand-pointer"></i></button> hojas/pliegos para completar el pedido. 
-                                Se utilizará <span id="area_ocupada"></span> <button type="button" class="btn btn-dark" onclick="enviarAreaOcupada()"><i class="fa-solid fa-hand-pointer"></i></button> m² de papel/vinilo/lona. 
-                            </p>
-                        </div>
-                        
-                        <!-- Separador -->
-                        <hr>
+        <!-- 📏 Calcular por metro lineal -->
+        <div class="form-check d-flex flex-column flex-sm-row justify-content-between align-items-start p-2 rounded mb-2">
+          <div class="flex-grow-1">
+            <input class="form-check-input" type="radio" name="tipoProducto" id="tipoC" value="C">
+            <label class="form-check-label" for="tipoC">
+              <i class="fa-solid fa-ruler-vertical me-1"></i> Calcular por metro lineal
+              <small class="d-block text-muted">Estimar cantidad de metros necesarios</small>
+            </label>
+          </div>
+          <div class="form-check mt-2 mt-sm-0 ms-sm-3">
+            <input class="form-check-input" type="checkbox" id="defaultTipoC" onchange="guardarDefault('C')">
+            <label class="form-check-label small" for="defaultTipoC">Opción por defecto</label>
+          </div>
+        </div>
 
-                        <!-- Línea 5: Select de productos -->
-                        <div class="form-group">
-                            <label for="producto">Producto:</label>
-                            <select id="producto" name="producto" class="form-control">
-                            <!-- Opciones del select -->
-                            </select>
-                        </div>
+        <!-- 🔢 Precio por unidad -->
+        <div class="form-check d-flex flex-column flex-sm-row justify-content-between align-items-start p-2 rounded mb-2">
+          <div class="flex-grow-1">
+            <input class="form-check-input" type="radio" name="tipoProducto" id="tipoD" value="D">
+            <label class="form-check-label" for="tipoD">
+              <i class="fa-solid fa-hashtag me-1"></i> Precio por unidad
+              <small class="d-block text-muted">Cotización directa sin medidas</small>
+            </label>
+          </div>
+          <div class="form-check mt-2 mt-sm-0 ms-sm-3">
+            <input class="form-check-input" type="checkbox" id="defaultTipoD" onchange="guardarDefault('D')">
+            <label class="form-check-label small" for="defaultTipoD">Opción por defecto</label>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
-                        <div class="form-group info_adic">
-                            <label for="info_adic" style="font-weight: bold;" data-bs-toggle="tooltip" data-bs-placement="top" title="En este campo puedes indicar detalles adicionales sobre el producto como podría ser algún pedido especial que haya hecho el cliente. También puede usarse para que se refleje en el presupuesto exactamente lo que el cliente pide.">Información adicional</label>
-                            <input type="textarea" id="info_adic" name="info_adic" class="form-control" placeholder="Información adicional">
-                        </div>
+  <!-- 🗂️ Selección de categoría y producto -->
+  <div class="row mt-4">
+    <div class="col-md-6">
+      <label class="form-label">Categoría</label>
+      <select id="selectCategoria" class="form-select">
+        <option value="">Seleccione una categoría</option>
+      </select>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Producto</label>
+      <select id="selectProducto" class="form-select">
+        <option value="">Seleccione un producto</option>
+      </select>
+    </div>
+  </div>
 
-                        <!-- Línea 6: Checkbox de empaquetado, Tiempo de producción, Descuento -->
-                        <div class="form-row agregados">
-                            <div class="form-group col-md-4">
-                            <label for="empaquetado">Empaquetado:</label>
-                            <input type="checkbox" id="empaquetado" name="empaquetado" checked>
-                            </div>
-                            <div class="form-group col-md-4">
-                            <label for="t_produccion">Tiempo de producción [hs]:</label>
-                            <input type="text" id="t_produccion" name="t_produccion" value="1" class="form-control">
-                            </div>
-                            <div class="form-group col-md-4">
-                            <label for="descuento">Descuento [%]:</label>
-                            <input type="number" id="descuento" name="descuento" value="0" class="form-control">
-                            </div>
-                        </div>
+  <!-- 📐 Datos de producto + cantidad -->
+  <div class="row g-2 mt-4" id="bloqueDimensiones">
+    <div class="col-12 col-md-4">
+      <label for="cantidadElementos" class="form-label label-alineado">Cantidad de elementos</label>
+      <input type="number" class="form-control" id="cantidadElementos" placeholder="Ej: 100">
+    </div>
+    <div class="col-12 col-md-4">
+      <label for="inputAnchoHoja" class="form-label label-alineado">Ancho hoja/pliego (cm)</label>
+      <input type="number" class="form-control" id="inputAnchoHoja" placeholder="Ej: 50" readonly>
+    </div>
+    <div class="col-12 col-md-4">
+      <label for="inputAltoHoja" class="form-label label-alineado">Alto hoja/pliego (cm)</label>
+      <input type="number" class="form-control" id="inputAltoHoja" placeholder="Ej: 70" readonly>
+    </div>
+    <div class="col-12 col-md-4">
+      <label for="inputAnchoElemento" class="form-label label-alineado">Ancho elemento (cm)</label>
+      <input type="number" class="form-control" id="inputAnchoElemento" placeholder="Ej: 10">
+    </div>
+    <div class="col-12 col-md-4">
+      <label for="inputAltoElemento" class="form-label label-alineado">Alto elemento (cm)</label>
+      <input type="number" class="form-control" id="inputAltoElemento" placeholder="Ej: 15">
+    </div>
+    <div class="col-12 col-md-4">
+      <label for="separacionElementos" class="form-label label-alineado">Separación entre elementos (cm)</label>
+      <input type="number" class="form-control" id="separacionElementos" placeholder="Ej: 0,5">
+    </div>
+  </div>
 
-                        <!-- Línea 7: Botones de Limpiar formulario y Calcular -->
-                        <div class="form-group">
-                            <a href="/presupuestos/inicio" styles="text-decoration: none;"><button type="button" class="btn btn_agregar btn-dark btn-fuente" data-bs-toggle="tooltip" data-bs-placement="top" title="Este botón refresca la página devolviendo el formulario a su estado inicial.">
-                                <i class="fa-solid fa-eraser"></i> 
-                                Limpiar formulario
-                            </button></a>
-                            <button type="button" class="btn btn_agregar btn-dark btn-fuente" onclick="previoModal()" data-bs-toggle="tooltip" data-bs-placement="top" title="Este botón realiza el cálculo del precio con la información cargada y muestra una ventana con el resultado donde podrás agregar el producto al presupuesto o descartarlo.">
-                                <i class="fa-solid fa-calculator"></i> 
-                                Calcular $ 
-                            </button>
-                        </div>
-                    </form>
+  <!-- ⏱ Producción + empaquetado + descuento -->
+  <div class="row mt-3">
+    <div class="col-md-4">
+      <label class="form-label">Tiempo estimado de producción (horas)</label>
+      <input type="number" id="inputTiempo" class="form-control" min="1" value="1">
+    </div>
+    <div class="col-md-4 d-flex align-items-end">
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" id="checkEmpaquetado" name="checkEmpaquetado" checked>
+        <label class="form-check-label" for="checkEmpaquetado">Lleva empaquetado</label>
+      </div>
+    </div>
+    <!-- Descuento -->
+    <div class="col-md-4">
+      <label class="form-label">Descuento (%)</label>
+      <input type="number" id="inputDescuento" class="form-control" min="0" max="100" value="0">
+    </div>
+  </div>
+
+  <!-- 📝 Información adicional -->
+  <div class="row mt-3">
+    <div class="col">
+      <label class="form-label">Información adicional</label>
+      <textarea id="inputExtra" class="form-control" rows="3"></textarea>
+    </div>
+  </div>
+
+  <!-- 📊 Sección gráfica -->
+  <div id="seccionGrafico" class="mt-4">
+    <div class="row align-items-start mt-3">
+      <!-- Columna del gráfico -->
+      <div class="col-md-8 col-12 mb-3" id="graficoCotizacion">
+        <!-- Aquí se inserta el gráfico -->
+      </div>
+
+      <!-- Columna de botones -->
+      <div class="col-md-4 col-12 d-flex justify-content-md-start justify-content-center gap-3" id="botonesGrafico">
+        <!-- Aquí se insertan los botones -->
+      </div>
+    </div>
+  </div>
+  <!-- 🔘 Botón de acción -->
+  <div id="bloqueBotonGrafico" class="mt-4">
+    <div class="row mt-3">
+      <div class="col text-end">
+        <button class="btn btn-outline-primary" id="btnGenerarGrafico">
+          <i class="fa-solid fa-chart-column me-1"></i> Dibujito
+        </button>
+      </div>
+    </div>
+  </div>
+
+  {% if Prods %}
+  <div class="container mt-4">
+      <div class="row mb-3">
+          <div class="col-12 cliente-field">
+              <label for="cliente">Cliente:</label>
+              <input type="text" id="cliente_input" name="cliente_input" class="form-control"
+                    value="{{ cliente|default:'Consumidor final' }}"
+                    placeholder="Nombre del cliente">
+          </div>
+      </div>
+
+      <div class="row">
+          <div class="col-12">
+              <table id="NuevoPresupuesto" class="table table-hover table-responsive">
+                  <thead class="table-dark">
+                      <tr>
+                          <th class="centered">Servicio</th>
+                          <th class="centered">Empaquetado</th>
+                          <th class="centered">Cantidad</th>
+                          <th class="centered">Precio</th>
+                          <th class="centered">Descuento [%]</th>
+                          <th class="centered">Descuento [$]</th>
+                          <th class="centered">Total</th>
+                          <th class="centered">Editar/Borrar</th>
+                      </tr>
+                  </thead>
+                  <tbody id="tableBody_Presupuesto">
+                      {% for c in Prods %}
+                      <tr>
+                          <td>{{ c.producto }}</td>
+                          <td>{{ c.empaquetado|yesno:"Sí,No" }}</td>
+                          <td>{{ c.cantidad }}</td>
+                          <td>$ {{ c.precio_bruto|localize }}</td>
+                          <td>{{ c.desc_porcentaje }}%</td>
+                          <td>$ {{ c.desc_plata|localize }}</td>
+                          <td>$ {{ c.resultado|localize }}</td>
+                          <td>
+                              <button type="button" class="btn btn-dark btn-xs"
+                                      data-bs-toggle="modal"
+                                      data-bs-target="#editarProductoPresupuestoModal"
+                                      data-bs-whatever="{{ c.id }}"
+                                      title="Editar producto">
+                                  <i class="fa-solid fa-pencil"></i>
+                              </button>
+                              <a href="/presupuestos/deleteCalc_Presupuesto/{{ c.id }}"
+                                class="btn btn-dark btn-xs btnEliminacion"
+                                title="Eliminar producto">
+                                  <i class="fa-solid fa-trash-can"></i>
+                              </a>
+                          </td>
+                      </tr>
+                      {% endfor %}
+                  </tbody>
+                  <tfoot>
+                      <tr>
+                          <td colspan="6" class="text-end fw-bold">Total bruto:</td>
+                          <td>$ {{ total|localize }}</td>
+                      </tr>
+                      <tr>
+                          <td colspan="6" class="text-end fw-bold">Total descuento:</td>
+                          <td>$ {{ descuento|localize }}</td>
+                      </tr>
+                      <tr>
+                          <td colspan="6" class="text-end fw-bold">Total Neto:</td>
+                          <td>$ {{ totalNeto|localize }}</td>
+                      </tr>
+                  </tfoot>
+              </table>
+          </div>
+      </div>
+
+      <div class="row mt-3">
+          <div class="col-12 d-flex justify-content-between flex-wrap gap-2 buttons">
+              {% if cliente %}
+                  <a href="/presupuestos" class="btn btn-outline-dark btn-fuente" title="Volver a la lista de presupuestos.">
+                      <i class="fa-regular fa-circle-left"></i> Volver atrás
+                  </a>
+              {% else %}
+                  <a href="/presupuestos/borrarTodo" class="btn btn-outline-dark btn-fuente" title="Borra TODOS los productos de la cotización actual.">
+                      <i class="fa-solid fa-trash-can"></i> Borrar todo
+                  </a>
+              {% endif %}
+
+              <a id="guardarPresupuestoLink" href="#" onclick="guardarPresupuesto()" class="btn btn-outline-dark" title="Guardar presupuesto para editar o descargar luego.">
+                  <i class="fa-solid fa-sd-card"></i> Guardar presupuesto
+              </a>
+
+              <a id="completarPedidoLink" href="/pedidos/completarPedido" class="btn btn-outline-dark" title="Confirmar pedido si el cliente ya está decidido.">
+                  <i class="fa-solid fa-check"></i> Confirmar pedido
+              </a>
+          </div>
+      </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+<!--------------------------------------------------------------------------- Block modal --------------------------------------------------------------------------->
+{% block modal %}
+<!-- Modal resultado del cálculo -->
+<div class="modal fade" id="resultadoPrevioModal" tabindex="-1" aria-labelledby="resultadoPrevioModalLabel" data-bs-backdrop="static" aria-hidden="true">   
+    <form action="" method="POST" id="">
+        {% csrf_token %}
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title-prod fs-5" id="resultadoPrevioModalLabel">Cálculo rápido</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <br>
-                <hr>
-                <br>
-                <div class="container">
-                    <div class="col-sm-12 col-md-12 col-lg-12 col-xl-12">
-                        <div class="cliente-field">
-                            <label for="cliente">Cliente:</label>
-                            <input type="text" id="cliente" name="cliente" class="form-control" value="{{ cliente|default:'Consumidor final' }}" placeholder="Nombre del cliente">
-                        </div>
-                        <table id="NuevoPresupuesto" class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th class="centered">Código</th>
-                                    <th class="centered">Servicio</th>
-                                    <th class="centered">Descripción</th>
-                                    <th class="centered">Empaquetado</th>
-                                    <th class="centered">Cantidad</th>
-                                    <th class="centered">Precio</th>
-                                    <th class="centered">Descuento [%]</th>
-                                    <th class="centered">Descuento [$]</th>
-                                    <th class="centered">Total</th>
-                                    <th class="centered">Editar/Borrar</th>
-                                </tr>
-                            </thead>
-                            <tbody id="tableBody_Presupuesto">
-                                {% for c in Prods %}
-                                        <tr>
-                                            <td>{{c.codigo}}</td>
-                                            <td>{{c.nombre}}</td>
-                                            <td>{{c.info_adic}}</td>
-                                            <td>
-                                                {% if c.empaquetado %}
-                                                    Si
-                                                {% else %}
-                                                    No
-                                                {% endif %}
-                                            </td>
-                                            <td>{{c.cantidad}}</td>
-                                            <td>$ {{c.precio}}</td>
-                                            <td>{{c.desc_porcentaje}}%</td>
-                                            <td>$ {{c.desc_plata}}</td>
-                                            <td>$ {{c.resultado}}</td>
-                                            <td>
-                                                <button type="button" class="btn btn-dark btn-xs" data-bs-toggle="modal" data-bs-target="#editarProductoPresupuestoModal" data-bs-whatever="{{c.codigo}} | {{c.nombre}} | {{c.info_adic}} | {{c.cantidad|floatformat:0}} | {{c.cant_area}} | {{c.desc_porcentaje}} | {{c.empaquetado}} | {{c.t_produccion}} | {{c.precio}}" data-bs-toggle="tooltip" data-bs-placement="top" title="Permite editar este producto."><i class="fa-solid fa-pencil"></i></button>
-                                                <a href="/presupuestos/deleteCalc_Presupuesto/{{c.codigo}}" class="btn btn-dark btn-xs btnEliminacion" data-bs-toggle="tooltip" data-bs-placement="top" title="Borra este producto de la cotización actual."><i class="fa-solid fa-trash-can"></i></a>
-                                            </td>
-                                        </tr>
-                                        
-                                {% endfor %} 
-
-                            </tbody>
-                            <tfoot>
-                                <tr>
-                                    <td colspan="8" style="text-align:right; font-weight: bold;">Total bruto:</td>
-                                    <td>$ {{total}}</td>
-                                </tr>
-                                <tr>
-                                    <td colspan="8" style="text-align:right; font-weight: bold;">Total descuento:</td>
-                                    <td>$ {{descuento}}</td>
-                                </tr>
-                                <tr>
-                                    <td colspan="8" style="text-align:right; font-weight: bold;">Total Neto:</td>
-                                    <td>$ {{totalNeto}}</td>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
-                    <div class="buttons">
-                        {% if cli %}
-                            <a href="/presupuestos" class="btn btn-outline-dark btn-dark btn-fuente" data-bs-toggle="tooltip" data-bs-placement="top" title="Volver a la lista de presupuestos."><i class="fa-regular fa-circle-left"></i> Volver atras </a>
-                        {% else %}
-                            <a href="/presupuestos/borrarTodo" class="btn btn-outline-dark btn-dark btn-fuente" data-bs-toggle="tooltip" data-bs-placement="top" title="Borra TODOS los productos de la cotización actual."><i class="fa-solid fa-trash-can"></i> Borrar todo </a>
-                        {% endif %}
-                        <a id="guardarPresupuestoLink" href="#" onclick="guardarPresupuesto()" class="btn btn-outline-dark btn-dark" data-bs-toggle="tooltip" data-bs-placement="top" title="Guarda el presupuesto para poder descargarlo o editarlo después.">
-                            <i class="fa-solid fa-sd-card"></i> Guardar presupuesto
-                        </a>
-                        <a id="completarPedidoLink" href="#" onclick="completarPedido()" class="btn btn-outline-dark btn-dark" data-bs-toggle="tooltip" data-bs-placement="top" title="Este botón guarda el presupuesto y muestra un formulario para completar el pedido en el caso de que el cliente ya esté seguro de lo que quiere."><i class="fa-solid fa-check"></i> Confirmar pedido </a>
-                    </div>
+                <div class="modal-body">
+                    <p>Producto: <span id="prod_prev" style="font-weight: bold"> </span></p>
+                    <p>Cantidad: <span id="cant_prev" style="font-weight: bold"> </span></p>
+                    <p>Cantidad hojas/Área/Metros: <span id="cant_area_prev" style="font-weight: bold"> </span></p>
+                    <p>Precio: $ <span id="precio_prev" style="font-weight: bold"> </span></p>
+                    <p>Descuento: <span id="descuento_prev" style="font-weight: bold"></span></p>
+                    <p>Empaquetado: <span id="empaquetado_prev" style="font-weight: bold"> </span></p>
+                    <p>Tiempo de producción [hs]: <span id="t_produccion_prev" style="font-weight: bold"> </span></p>
+                    <p>Detalle: <span id="detalle_prev" style="font-weight: bold"> </span></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-dark"><a href="/presupuestos/agregarProducto" style="text-decoration: none;"> Agregar </a></button>
+                    <button type="button" class="btn btn-outline-dark" onclick="descartarProducto()">Descartar</button>
                 </div>
             </div>
-            <!-- Modal resultado del cálculo -->
-            <div class="modal fade" id="resultadoPrevioModal" tabindex="-1" aria-labelledby="resultadoPrevioModalLabel" data-bs-backdrop="static" aria-hidden="true">   
-                <form action="" method="POST" id="">
-                    {% csrf_token %}
-                    <div class="modal-dialog">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h1 class="modal-title-prod fs-5" id="resultadoPrevioModalLabel">Cálculo rápido</h1>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                            </div>
-                            <div class="modal-body">
-                                <p>Producto: <span id="prod_prev" style="font-weight: bold"> </span></p>
-                                <p>Cantidad: <span id="cant_prev" style="font-weight: bold"> </span></p>
-                                <p>Cantidad/Área: <span id="cant_area_prev" style="font-weight: bold"> </span></p>
-                                <p>Precio: $ <span id="precio_prev" style="font-weight: bold"> </span></p>
-                                <p>Descuento: <span id="descuento_prev" style="font-weight: bold"></span></p>
-                                <p>Empaquetado: <span id="empaquetado_prev" style="font-weight: bold"> </span></p>
-                                <p>Tiempo de producción [hs]: <span id="t_produccion_prev" style="font-weight: bold"> </span></p>
-                                <p>Detalle: <span id="detalle_prev" style="font-weight: bold"> </span></p>
-                            </div>
-                            <div class="modal-footer">
-                                <a href="/presupuestos/agregarDescartarProducto/add" style="text-decoration: none;"><button type="button" id="btn_calcular_previo" class="btn btn-dark btn-fuente" onclick=""> Agregar </button></a>
-                                <a href="/presupuestos/agregarDescartarProducto/del" style="text-decoration: none;"><button type="button" class="btn btn-dark btn-fuente" data-bs-dismiss="modal" onclick=""> Descartar </button"></a>
-                            </div>
-                        </div>
-                    </div>
-                </form>
-            </div>
-
-            <!-- Modal editar producto del presupuesto -->
-            <div class="modal fade" id="editarProductoPresupuestoModal" tabindex="-1" aria-labelledby="editarProductoPresupuestoModalLabel" data-bs-backdrop="static" aria-hidden="true">   
-                <form action="/presupuestos/editarProductoCotizado" method="POST" id="">
-                    {% csrf_token %}
-                    <div class="modal-dialog">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h1 class="modal-title-prod fs-5" id="editarProductoPresupuestoModalLabel">Editar cotización</h1>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                            </div>
-                            <div class="modal-body">
-                                <input type="text" id="cod_edit" name="cod_edit" readonly>
-
-                                <label for="prod_edit" style="font-weight: bold">Producto:</label>
-                                <input type="text" id="prod_edit" name="prod_edit" readonly>
-
-                                <label for="cant_edit" style="font-weight: bold">Cantidad:</label>
-                                <input type="text" id="cant_edit" name="cant_edit">
-
-                                <label for="cant_area_edit" style="font-weight: bold">Cantidad/Área:</label>
-                                <input type="text" id="cant_area_edit" name="cant_area_edit">
-                                
-                                <label for="precio_edit" style="font-weight: bold">Precio:</label>
-                                <input type="text" id="precio_edit" name="precio_edit">
-                                
-                                <label for="desc_edit" style="font-weight: bold">Descuento:</label>
-                                <input type="text" id="desc_edit" name="desc_edit">
-                                
-                                <label for="detalle_edit" style="font-weight: bold">Información adicional:</label>
-                                <input type="text" id="detalle_edit" name="detalle_edit">
-
-                                <label for="empaq_edit" style="font-weight: bold">Empaquetado:</label>
-                                <input type="checkbox" id="empaq_edit" name="empaq_edit" class="form-check-input" size="25">
-
-                                <label for="t_prod_edit" style="font-weight: bold">Tiempo de producción [hs]:</label>
-                                <input type="text" id="t_prod_edit" name="t_prod_edit">
-                            </div>
-                            <div class="modal-footer">
-                                <button type="submit" id="btn_calcular_edit" class="btn btn-dark btn-fuente" onclick=""> Guardar cambios </button>
-                                <button type="button" class="btn btn-dark btn-fuente" data-bs-dismiss="modal" onclick="">Volver atras</button>
-                            </div>
-                        </div>
-                    </div>
-                </form>
-            </div>
-            
-            <!-- Custom Js -->
-            <script src="{% static 'core/js/Index.js' %}"></script>
-        
-        {% endblock %}
-        {% block footer %}
-        
-        {% endblock %}
-    </body>
-
-</html>
+        </div>
+    </form>
+</div>
+<!-- ⚙️ Modal reutilizable -->
+{% include 'core/modal_editar_producto.html' %}
+{% endblock %}
+<!--------------------------------------------------------------------------- Block footer --------------------------------------------------------------------------->
+{% block footer %}
+{% endblock %}
+<!--------------------------------------------------------------------------- Block scripts --------------------------------------------------------------------------->
+{% block scripts %}
+<script src="{% static 'core/js/cotizacion.js' %}"></script>
+<script src="{% static 'core/js/editar_producto_cotizado.js' %}"></script>
+{% endblock %}

@@ -14,7 +14,7 @@ document.addEventListener("DOMContentLoaded", function() {
             const darkMode = data.dark_mode;
             setTheme(darkMode);
             // Llamar función que adapta el recuadro de fondo
-            adaptRecuadroFondo()
+            // adaptRecuadroFondo()
         },
         error: function() {
             // Establecer el tema en función de las preferencias obtenidas
@@ -38,14 +38,20 @@ document.addEventListener("DOMContentLoaded", function() {
 // Esta es la función que hace toda la magia. Incluida la llamada a otras funciones que cambian partes de la estructura del tema.
 function setTheme(themeValue) {
 
-    const html = document.querySelector('html');
+    const html = document.querySelector('body');
     html.setAttribute('data-bs-theme', themeValue);
+    const recuadroSemifondo = document.querySelector('.recuadro-semifondo');
 
     // Llamar a la función que edita el menú de cambio de tema según corresponda
     editThemeToggleMenu(themeValue);
 
     // Llamar a la función que cambia la imagen de fondo
     setBackgroundImageAndButtons(themeValue);
+
+    if (recuadroSemifondo) {
+        recuadroSemifondo.classList.remove('light', 'dark');
+        recuadroSemifondo.classList.add(themeValue);
+    }
 
     // Comprobar la existencia del navbar antes de llamar a editNavBar
     const recuadroFondoLogin = document.querySelector('.recuadro-fondo-login'); 
@@ -144,10 +150,10 @@ function setSvgsImages(themeValue) {
 function setBackgroundImageAndButtons(themeValue) {
 
     // Cambiar la clase de la imagen de fondo según el tema seleccionado
-    const imagenFondo = document.querySelector('.imagen-fondo');
-    imagenFondo.classList.remove('imagen-fondo-light', 'imagen-fondo-dark');
-    imagenFondo.classList.add(`imagen-fondo-${themeValue}`);
-    
+
+    const body = document.body;
+    body.classList.remove('theme-light', 'theme-dark');
+    body.classList.add(`theme-${themeValue}`);
     const btnElements = document.querySelectorAll('.btn');
     // Verificar si hay botones en el template
     if (btnElements.length > 0) {
@@ -207,27 +213,18 @@ function editNavBar(themeValue) {
 
 // Función que modifica algunos elementos de la vista de inicio de sesión
 function editLogin(themeValue) {
-    const navBar = document.querySelector('.navbar');
-    navBar.classList.remove('navbar-light', 'navbar-dark');
-    navBar.classList.remove('bg-light', 'bg-dark');
-    navBar.classList.add(`navbar-${themeValue}`);
-    navBar.classList.add(`bg-${themeValue}`);
-    const recuadroLogin = document.querySelector('.recuadro-fondo-login');
+
     const btn = document.getElementById('submit');
     const logo = document.getElementById('logo_login');
     // Verificar el valor del tema elegido
     if (themeValue === 'dark') {
         logo.classList.remove('light_login');
         logo.classList.add('dark_login');
-        recuadroLogin.classList.remove('light');
-        recuadroLogin.classList.add('dark'); 
         btn.classList.remove('btn-light');
         btn.classList.add('btn-dark');
     } else {
         logo.classList.remove('dark_login');
         logo.classList.add('light_login');
-        recuadroLogin.classList.remove('dark');
-        recuadroLogin.classList.add('light');
         btn.classList.remove('btn-dark');
         btn.classList.add('btn-light');
     }
@@ -319,82 +316,17 @@ document.addEventListener('DOMContentLoaded', function() {
 const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
 const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
 
-function adaptRecuadroFondo() {
-    const contenidoPrincipal = document.querySelector('.ContenidoPrincipal');
 
-    // Ajusta el ancho del recuadro al 90% del viewport
-    const viewportWidth = window.innerWidth;
-    contenidoPrincipal.style.width = `${viewportWidth * 0.9}px`;
-
+/**
+ * Formatea un número con dos decimales y separador de miles.
+ * Si el valor no es un número válido, lo devuelve sin cambios.
+ *
+ * @param {string|number} valor - El número a formatear.
+ * @return {string} El número formateado o el valor original si no es un número válido.
+ */
+function formatearNumero(valor) {
+  const num = typeof valor === 'string' ? parseFloat(valor.replace(',', '.')) : valor;
+  return isNaN(num)
+    ? valor
+    : num.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
-
-window.addEventListener('resize', () => adaptRecuadroFondo());
-window.addEventListener('load', () => adaptRecuadroFondo());
-
-// Función que se dispara al abrir el modal
-function cargarCategoriasYProducto(idProducto = null) {
-    // Cargar las categorías
-    $.ajax({
-        url: '/productos/infoEditarProducto', // URL para obtener las categorías
-        type: 'GET',
-        success: function(data) {
-            var categorias = data.Cate;
-            var select = $('#categ');
-            
-            // Limpiar y llenar el select de categorías
-            select.empty();
-            select.append('<option value="">Seleccione una categoría</option>');
-            categorias.forEach(function(categoria) {
-                select.append('<option value="' + categoria.id + '">' + categoria.nombre + '</option>');
-            });
-  
-            // Si es edición, cargar los datos del producto
-            if (idProducto) {
-                $.ajax({
-                    url: '/productos/obtenerProducto/' + idProducto, // URL para obtener los datos del producto
-                    type: 'GET',
-                    success: function(data) {
-                        // Rellenar los campos del formulario con los datos del producto
-                        $('#codigo').val(data.codigo);
-                        $('#nombre').val(data.nombre);
-                        $('#precio').val(data.precio);
-                        $('#ancho').val(data.ancho);
-                        $('#alto').val(data.alto);
-                        $('#factor_edit').val(data.factor);
-                        // Seleccionar la categoría correcta en el select
-                        $('#categ').val(data.categoria_id);
-                    }
-                });
-                
-                // Cambiar el título del modal para edición
-                $('#editarProductoModalLabel').text('Editar producto');
-            } else {
-                // Si es creación, limpiar todos los campos del formulario
-                $('#codigo').val('');
-                $('#nombre').val('');
-                $('#precio').val('');
-                $('#ancho').val('');
-                $('#alto').val('');
-                $('#factor_edit').val('');
-                $('#nueva_categoria').val(''); // Limpiar también el campo para nueva categoría
-  
-                // Cambiar el título del modal para creación
-                $('#editarProductoModalLabel').text('Agregar producto');
-            }
-        }
-    });
-}
-  
-// Evento que se dispara al abrir el modal
-$('#editarProductoModal').on('show.bs.modal', function(event) {
-    var button = $(event.relatedTarget); // Botón que disparó el modal
-    var idProducto = button.data('bs-whatever');  // Extrae el id del producto del atributo data-bs-whatever
-
-    // Si el valor de idProducto es " " (vacío), lo tratamos como creación
-    if (idProducto === " ") {
-        idProducto = null;
-    }
-
-    // Llama a la función con el idProducto (null si es creación)
-    cargarCategoriasYProducto(idProducto);
-});

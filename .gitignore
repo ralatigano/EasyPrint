@@ -156,6 +156,14 @@ cython_debug/
 # Lista de correcciones y mejoras pendientes
 Correcciones y mejoras.txt
 
+exportar_productos.py
+productos_exportados.json
+/core/templates/productos/productos_old.html
+/core/templates/core/base copy.html
+/core/templates/presupuestos/inicio copy.html
+/core/static/core/css/styles copy.css
+/core/static/core/js/Index copy.js
+/presupuestos/prueba.py
 # Directorios con imágenes de prueba
 /media/presupuestos/graficos/
 /media/users/

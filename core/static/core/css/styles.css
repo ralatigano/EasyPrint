@@ -1,197 +1,174 @@
-:root {
-    --fondo-light: #B1DE43;
-    --fondo-dark: #474973;
+/* === Tipo de cálculo === */
+
+/* Alineación vertical de íconos + texto */
+.form-check-label i {
+  width: 1.2em;
+  text-align: center;
+  color: #495057; /* gris Bootstrap */
 }
 
-/* Estilos generales */
-.imagen-fondo {
-    background-size: cover;
-    background-repeat: no-repeat;
-    background-position: center;
-    background-attachment: fixed;
-    width: 100vw;
-    z-index: -10;
+/* Mayor espaciado entre radios para legibilidad */
+.form-check {
+  padding: 0.6rem 0.2rem;
+  border-radius: 4px;
+  transition: background 0.3s ease;
 }
 
-.imagen-fondo-light {
+/* Hover sutil sobre opción */
+.form-check:hover {
+  background-color: #f8f9fa; /* gris claro Bootstrap */
+}
+
+/* Opción seleccionada resaltada visualmente */
+.form-check-input:checked ~ .form-check-label {
+  font-weight: 600;
+  color: #0d6efd; /* azul Bootstrap primario */
+}
+
+.form-check-input:checked ~ .form-check-label i {
+  color: #0d6efd;
+}
+
+/* Subtítulo pequeño en gris */
+.form-check-label small {
+  font-size: 0.85rem;
+  color: #6c757d; /* gris medio */
+}
+
+/* Tooltip personalizado */
+[data-bs-toggle="tooltip"] {
+  cursor: help;
+}
+
+body.theme-light {
     background-image: url(/static/core/img/light/Fondo_light.png);  
 }
 
-.imagen-fondo-dark {
+body.theme-dark {
     background-image: url(/static/core/img/dark/Fondo_dark.png); 
 }
 
-.contenedor {
-    position: relative;
-    display: grid;
-    grid-template-columns: 1fr;
-    grid-template-rows: auto 1fr auto; 
-    grid-template-areas: 
-        "Encabezado"
-        "ContenidoPrincipal"
-        "Pie";
-    min-height: 100vh;
-    align-items: center;
-    justify-content: center;
-    background-color: transparent;
+.ContenidoPrincipal {
+  margin: 0 auto;
+  padding: 0 1rem; /* Espacio lateral base */
 }
 
-.contenedor .Encabezado {
-    grid-area: Encabezado;
-    margin: 30px;
-    padding: 50px;
-    width: 100vw;
+@media (min-width: 768px) {
+  .ContenidoPrincipal {
+    max-width: 1200px;
+    padding: 0 2rem; /* Más espacio en desktop */
+  }
 }
 
-.contenedor .ContenidoPrincipal {
-    grid-area: ContenidoPrincipal;
-    margin: 10px;
-    padding: 50px;
-    min-height: 800px; 
-    overflow: auto;  
-    z-index: 10;
+.recuadro-semifondo {
+  background-color: rgba(255, 255, 255, 0.75); /* semi transparente en modo claro */
+  padding: 2rem;
+  border-radius: 1rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(3px); /* opcional pero queda fino */
+  /* max-width: 600px; */
+  margin: 2rem auto;
+  z-index: 1; /* bien atrás */
+  position: relative;
 }
 
-.contenedor .Pie {
-
-    grid-area: Pie;
+/* Tema claro */
+.recuadro-semifondo.light {
+  background-color: rgba(255, 255, 255, 0.7);
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
 
-.version {
-    position: absolute;
-    bottom: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 10;
+/* Tema oscuro */
+.recuadro-semifondo.dark {
+  background-color: rgba(0, 0, 0, 0.5);
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
 }
 
-.navbar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    width: 100vw;
-    z-index: 10;
-    font-family: 'ubuntu', sans-serif;
+/* === Base visual para radios === */
+.form-check {
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  transition: all 0.2s ease-in-out;
+  border: 1px solid transparent;
 }
 
-.navbar .izquierda {
-    text-align: left;
+/* === Hover según tema === */
+body[data-bs-theme="light"] .form-check:hover {
+  background-color: rgba(0, 0, 0, 0.05); /* gris suave */
+  border-color: rgba(0, 0, 0, 0.2);
 }
 
-.navbar .derecha {
-    text-align: right;
+body[data-bs-theme="dark"] .form-check:hover {
+  background-color: rgba(255, 255, 255, 0.1); /* blanco semi */
+  border-color: rgba(255, 255, 255, 0.3);
 }
 
-.vacio {
-    background-color: transparent;
-    height: 100px;
-    width: 100px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+/* === Opción seleccionada === */
+.form-check-input:checked ~ .form-check-label {
+  font-weight: 600; /* negrita */
 }
 
-.titulo {
-    width: 100%;
-    border-radius: 10px;
+body[data-bs-theme="light"] .form-check-input:checked ~ .form-check-label {
+  background-color: #f0f4ff;
+  border-radius: 0.5rem;
+  border: 1px solid #0d6efd;
 }
 
-.saludo {
-    position: absolute;
-    margin: 30px;
-    display: grid;
-    grid-template-columns: repeat(2, auto);
-    justify-content: left;
-    text-align: left;
-    align-items: center;
-    background-color: transparent;
-    width: 100vw;
+body[data-bs-theme="dark"] .form-check-input:checked ~ .form-check-label {
+  background-color: rgba(0, 123, 255, 0.2);
+  border-radius: 0.5rem;
+  border: 1px solid rgba(0,123,255,0.4);
 }
 
-.btn-fuente{
-    font-family: 'Ubuntu', sans-serif !important; 
-    text-transform: none; 
-}
-.btn-group {
-    position: absolute;
-    display: flex;
-    gap: 10px;
-    margin-top: 20px;
-}
-
-.texto_navbar {
-    display: flex;
-    text-align: right;
-    align-items: center;
-    gap: 10px;
-}
-
-.form-group label {
-    font-weight: bold;
-}
-
-#hora, #fecha {
-    border: none;
-}
-
-.modal-body {
-    display: grid;
-    text-align: left;
-    width: 100%;
-    gap: 10px;
-}
-
-.table{
-    border-radius: 10px;
-    overflow: hidden;
+/* === Ícono con color reactivo */
+.form-check-label i {
+  width: 1.5rem;
+  text-align: center;
+  margin-right: 0.5rem;
+  color: inherit;
 }
 
 .modal {
-    z-index: 1100; 
+  z-index: 1100 !important;
 }
-
 .modal-backdrop {
-    z-index: 1000; 
+  z-index: 1000 !important;
 }
 
-.modal-dialog {
-    margin: 1.75rem auto;
+.tabla-scroll {
+  overflow-x: auto;
+  display: block;
+  width: 100%;
+  margin-top: 1rem;
 }
 
-.rounded-circle {
-    border-radius: 50%;
-    object-fit: cover;
+@media (min-width: 768px) {
+  .label-alineado {
+    min-height: 3rem; /* o el valor que mejor se adapte a tus labels */
+    display: flex;
+    align-items: center;
+  }
+
+  #bloqueDimensiones {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 1rem;
+  }
+
+  #bloqueDimensiones > div {
+    flex: 1;
+    min-width: 0;
+  }
 }
 
-/* Iconos */
-.bi-circle-half-fill,
-.bi-sun-fill,
-.bi-moon-stars-fill,
-.bi.bi-check2 {
-    display: inline-block;
-    vertical-align: -.125em;
-    background-repeat: no-repeat;
-}
-
-
-.centered {
-    text-align: center !important;
-    vertical-align: middle !important;
-}
-
-th, td {
-    text-align: center;
-    vertical-align: middle;
-}
-
-body {
-    overflow-x: auto;  
-    margin: 0; 
-    padding: 0; 
-} 
-
-.row {
-    border-radius: 10px;
-    margin: 10px;
-    padding: 10px;
+/* Override del ícono responsive de DataTables para coherencia visual */
+table.dataTable.dtr-inline.collapsed > tbody > tr > td.dtr-control::before {
+  border-left: 14px solid #00bfff !important;
+  border-top: 7px solid transparent;
+  border-bottom: 7px solid transparent;
+  border-right: 0px solid transparent;
+  content: "";
+  display: inline-block;
+  box-sizing: border-box;
+  margin-right: 0.5em;
 }

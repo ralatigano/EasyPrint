@@ -7,6 +7,8 @@ const initDataTable=async() => {
         dataTable.destroy();
     }
     dataTable=$("#Presupuestos").DataTable({
+        order: [[0, 'desc']],
+        responsive: true,
         language: {
             lengthMenu: 'Mostrar _MENU_ presupuestos por página',
             zeroRecords: 'No hay presupuestos registrados',
@@ -95,3 +97,32 @@ function getCookie(name) {
     }
     return cookieValue;
 }
+
+$(document).on('click', '.ver-productos-btn', function () {
+    const numeroPresupuesto = $(this).data('numero');
+
+    $.ajax({
+        url: `/presupuestos/productosPorPresupuesto/${numeroPresupuesto}`,
+        method: 'GET',
+        success: function (data) {
+            const tbody = $('#tablaProductosPresupuesto');
+            tbody.empty();
+
+            data.data.forEach(prod => {
+                tbody.append(`
+                    <tr>
+                        <td>${prod.nombre}</td>
+                        <td>${prod.cantidad}</td>
+                    </tr>
+                `);
+            });
+
+            $('#btnEditarPresupuesto').attr('href', `/presupuestos/verPresupuesto/${numeroPresupuesto}`);
+            $('#btnConvertirPedido').attr('href', `/pedidos/prepararCompletarPedido/${numeroPresupuesto}`);
+            $('#modalProductosPresupuesto').modal('show');
+        },
+        error: function () {
+            alert('No se pudieron cargar los productos del presupuesto.');
+        }
+    });
+});

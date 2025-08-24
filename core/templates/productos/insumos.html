@@ -1,0 +1,140 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% load l10n %}
+<!--------------------------------------------------------------------------- Block head --------------------------------------------------------------------------->
+{% block head %}
+<!-- Custom Css -->
+<link rel="stylesheet" href="{% static 'productos/css/Insumos.css' %}">
+{% endblock %}
+<!--------------------------------------------------------------------------- Block title --------------------------------------------------------------------------->       
+{% block title %}Insumos{% endblock %}
+<!--------------------------------------------------------------------------- Block header --------------------------------------------------------------------------->
+{% block header %}
+<div class="container">
+    <div class="titulo">
+        <h1>Insumos</h1>
+    </div>
+    {% if autorizado %}
+    <div class="grupo-botones">
+        <button type="button"
+                class="btn btn-dark btn-fuente btn-xs"
+                data-bs-toggle="modal"
+                data-bs-target="#crearEditarInsumoModal"
+                data-id="0">
+            <i class="fa-solid fa-square-plus"></i> Agregar un insumo
+        </button>
+
+        <a href="{% url 'exportarInsumos' %}" class="btn btn-dark btn-xs btn-fuente">
+            <i class="fa-solid fa-download"></i> Exportar insumos en excel
+        </a>
+
+        <a href="{% url 'borrarTodosInsumos' %}" class="btn btn-dark btnEliminacion btn-xs btn-fuente">
+            <i class="fa-solid fa-land-mine-on"></i> Borrar lista de insumos
+        </a>
+
+        <form action="/productos/importarInsumos/" method="POST" enctype="multipart/form-data" id="formCargaAuto">
+            {% csrf_token %}
+            <input type="file" name="excel_file" id="excelFileInput" class="btn btn-dark btn-xs btn-fuente">
+        </form>
+    </div>
+    {% endif %}
+{% endblock %}
+<!--------------------------------------------------------------------------- Block content --------------------------------------------------------------------------->
+{% block content %}
+<div class="row">
+    <div class="col-sm-12 col-md-12 col-lg-12 col-xl-12">
+        <div class="tabla-scroll">
+            <table id="Insumos" class="table table-hover">
+                <thead>
+                    <tr>
+                        <th class="centered">Nombre</th>
+                        <th class="centered">Precio unitario $</th>
+                        <th class="centered">Unidad medida</th>
+                        <th class="centered">Stock</th>
+                        <th class="centered">Stock real</th>
+                        <th class="centered">Editar/Borrar</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody_Insumos">
+                {% for i in insumos %}
+                    <tr>
+                        <td>{{i.nombre}}</td>
+                        <td>$ {{i.precio}}</td>
+                        <td>{{i.unidad_medida}}</td>
+                        <td>{{i.stock}}</td>
+                        <td>{{i.stock_real}}</td>
+                        <td>
+                            <button type="button" class="btn btn-dark btn-xs" data-bs-toggle="modal" data-bs-target="#crearEditarInsumoModal" data-id="{{i.id}}" onclick=""><i class="fa-solid fa-pencil sm"></i></button>
+                            <a href="/productos/borrarInsumo/{{i.id}}" class="btn btn-dark btn-xs btnEliminacion"><i class="fa-solid fa-trash-can"></i></a>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+<!--------------------------------------------------------------------------- Block modal --------------------------------------------------------------------------->
+{% block modal %}
+<div class="modal fade" id="crearEditarInsumoModal" tabindex="-1" aria-labelledby="crearEditarInsumoModalLabel" data-bs-backdrop="static" aria-hidden="true">
+    <form action="/productos/guardarInsumo/" method="POST">
+        {% csrf_token %}
+        <input type="hidden" name="id_insumo" id="id_insumo" value="0">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="crearEditarInsumoModalLabel">Nuevo insumo</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                
+                <div class="modal-body">
+                    <label for="nombre" class="fw-bold">Nombre:</label>
+                    <input type="text" id="nombre" name="nombre" required class="form-control">
+                    
+                    <label for="unidad_medida" class="fw-bold">Unidad de compra:</label>
+                    <input type="text" id="unidad_medida" name="unidad_medida" class="form-control"
+                    title="Ej: paquete, rollo, frasco. Unidad en la que se adquiere el insumo">
+                    
+                    <label for="unidad_composicion" class="fw-bold">Unidad de uso:</label>
+                    <input type="text" id="unidad_composicion" name="unidad_composicion" class="form-control"
+                    title="Ej: cm², unidades, ml. Unidad con la que se consume o compone el producto">
+                    
+                    <label for="factor_conversion" class="fw-bold">Factor de conversión:</label>
+                    <input type="number" id="factor_conversion" name="factor_conversion" class="form-control" min="1" step="1" value="1"
+                    title="Cantidad de unidades de uso por cada unidad de compra. Ej: 1 rollo = 1000 cm² → factor 1000">
+                    
+                    <label for="stock" class="fw-bold">Stock actual:</label>
+                    <input type="number" id="stock" name="stock" step="0.01" class="form-control"
+                    title="Cantidad disponible del insumo en unidades de medida o de compra.">
+                    
+                    <label for="precio_unitario" class="fw-bold">Precio:</label>
+                    <input type="number" id="precio_unitario" name="precio_unitario" step="0.01" class="form-control"
+                    title="Costo por cada unidad de medida. Ej: precio de la resma o de una caja del insumo">
+                    
+                    <label for="activo" class="fw-bold">Activo:</label>
+                    <div class="form-check" title="Determina si el insumo está habilitado para ser usado en composiciones o pedidos">
+                        <input class="form-check-input" type="checkbox" id="activo" name="activo" checked>
+                        <label class="form-check-label" for="activo">Sí</label>
+                    </div>
+                </div>
+                <div id="info-modificacion" class="text-muted small mt-3"></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-dark btn-fuente" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-dark btn-fuente">Guardar</button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock  %}
+<!--------------------------------------------------------------------------- Block footer --------------------------------------------------------------------------->
+{% block footer %}
+
+{% endblock %}
+<!--------------------------------------------------------------------------- Block scripts --------------------------------------------------------------------------->
+{% block scripts %}
+<!-- Custom Js -->
+<script src="{% static 'productos/js/insumos.js' %}"></script>
+
+{% endblock %}

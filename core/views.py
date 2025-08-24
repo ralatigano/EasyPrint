@@ -3,19 +3,11 @@ from django.http import JsonResponse
 from django.contrib import messages
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.forms import AuthenticationForm
-from datetime import datetime
 from django.contrib.auth.decorators import login_required
 from .functions import *
 from django.contrib.auth.models import User, Group
 from .models import Usuario
-from productos.models import Producto, Categoria
-from presupuestos.models import Presupuesto
-from pedidos.models import Pedido
-from clientes.models import Cliente
-from datetime import date
-from django.contrib import messages
-from django.contrib.sessions.models import Session
-from django.contrib.auth import login
+from datetime import datetime
 from .forms import RegistroUsuarioForm
 
 # Create your views here.

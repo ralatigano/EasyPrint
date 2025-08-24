@@ -1,33 +1,40 @@
-{% extends 'core/base.html' %}
+{% extends 'core/base_login.html' %}
 {% load static %}
+<!--------------------------------------------------------------------------- Block head --------------------------------------------------------------------------->
+{% block head %}
+<link rel="stylesheet" href="{% static 'core/css/login.css' %}">
+{% endblock %}
+<!--------------------------------------------------------------------------- Block title --------------------------------------------------------------------------->
+{% block title %} Iniciar sesión {% endblock %}
+<!--------------------------------------------------------------------------- Block header --------------------------------------------------------------------------->
+{% block header %}
+<div class="vacio"></div>
+{% endblock %}
+<!--------------------------------------------------------------------------- Block logo --------------------------------------------------------------------------->
+{% block logo %}
+  <div class="light_login brand_login" id="logo_login"></div>
+  <!-- <div class="titulo_login">EASYPRINT</div> -->
+{% endblock %}
+<!--------------------------------------------------------------------------- Block content --------------------------------------------------------------------------->
+{% block content %}
+  <div class="recuadro-fondo-login">
+    <form action="/" method="post" class="form-login">
+      {% csrf_token %}
+      {{ form.as_p }}
+      <button id="submit" type="submit" class="btn btn-light btn-fuente">Iniciar sesión</button>
+      <br>
+      <a href="/restablecerContrasena">Olvidé mi contraseña</a>
+    </form>
+  </div>
+{% endblock %}
 
-<!DOCTYPE html>
-<html lang="es" data-bs-theme="light">
-    <head>
-        <title> {% block title %} Iniciar sesión {% endblock %} </title>
-        {% block head %}
-        <link rel="stylesheet" href="{% static 'core/css/login.css' %}">
-        {% endblock %}
-    </head>
-    <body>
-        {% block header %}
-        <div class="vacio"></div>
-        {% endblock %}
+<!--------------------------------------------------------------------------- Block modal --------------------------------------------------------------------------->
+{% block modal %}{% endblock %}
+<!--------------------------------------------------------------------------- Block footer --------------------------------------------------------------------------->
+{% block footer %}
+<div class="vacio"></div>
+{% endblock %}
+<!--------------------------------------------------------------------------- Block scripts --------------------------------------------------------------------------->
+{% block scripts %}
 
-        {% block content %}
-        <div class="recuadro-fondo-login light"></div>
-        <div id="logo_login" class="brand_login light_login"></div>
-        <form action="/" method="post" class="form-login">
-            {% csrf_token %}
-            {{ form.as_p }}
-            <button type="submit" id="submit" class="btn btn-light btn-fuente">Iniciar sesión</button>
-            <br>
-            <a href="/restablecerContrasena">Olvidé mi contraseña</a>
-        </form>
-        {% endblock %}
-        
-        {% block footer %}
-        <div class="vacio"></div>
-        {% endblock %}
-    </body>
-</html>
+{% endblock %}

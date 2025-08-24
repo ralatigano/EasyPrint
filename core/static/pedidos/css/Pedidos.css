@@ -18,3 +18,44 @@
 .form-group.btn-guardar-cancelar .button.btn.btn-success {
     grid-area : btn-success;
 }
+
+td.dtr-control::before {
+  color: #00bfff !important;
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+
+/* Estructura interna con grid */
+table.dataTable td .celda-grid {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 0.3rem;
+    white-space: normal;
+    word-break: break-word;
+}
+
+/* Bordes para trazabilidad visual */
+table.dataTable td {
+    border: black solid 1px;
+}
+
+/* Botones más compactos */
+.btn-xs {
+    padding: 0.2rem 0.4rem;
+    font-size: 0.8rem;
+    line-height: 1;
+}
+
+td.numero,
+td.estado {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 160px;
+}
+
+td.numero .contenido,
+td.estado .contenido {
+    white-space: nowrap;
+}
