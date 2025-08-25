@@ -106,3 +106,11 @@ Versión 3.0.0
     -Viajes de cadete
         *Se crea una interfaz que permite registrar y administrar los viajes del catede y su estado en relación al pago.
         
+
+****************** 25/8/2024 ******************
+Versión 3.0.1
+    -Formulario de cotización
+        *Se suma un fallback para prevenir problemas en la cotización si no se agrega un valor de separación.
+    -Insumos
+        *Se corrige un problema que impedía que los datos de los insumos sean mostrados en el modal de edición.
+    

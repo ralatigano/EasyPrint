@@ -296,7 +296,8 @@ function generarGrafico() {
   formData.append("anchoElemento", document.getElementById("inputAnchoElemento").value);
   formData.append("altoElemento", document.getElementById("inputAltoElemento").value);
   formData.append("cantidadElementos", document.getElementById("cantidadElementos").value);
-  formData.append("separacionElementos", document.getElementById("separacionElementos").value);
+  const valorSeparacion = document.getElementById("separacionElementos").value || "0";
+  formData.append("separacionElementos", valorSeparacion);
   formData.append("algoritmo", algoritmoNombre);
 
   fetch("/presupuestos/generarGrafico/", {
