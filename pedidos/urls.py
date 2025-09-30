@@ -3,7 +3,7 @@ from .views import (
     pedidos, cambiar_estado, cambiar_enc, agregar_descripcion,
     agregar_senia, completar_pedido, confirmar_pedido, get_productos_info,
     eliminar_pedido, preparar_completar_pedido,
-    viajes_cadete, guardar_viaje_cadete, borrar_viaje_cadete, info_viaje_cadete, actualizar_estado_viajes
+    viajes_cadete, guardar_viaje_cadete, borrar_viaje_cadete, info_viaje_cadete, actualizar_estado_viajes, exportar_viajes_cadete
 )
 
 
@@ -34,4 +34,6 @@ urlpatterns = [
          info_viaje_cadete, name='infoViajeCadete'),
     path('actualizarEstadoViajes', actualizar_estado_viajes,
          name='actualizarEstadoViajes'),
+    path('exportarViajesCadete', exportar_viajes_cadete,
+         name='exportar_viajes_cadete'),
 ]

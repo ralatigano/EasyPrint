@@ -500,15 +500,15 @@ def guardar_insumo(request):
         insumo.factor_conversion = data.get("factor_conversion") or 1
         insumo.precio = data.get("precio_unitario") or 0
         insumo.activo = data.get("activo") == "on"
-
         cantidad_repuesta = data.get("stock") or 0
+        insumo.stock = cantidad_repuesta
 
         if id_insumo and id_insumo != "0":
             mensaje_reposicion = procesar_reposicion_insumo_por_edicion(request,
                                                                         insumo, cantidad_repuesta)
             messages.success(request, mensaje)
             messages.error(request, mensaje_reposicion)
-
+        insumo.save()
         return redirect("insumos")
 
 

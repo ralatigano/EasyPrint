@@ -9,10 +9,11 @@ from clientes.models import Cliente
 from django.contrib.auth.models import User
 from django.contrib import messages
 from .functions import *
-from django.http import JsonResponse, Http404
+from django.http import JsonResponse, Http404, HttpResponse
 from datetime import datetime
 from django.utils import timezone
 import json
+from openpyxl import Workbook
 
 # Create your views here.
 app_name = 'pedidos'
@@ -534,3 +535,43 @@ def actualizar_estado_viajes(request):
     except Exception as e:
         messages.error(request, f"Error: {str(e)}")
         return JsonResponse({"redirect_url": reverse("viajesCadete")})
+
+
+def exportar_viajes_cadete(request):
+    # Filtrar solo los viajes no pagados
+    viajes = ViajeCadete.objects.filter(fecha_pago__isnull=True)
+
+    # Crear workbook
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Viajes NO pagados"
+
+    # Encabezados
+    ws.append(["Fecha", "Origen", "Destino", "Precio", "Estado"])
+
+    total = 0
+
+    for v in viajes:
+        precio = float(v.precio)
+        total += precio
+        ws.append([
+            v.fecha.strftime("%d/%m/%Y"),
+            v.origen,
+            v.destino,
+            precio,
+            "Pendiente"
+        ])
+
+    # Fila totalizadora
+    ws.append(["", "", "TOTAL", total, ""])
+
+    # Estilo opcional: negrita en la fila total
+    from openpyxl.styles import Font
+    for cell in ws[ws.max_row]:
+        cell.font = Font(bold=True)
+
+    response = HttpResponse(
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename=viajes_no_pagados.xlsx'
+    wb.save(response)
+    return response

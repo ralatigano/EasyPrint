@@ -17,6 +17,9 @@
     </button>
     <button class="btn btn-dark btn-fuente btn-xs" id="btnMarcarPagados">Marcar como pagados</button>
     <button class="btn btn-dark btn-fuente btn-xs" id="btnMarcarNoPagados">Marcar como NO pagados</button>
+    <a href="{% url 'exportar_viajes_cadete' %}">
+      <button class="btn btn-dark btn-fuente btn-xs">Exportar NO pagados a excel</button>
+    </a>
 </div>
 {% endblock %}
 <!--------------------------------------------------------------------------- Block content --------------------------------------------------------------------------->
@@ -32,7 +35,10 @@
                             <th class="centered">Fecha</th>
                             <th class="centered">Origen &rarr; Destino</th>
                             <th class="centered">Precio</th>
-                            <th class="centered">Estado</th>
+                            <th class="centered">
+                              <input type="checkbox" id="selectAllViajesPendientes">
+                              Estado
+                            </th>
                             <th class="centered">Fecha de pago</th>
                             <th class="centered">Editar/Borrar</th>
                         </tr>
@@ -80,7 +86,10 @@
                             <th class="centered">Fecha</th>
                             <th class="centered">Origen &rarr; Destino</th>
                             <th class="centered">Precio</th>
-                            <th class="centered">Estado</th>
+                            <th class="centered">
+                              <input type="checkbox" id="selectAllViajesPagados">
+                              Estado
+                            </th>
                             <th class="centered">Fecha de pago</th>
                             <th class="centered">Borrar</th>
                         </tr>

@@ -3,37 +3,52 @@ let dataTablePagados;
 let dataTableIsInitilized=false;
 // Lógica que inicializa la dataTable Pedidos.
 const initDataTablesViajes=async() => {
-    if(dataTableIsInitilized){
-        dataTablePendientes.destroy();
-        dataTablePagados.destroy();
-    }
-const configComun = {
-    responsive: true,
-    columnDefs: [
-      { responsivePriority: 1, targets: 0 }, // Fecha
-      { responsivePriority: 4, targets: 1 }, // Origen/Destino
-      { responsivePriority: 2, targets: 2 }, // Precio
-      { responsivePriority: 3, targets: 3 }, // Estado
-      { responsivePriority: 5, targets: 4 }, // Fecha de pago
-    ],
-    language: {
-      lengthMenu: 'Mostrar _MENU_ viajes por página',
-      zeroRecords: 'No hay viajes registrados',
-      info: 'Mostrando de _START_ a _END_ de _TOTAL_ viajes',
-      infoEmpty: 'No hay viajes',
-      infoFiltered: '(filtrado de _MAX_ viajes totales)',
-      search: 'Buscar:',
-      loadingRecords: 'Cargando...',
-      paginate: {
-        first: 'Primero',
-        last: 'Último',
-        next: 'Siguiente',
-        previous: 'Anterior'
+  if(dataTableIsInitilized){
+      dataTablePendientes.destroy();
+      dataTablePagados.destroy();
+  }
+
+  // 🔄 Resetear todos los checkboxes antes de inicializar
+  document.querySelectorAll('.estado-checkbox').forEach(cb => {
+    cb.checked = false;
+  });
+  const checkboxGlobal = document.getElementById('selectAllViajesPendientes');
+  if (checkboxGlobal) {
+    checkboxGlobal.checked = false;
+  }
+  const checkboxGlobalPagados = document.getElementById('selectAllViajesPagados');
+  if (checkboxGlobalPagados) {
+    checkboxGlobalPagados.checked = false;
+  }
+  const configComun = {
+      responsive: true,
+      columnDefs: [
+        { responsivePriority: 1, targets: 0 }, // Fecha
+        { responsivePriority: 4, targets: 1 }, // Origen/Destino
+        { responsivePriority: 2, targets: 2 }, // Precio
+        { responsivePriority: 3, targets: 3 }, // Estado
+        { responsivePriority: 5, targets: 4 }, // Fecha de pago
+      ],
+      language: {
+        lengthMenu: 'Mostrar _MENU_ viajes por página',
+        zeroRecords: 'No hay viajes registrados',
+        info: 'Mostrando de _START_ a _END_ de _TOTAL_ viajes',
+        infoEmpty: 'No hay viajes',
+        infoFiltered: '(filtrado de _MAX_ viajes totales)',
+        search: 'Buscar:',
+        loadingRecords: 'Cargando...',
+        paginate: {
+          first: 'Primero',
+          last: 'Último',
+          next: 'Siguiente',
+          previous: 'Anterior'
+        }
       }
-    }
   };
   dataTablePendientes=$("#ViajesPendientes").DataTable({...configComun});
   dataTablePagados=$("#ViajesPagados").DataTable({...configComun});
+  vincularCheckboxesConSelectAll('ViajesCadete', 'selectAllViajesPendientes');
+  vincularCheckboxesConSelectAll('ViajesCadetePagados', 'selectAllViajesPagados');
   dataTableIsInitilized=true;
 };
 
@@ -155,3 +170,33 @@ document.addEventListener("DOMContentLoaded", function () {
     enviarActualizacionEstado(ids, false);
   });
 });
+
+
+function vincularCheckboxesConSelectAll(idTabla, idCheckboxGlobal) {
+  const tabla = document.getElementById(idTabla);
+  const checkboxGlobal = document.getElementById(idCheckboxGlobal);
+
+  if (!tabla || !checkboxGlobal) return;
+
+  const checkboxes = tabla.querySelectorAll('.estado-checkbox');
+
+  // Reset inicial
+  checkboxGlobal.checked = false;
+  checkboxes.forEach(cb => cb.checked = false);
+
+  // Vinculación: marcar todos
+  checkboxGlobal.addEventListener('change', function () {
+    checkboxes.forEach(cb => {
+      cb.checked = checkboxGlobal.checked;
+    });
+  });
+
+  // Vinculación: sincronizar estado del global
+  checkboxes.forEach(cb => {
+    cb.addEventListener('change', function () {
+      const allChecked = Array.from(checkboxes).every(c => c.checked);
+      checkboxGlobal.checked = allChecked;
+    });
+  });
+}
+

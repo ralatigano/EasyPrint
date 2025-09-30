@@ -72,7 +72,7 @@ Versión 2.6.0
         *Se modifica la interacción con la plantilla de completar pedido así como la vista que recibe el post de dicha plantilla para poder modificar
         el nombre del cliente o incluso para incorporar el nombre que se usara en el formulario inicial.
 
-****************** 23/8/2024 ******************
+****************** 23/8/2025 ******************
 Versión 3.0.0
 
     -General
@@ -107,10 +107,17 @@ Versión 3.0.0
         *Se crea una interfaz que permite registrar y administrar los viajes del catede y su estado en relación al pago.
         
 
-****************** 25/8/2024 ******************
+****************** 25/8/2025 ******************
 Versión 3.0.1
     -Formulario de cotización
         *Se suma un fallback para prevenir problemas en la cotización si no se agrega un valor de separación.
     -Insumos
         *Se corrige un problema que impedía que los datos de los insumos sean mostrados en el modal de edición.
-    
+
+****************** 29/9/2025 ******************
+Versión 3.0.2
+    -Insumos
+        *Se corrige un problema que impedía crear insumos mediante el modal correspondiente.
+    -Viajes cadete
+        *Se agrega un checkbox en el encabezado de las tablas para permitir seleccionar/deseleccionar todas las filas visibles de la tabla.
+        *Se agrega un botón para descargar un excel con los registros de los viajes NO pagados.
