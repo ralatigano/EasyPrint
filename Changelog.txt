@@ -121,3 +121,8 @@ Versión 3.0.2
     -Viajes cadete
         *Se agrega un checkbox en el encabezado de las tablas para permitir seleccionar/deseleccionar todas las filas visibles de la tabla.
         *Se agrega un botón para descargar un excel con los registros de los viajes NO pagados.
+
+****************** 4/10/2025 ******************
+Versión 3.0.3
+    -Presupuestos
+        *Se cambia los botones que indican el tipo de cálculo que se está por realizar para hacer la interfaz mas amigable para el usuario.
