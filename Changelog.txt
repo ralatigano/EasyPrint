@@ -126,3 +126,24 @@ Versión 3.0.2
 Versión 3.0.3
     -Presupuestos
         *Se cambia los botones que indican el tipo de cálculo que se está por realizar para hacer la interfaz mas amigable para el usuario.
+
+****************** 4/1/2026 ******************
+Versión v3.1.0
+    -Presupuestos
+        *Se modifica el fomulario inicial para que el usuario pueda agregar una "nombre de producto final" al producto cotizado del estilo: "Tarjetas personales", "Stickers" 
+        para facilitar la comprensión de que se está cotizando.
+        *Se cambia algunas etiquetas del formulario inicial a pedido del usuario. El campo Producto ahora se llama Insumo y se agrega un nuevo campo Producto al final del
+        formulario.
+        *Se acomoda la estructura de los modales para que responda a los cambios realizados en el formulario de cotización.
+        *Se estructura la lógica del modal que muestra el resultado de la cotización de modo que muestre una descripción compuesta por el insumo de un producto, sus dimensiones
+        y la cantidad de hojas/pliegos necesarios para realizarlo.
+        *Se modifica los datos que se incluyen en el presupuesto para mayor claridad del mismo. Ahora se incluye la información del "producto final" en lugar del insumo.
+        *Se mejora la funcionalidad de descarga de presupuesto prescindiendo de la carga de librerías innecesarias para la descarga. Se borran los archivos que quedaron obsoletos.
+    -Productos
+        *Se modifica el modelo de producto cotizado para que sea un poco mas coherente con el lenguaje del usuario. Ahora los productos cotizados tienen un insumo relacionado
+        en lugar de un producto (distinción de nombre, no confundir entre modelos de base de datos).
+        *Ahora los productos cotizados tienen un campo producto final y una descripción compuesta con información específica de la cotización. 
+    -Pedidos
+        *Se estructura las vistas y modales de modo que muestren la información que solicita el cliente en función de las modificaciones que se hicieron sobre el modelo de
+        producto cotizado.
+        *Se agregan filtros a la vista de pedidos para poder ocultar/mostrar pedidos según el estado, los productos finales que involucran o el cliente.

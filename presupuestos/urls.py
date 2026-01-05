@@ -5,7 +5,7 @@ from .views import (
     Inicio, presupuestos, guardar_presupuesto, editar_presupuesto, editar_producto_cotizado, generar_presupuesto_pdf,
     obtener_cliente, cambiar_cliente, productos_por_presupuesto,
     borrar_imagen_generada, generar_grafico, calcular_cotizacion_final, agregar_producto, descartar_producto, delete_calc_presupuesto,
-    destroy_calc_presupuesto, info_prod_cotizado,
+    destroy_calc_presupuesto, info_prod_cotizado, actualizar_detalle,
 )
 
 
@@ -20,6 +20,7 @@ urlpatterns = [
          name='borrarImagenGenerada'),
     path('calcularCotizacionFinal', calcular_cotizacion_final,
          name='calcularCotizacionFinal'),
+    path("actualizarDetalle", actualizar_detalle, name="actualizarDetalle"),
     path('agregarProducto', agregar_producto, name='agregarProducto'),
     path('descartarProducto', descartar_producto, name='descartarProducto'),
     # vista que permite borrar un producto del presupuesto que se está armando.

@@ -19,6 +19,12 @@ class Cliente(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now_add=True)
 
+    @property
+    def referencia(self):
+        if self.negocio:
+            return f"{self.nombre} | {self.negocio}"
+        return self.nombre
+
     def __str__(self):
         return self.nombre
 

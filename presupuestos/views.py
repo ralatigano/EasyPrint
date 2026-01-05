@@ -6,6 +6,7 @@ from .models import Presupuesto
 from django.contrib.auth.models import User
 from django.contrib import messages
 from .functions import *
+from presupuestos.models import DetalleSugerido
 from productos.models import ProductoCotizado, Categoria, Producto
 from clientes.models import Cliente
 from django.http import HttpResponse, JsonResponse, Http404
@@ -16,6 +17,7 @@ from django.template.loader import render_to_string
 from weasyprint import HTML
 from datetime import date
 from decimal import Decimal, InvalidOperation
+import json
 
 # Create your views here.
 app_name = 'presupuestos'
@@ -44,6 +46,7 @@ def Inicio(request):
         descuento += p.desc_plata
         totalNeto = total-descuento
     Cat = Categoria.objects.all()
+    Sugerencias = DetalleSugerido.objects.order_by("-frecuencia")
     data = {
         'usuario': usuario_nombre,
         'img': img,
@@ -53,7 +56,8 @@ def Inicio(request):
         'Prods': Prods,
         'total': total,
         'descuento': descuento,
-        'totalNeto': totalNeto
+        'totalNeto': totalNeto,
+        'Sugerencias': Sugerencias
     }
 
     return render(request, 'presupuestos/inicio.html', data)
@@ -96,11 +100,17 @@ def generar_grafico(request):
 @csrf_exempt
 def calcular_cotizacion_final(request):
     if request.method == "POST":
-        print(request.POST)
         producto_id = int(request.POST.get("producto_id"))
         cantidad = int(request.POST.get("cantidadElementos"))
         empaquetado = request.POST.get("empaquetado") == "true"
-        extra = request.POST.get("inputExtra", "")
+        producto_final = request.POST.get("producto_final", "").strip()
+        info_adic = request.POST.get("info_adic", "").strip()
+        if producto_final.strip():
+            obj, created = DetalleSugerido.objects.get_or_create(
+                texto=producto_final.strip())
+            if not created:
+                obj.frecuencia += 1
+                obj.save()
         tipo_cotizacion = request.POST.get("tipoCotizacion", "D")
         cantidad_producto = 0
         # Conversión segura
@@ -143,10 +153,11 @@ def calcular_cotizacion_final(request):
         total_bruto = subtotal + costo_produccion + precio_empaquetado
         total_con_descuento = total_bruto * \
             (1 - descuento / 100) if descuento > 0 else total_bruto
-        print(f'resultado_grafico: {resultado_grafico} precio_producto: {precio_producto} subtotal: {subtotal} costo_produccion: {costo_produccion} total_con_descuento: {total_con_descuento} total_bruto: {total_bruto}')
         # Guardar en sesión
         request.session["cotizacion_previa"] = {
             "producto_id": producto_id,
+            "producto_final": producto_final,
+            "info_adic": info_adic,
             "cantidad": cantidad,
             "resultado_grafico": float(resultado_grafico),
             "tiempo_produccion": float(tiempo),
@@ -154,19 +165,42 @@ def calcular_cotizacion_final(request):
             "descuento": float(descuento),
             "total_bruto": float(total_bruto),
             "precio_total": float(total_con_descuento),
-            "detalle": extra
+            # "detalle": extra
         }
 
         return JsonResponse({
-            "producto": producto.nombre,
+            "insumo": producto.nombre,
+            "producto_final": producto_final,
+            "info_adic": info_adic,
             "cantidad": cantidad,
             "resultado_grafico": resultado_grafico,
             "precio_total": round(total_con_descuento, 2),
             "descuento": f"{descuento}%",
             "empaquetado": f"SI" if empaquetado else "NO",
             "tiempo_produccion": float(tiempo),
-            "detalle": extra
+            # "detalle": extra
         })
+
+
+@csrf_exempt
+def actualizar_detalle(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            detalle = data.get("detalle", "").strip()
+
+            if "cotizacion_previa" in request.session:
+                request.session["cotizacion_previa"]["detalle"] = detalle
+                request.session.modified = True
+
+            return JsonResponse({"status": "ok", "detalle": detalle})
+
+        except Exception as e:
+            return JsonResponse({"status": "error", "message": str(e)}, status=400)
+
+    return JsonResponse({"status": "error", "message": "Método no permitido"}, status=405)
+
+
 # Vista que procesa una llamada desde el frontend para borrar todos los gráficos que se generan durante la cotización.
 
 
@@ -211,60 +245,60 @@ def agregar_producto(request):
     vendedor = User.objects.get(id=request.session.get('vendedor'))
     datos = request.session.get("cotizacion_previa")
     url = ''
+
     if not datos:
         messages.error(
             request, "No se encontraron datos para agregar el producto.")
         return redirect("/presupuestos")
 
-    if editando_presup:
-        try:
-            producto = Producto.objects.get(id=datos["producto_id"])
-            total_bruto = Decimal(str(datos["total_bruto"]))
-            desc_porcentaje = Decimal(str(datos["descuento"]))
-            desc_plata = Decimal(total_bruto * desc_porcentaje /
-                                 100 if desc_porcentaje > 0 else 0)
-            ProductoCotizado.objects.create(
-                presupuesto=Presupuesto.objects.get(numero=np_global),
-                cliente=None,
-                producto=producto,
-                cantidad=datos["cantidad"],
-                resultado=Decimal(str(datos["precio_total"])),
-                desc_plata=desc_plata,
-                desc_porcentaje=desc_porcentaje,
-                t_produccion=datos["tiempo_produccion"],
-                empaquetado=datos["empaquetado"],
-                info_adic=datos["detalle"],
-                vendedor=vendedor
-            )
+    try:
+        # --- Datos base ---
+        insumo = Producto.objects.get(id=datos["producto_id"])
+        producto_final = datos.get("producto_final", "").strip()
+        descripcion = datos.get("detalle", "").strip()  # detalle extendido
+        info_adic = datos.get("info_adic", "").strip()
+
+        cantidad = datos["cantidad"]
+        total_bruto = Decimal(str(datos["total_bruto"]))
+        desc_porcentaje = Decimal(str(datos["descuento"]))
+        desc_plata = Decimal(total_bruto * desc_porcentaje /
+                             100 if desc_porcentaje > 0 else 0)
+
+        resultado = Decimal(str(datos["precio_total"]))
+        t_produccion = datos["tiempo_produccion"]
+        empaquetado = datos["empaquetado"]
+
+        # --- Crear instancia ---
+        kwargs = {
+            "insumo": insumo,
+            "producto_final": producto_final,
+            "descripcion": descripcion,
+            "info_adic": info_adic,
+            "cantidad": cantidad,
+            "resultado": resultado,
+            "desc_plata": desc_plata,
+            "desc_porcentaje": desc_porcentaje,
+            "t_produccion": t_produccion,
+            "empaquetado": empaquetado,
+            "vendedor": vendedor,
+        }
+
+        if editando_presup:
+            kwargs["presupuesto"] = Presupuesto.objects.get(numero=np_global)
+            ProductoCotizado.objects.create(**kwargs)
             messages.success(request, "Producto agregado al presupuesto.")
             url = f'/presupuestos/verPresupuesto/{np_global}'
-            del request.session["cotizacion_previa"]
-        except Exception as e:
-            messages.error(request, f"Error al agregar producto: {str(e)}")
-
-    else:
-        try:
-            producto = Producto.objects.get(id=datos["producto_id"])
-            total_bruto = Decimal(str(datos["total_bruto"]))
-            desc_porcentaje = Decimal(str(datos["descuento"]))
-            desc_plata = Decimal(total_bruto * desc_porcentaje /
-                                 100 if desc_porcentaje > 0 else 0)
-            ProductoCotizado.objects.create(
-                producto=producto,
-                cantidad=datos["cantidad"],
-                resultado=Decimal(str(datos["precio_total"])),
-                desc_plata=desc_plata,
-                desc_porcentaje=desc_porcentaje,
-                t_produccion=datos["tiempo_produccion"],
-                empaquetado=datos["empaquetado"],
-                info_adic=datos["detalle"],
-                vendedor=request.user
-            )
+        else:
+            ProductoCotizado.objects.create(**kwargs)
             messages.success(request, "Producto agregado al presupuesto.")
             url = '/presupuestos/inicio'
-            del request.session["cotizacion_previa"]
-        except Exception as e:
-            messages.error(request, f"Error al agregar producto: {str(e)}")
+
+        # Limpiar sesión
+        del request.session["cotizacion_previa"]
+
+    except Exception as e:
+        messages.error(request, f"Error al agregar producto: {str(e)}")
+        return redirect("/presupuestos")
 
     return redirect(url)
 
@@ -619,7 +653,7 @@ def info_prod_cotizado(request, producto_id):
         precio_empaquetado = Producto.objects.get(
             nombre="Empaquetado").precio_proveedor
         data = {
-            'producto_nombre': producto.producto.nombre,
+            'producto_nombre': producto.insumo.nombre,
             'info_adicional': producto.info_adic,
             'precio': producto.precio_bruto,
             'resultado': producto.resultado,
@@ -690,7 +724,7 @@ def editar_producto_cotizado(request):
 def productos_por_presupuesto(request, presupuesto_numero):
     productos = ProductoCotizado.objects.filter(presupuesto=presupuesto_numero)
     data = [
-        {"nombre": p.producto.nombre, "cantidad": p.cantidad}
+        {"nombre": p.producto_final, "cantidad": p.cantidad}
         for p in productos
     ]
     return JsonResponse({"data": data})

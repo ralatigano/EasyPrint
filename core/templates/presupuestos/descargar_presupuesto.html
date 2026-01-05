@@ -1,98 +1,190 @@
-
 {% load static %}
 {% load l10n %}
 <!DOCTYPE html>
-<html>
+<html lang="es">
     <head>
-        <!-- Bootstrap -->
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
-        <!-- Custom Css -->
-        <link rel="stylesheet" href="{{ css_path }}">
-        <!-- DataTables -->
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.3.0/css/bootstrap.min.css">
-        <link rel="stylesheet" href="https://cdn.datatables.net/2.0.2/css/dataTables.dataTables.css">
-        <!-- Ícono -->
-        <link rel="shortcut icon" href="{%  static 'core/img/easy1.png' %}">
-        <title>{% block title %} Presupuesto N° {{np}} {% endblock %}</title>
+    <meta charset="UTF-8">
+    <title>Presupuesto {{ np }}</title>
+
+    <style>
+        @page {
+            size: A4;
+            margin: 0;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        /* CONTENEDOR A4 */
+        #a4-container {
+            width: 21cm;
+            height: 29.7cm;
+            margin: auto;
+            padding: 10mm;
+            box-sizing: border-box;
+            position: relative;
+        }
+
+        /* IMÁGENES */
+        #a4-container img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        /* ENCABEZADO */
+        .encabezado img {
+            width: 100%;
+        }
+
+        /* POSICIONES ABSOLUTAS (como tu versión original) */
+        .texto-superpuesto {
+            position: absolute;
+            font-size: 20px;
+            font-weight: bold;
+            background: transparent;
+        }
+
+        #n_presupuesto {
+            top: 135px;
+            left: 600px;
+        }
+
+        #dia {
+            top: 245px;
+            left: 600px;
+        }
+
+        #mes {
+            top: 245px;
+            left: 640px;
+        }
+
+        #anio {
+            top: 245px;
+            left: 670px;
+        }
+
+        .cliente-img img {
+            width: 100%;
+            margin-top: 30px; /* Ajustable */
+        }
+
+        #cliente {
+            top: 375px;
+            left: 130px;
+            width: 1000px;
+            font-size: 20px;
+        }
+
+        /* TABLA */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 30px; /* debajo del encabezado */
+            font-size: 12px;
+        }
+
+        th, td {
+            border: 1px solid #000;
+            padding: 6px;
+        }
+
+        th {
+            background: #eee;
+        }
+
+        /* TOTALES */
+        .total-label {
+            text-align: right;
+            font-weight: bold;
+        }
+
+        .total-value {
+            font-weight: bold;
+        }
+
+        /* FOOTER */
+        .redes img {
+            width: 100%;
+            margin-top: 20px;
+        }
+    </style>
     </head>
+
     <body>
-        <div id="a4-container">
-            <header>
-                <input type="text" id="n_presupuesto" name="n_presupuesto" class="form-control" value="{{np}}">
-                <input type="text" id="dia" name="dia" class="form-control" value="{{dia}}">
-                <input type="text" id="mes" name="mes" class="form-control" value="{{mes}}">
-                <input type="text" id="anio" name="anio" class="form-control" value="{{anio}}">
-                <div class="presupuesto encabezado imagen-fondo">
-                    <img src="{{ img_base }}presupuesto.png" alt="encabezado">
-                </div>
-            </header>
-            <main>
-                <input type="text" id="cliente" name="cliente" class="form-control" value="{{cliente}}">
-                <div class="presupuesto cliente imagen-fondo">
-                    <img src="{{ img_base }}clientenew.png" alt="cliente">
-                </div>
-                <br>
-                <br>
-                <div class="presupuesto tabla">
-                    <table id="Descarga_Presupuesto" class="table table-bordered">
 
-                        <thead>
-                            <tr>
-                                <th class="centered">Cantidad</th>
-                                <th class="centered">Servicio</th>
-                                <th class="centered">Descripción</th>
-                                <th class="centered">Precio</th>
-                                <th class="centered">Descuento</th>
-                                <th class="centered">Subtotal</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tableBody_Presupuesto">
-                            {% for c in Prods %}
-                                <tr>
-                                    <td>{{c.cantidad}}</td>
-                                    <td>{{c.producto}}</td>
-                                    <td>{{c.info_adic}}</td>
-                                    <td>$ {{c.precio_bruto|localize}}</td>
-                                    <td>$ {{c.desc_plata|localize}}</td>
-                                    <td>$ {{c.resultado|localize}}</td>
-                                </tr>
-                            {% endfor %} 
-                        </tbody>
-                        <tfoot>
-                            <tr>
-                                <td colspan="5" style="text-align:right; font-weight: bold;">Total bruto:</td>
-                                <td>$ {{total|localize}}</td>
-                            </tr>
-                            <tr>
-                                <th colspan="5" style="text-align:right">Subtotal Descuento:</th>
-                                <th>$ {{descuento|localize}}</th>
-                            </tr>
-                            <tr>
-                                <th colspan="5" style="text-align:right">Total:</th>
-                                <th>$ {{total_neto|localize}}</th>
-                            </tr>
-                        </tfoot>
-                    </table>
-                </div>
-                <img class="redes" src="{{ img_base }}footernew.png" alt="redes">
-            </main>
+    <div id="a4-container">
 
-            <footer>
-                <img class="disclaimer" src="{{ img_base }}disclaimernew.png" alt="Img_disclaimer">
-                <br>
-                <br>
-                <img class="redes" src="{{ img_base }}footernew.png" alt="redes">
-            </footer>
+        <!-- ENCABEZADO -->
+        <div class="encabezado">
+            <img src="{{ img_base }}presupuesto.png">
         </div>
-        <!-- Bootstrap -->
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
-        <!-- Custom Js -->
-        <script src="{% static 'presupuestos/js/Descarga_Presupuesto.js' %}"></script>
-        <!-- jQuery -->
-        <script src="https://code.jquery.com/jquery-3.7.1.js"></script> 
-        <!-- DataTables.Js -->
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
-        <script src="https://cdn.datatables.net/2.0.2/js/dataTables.js"></script>
-        <script src="https://cdn.datatables.net/2.0.2/js/dataTables.bootstrap5.js"></script> 
+
+        <!-- TEXTOS SUPERPUESTOS -->
+        <div id="n_presupuesto" class="texto-superpuesto">{{ np }}</div>
+        <div id="dia" class="texto-superpuesto">{{ dia }}</div>
+        <div id="mes" class="texto-superpuesto">{{ mes }}</div>
+        <div id="anio" class="texto-superpuesto">{{ anio }}</div>
+
+        <div class="cliente-img">
+            <img src="{{ img_base }}clientenew.png">
+        </div>
+        <div id="cliente" class="texto-superpuesto">{{ cliente }}</div>
+
+        <!-- TABLA COMPLETA -->
+        <table>
+            <thead>
+                <tr>
+                    <th>Cantidad</th>
+                    <th>Producto</th>
+                    <th>Precio</th>
+                    <th>Descuento</th>
+                    <th>Subtotal</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for c in Prods %}
+                <tr>
+                    <td>{{ c.cantidad }}</td>
+                    <td>{{ c.producto_final }}</td>
+                    <td>$ {{ c.precio_bruto|localize }}</td>
+                    <td>$ {{ c.desc_plata|localize }}</td>
+                    <td>$ {{ c.resultado|localize }}</td>
+                </tr>
+                {% endfor %}
+
+                <!-- TOTALES -->
+                <tr>
+                    <td></td>
+                    <td colspan="3" class="total-label">Total bruto:</td>
+                    <td class="total-value">$ {{ total|localize }}</td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td colspan="3" class="total-label">Subtotal descuento:</td>
+                    <td class="total-value">$ {{ descuento|localize }}</td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td colspan="3" class="total-label">Total neto:</td>
+                    <td class="total-value">$ {{ total_neto|localize }}</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- DISCLAIMER -->
+        <br>
+        <img class="redes" src="{{ img_base }}footernew.png" alt="redes">
+        <img class="disclaimer" src="{{ img_base }}disclaimernew.png" alt="Img_disclaimer">
+        <br>
+        <br>
+        <img class="redes" src="{{ img_base }}footernew.png" alt="redes">
+    </div>
+
     </body>
 </html>

@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
 from django.db import transaction
 from .models import Pedido, ViajeCadete
-from presupuestos.models import Presupuesto
+from presupuestos.models import Presupuesto, DetalleSugerido
 from productos.models import ProductoCotizado, ComponenteProducto, FaltanteInsumo
 from clientes.models import Cliente
 from django.contrib.auth.models import User
@@ -27,9 +27,15 @@ def pedidos(request):
     usuario_nombre = request.session.get('usuario_nombre')
     img = request.session.get('img')
     Peds = Pedido.objects.order_by('-numero').all()
-
+    clientes = Cliente.objects.all().order_by("nombre")
+    sugerencias = DetalleSugerido.objects.order_by('-frecuencia')
+    estados = ['Sin seña', 'Señado', 'En proceso',
+               'Para retirar', 'Entregado', 'Pagado', 'Cancelado']
     data = {
         'Peds': Peds,
+        'Clientes': clientes,
+        'Sugerencias': sugerencias,
+        'Estados': estados,
         'usuario': usuario_nombre,
         'img': img,
         'autorizado': autorizado,
@@ -70,7 +76,7 @@ def completar_pedido(request):
             presupuesto=None).filter(vendedor=vendedor)
     lista = []
     for p in Prods:
-        lista.append(f'{p.cantidad} {p.producto}')
+        lista.append(f'{p.cantidad} {p.insumo}')
         t = t + p.resultado
         d = d + p.desc_plata
         c = cli
@@ -233,7 +239,7 @@ def confirmar_pedido(request):
         request.session['confirma'] = True
 
     # Armar lista de productos para el pedido
-    list_p = [f'{p.cantidad} {p.producto}' for p in Prods]
+    list_p = [f'{p.cantidad} {p.producto_final}' for p in Prods]
 
     # Procesar cliente
     consumidor_final = Cliente.objects.get(nombre="Consumidor final")
@@ -263,9 +269,9 @@ def confirmar_pedido(request):
 
         # Segunda pasada: actualizar insumos
         for p in Prods:
-            if not p.producto.tercerizado:
+            if not p.insumo.tercerizado:
                 actualizar_stock_insumos(
-                    p.producto, p.cantidad, modo='descontar',
+                    p.insumo, p.cantidad, modo='descontar',
                     request=request, pedido=pedido
                 )
 
@@ -291,8 +297,10 @@ def get_productos_info(request):
     productos_info = []
     for p in productos:
         productos_info.append({
-            'producto': p.producto.nombre,  # 👈 nombre del producto
-            'info_adic': p.info_adic or '',  # evitar nulls
+            'insumo': p.insumo.nombre,  # 👈 nombre del producto
+            'producto_final': p.producto_final or '',
+            'descripcion': p.descripcion or '',
+            'info_adic': p.info_adic or '',
             'empaquetado': p.empaquetado,
             'cantidad': p.cantidad,
         })
@@ -308,9 +316,9 @@ def eliminar_pedido(request, pedido_id):
             presupuesto=pedido.presupuesto)
 
         for p in productos:
-            if not p.producto.tercerizado:
+            if not p.insumo.tercerizado:
                 actualizar_stock_insumos(
-                    p.producto, p.cantidad, modo='reponer')
+                    p.insumo, p.cantidad, modo='reponer')
 
         pedido.delete()
         messages.success(

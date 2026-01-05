@@ -93,9 +93,15 @@ class ComponenteProducto(models.Model):
 
 
 class ProductoCotizado(models.Model):
-    producto = models.ForeignKey(Producto, on_delete=models.PROTECT)
+    insumo = models.ForeignKey(Producto, on_delete=models.PROTECT)
     presupuesto = models.ForeignKey(
         Presupuesto, on_delete=models.PROTECT, null=True, blank=True)
+    # Lo que se entrega al cliente
+    producto_final = models.CharField(max_length=255, null=True, blank=True)
+
+    # Descripción generada automáticamente
+    descripcion = models.TextField(null=True, blank=True)
+
     cantidad = models.FloatField(default=1)
 
     desc_plata = models.DecimalField(
@@ -113,7 +119,7 @@ class ProductoCotizado(models.Model):
     info_adic = models.TextField(null=True, blank=True)
 
     def __str__(self):
-        return f"{self.producto.nombre} x {self.cantidad} - ${self.resultado}"
+        return f"{self.insumo.nombre} x {self.cantidad} - ${self.resultado}"
 
     @property
     def precio_bruto(self):

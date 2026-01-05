@@ -93,9 +93,9 @@
       </select>
     </div>
     <div class="col-md-6">
-      <label class="form-label">Producto</label>
+      <label class="form-label">Insumo</label>
       <select id="selectProducto" class="form-select">
-        <option value="">Seleccione un producto</option>
+        <option value="">Seleccione un insumo</option>
       </select>
     </div>
   </div>
@@ -147,12 +147,23 @@
     </div>
   </div>
 
-  <!-- 📝 Información adicional -->
+  <!-- 📝 Producto -->
   <div class="row mt-3">
     <div class="col">
-      <label class="form-label">Información adicional</label>
-      <textarea id="inputExtra" class="form-control" rows="3"></textarea>
+      <label class="form-label">Producto</label>
+      <input id="inputProductoFinal" class="form-control" list="sugerenciasExtra">
+      <datalist id="sugerenciasExtra">
+          {% for sug in Sugerencias %}
+            <option value="{{ sug.texto }}">
+          {% endfor %}
+      </datalist>
     </div>
+  </div>
+  <div class="row mt-3">
+      <div class="col">
+          <label class="form-label">Información adicional</label>
+          <input id="inputInfoAdic" class="form-control" placeholder="Detalles del pedido (opcional)">
+      </div>
   </div>
 
   <!-- 📊 Sección gráfica -->
@@ -209,7 +220,7 @@
                   <tbody id="tableBody_Presupuesto">
                       {% for c in Prods %}
                       <tr>
-                          <td>{{ c.producto }}</td>
+                          <td>{{ c.insumo }}</td>
                           <td>{{ c.empaquetado|yesno:"Sí,No" }}</td>
                           <td>{{ c.cantidad }}</td>
                           <td>$ {{ c.precio_bruto|localize }}</td>
@@ -296,7 +307,9 @@
                     <p>Descuento: <span id="descuento_prev" style="font-weight: bold"></span></p>
                     <p>Empaquetado: <span id="empaquetado_prev" style="font-weight: bold"> </span></p>
                     <p>Tiempo de producción [hs]: <span id="t_produccion_prev" style="font-weight: bold"> </span></p>
-                    <p>Detalle: <span id="detalle_prev" style="font-weight: bold"> </span></p>
+                    <p>Producto final: <span id="producto_final_prev" style="font-weight: bold"></span></p>
+                    <p>Información adicional: <span id="info_adic_prev" style="font-weight: bold"></span></p>
+                    <p>Detalle: <span id="detalle_prev"></span></p>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-dark"><a href="/presupuestos/agregarProducto" style="text-decoration: none;"> Agregar </a></button>

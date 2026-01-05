@@ -428,7 +428,8 @@ function calcularCotizacion() {
   formData.append("cantidadElementos", document.getElementById("cantidadElementos").value);
   formData.append("inputTiempo", document.getElementById("inputTiempo").value);
   formData.append("empaquetado", document.getElementById("checkEmpaquetado").checked);
-  formData.append("inputExtra", document.getElementById("inputExtra").value);
+  formData.append("producto_final", document.getElementById("inputProductoFinal").value);
+  formData.append("info_adic", document.getElementById("inputInfoAdic").value);
   formData.append("descuento", document.getElementById("inputDescuento").value || 0);
   const tipoCotizacion = document.querySelector('input[name="tipoProducto"]:checked')?.value || "D";
   formData.append("tipoCotizacion", tipoCotizacion);
@@ -456,7 +457,9 @@ function calcularCotizacion() {
 }
 
 function mostrarModalResultado(data) {
-  document.getElementById("prod_prev").textContent = data.producto;
+  document.getElementById("prod_prev").textContent = data.insumo;
+  document.getElementById("producto_final_prev").textContent = data.producto_final;
+  document.getElementById("info_adic_prev").textContent = data.info_adic;
   document.getElementById("cant_prev").textContent = data.cantidad;
   document.getElementById("cant_area_prev").textContent = formatearNumero(data.resultado_grafico);
   document.getElementById("precio_prev").textContent = formatearNumero(data.precio_total);
@@ -466,6 +469,48 @@ function mostrarModalResultado(data) {
   document.getElementById("detalle_prev").textContent = data.detalle;
 
   const modal = new bootstrap.Modal(document.getElementById("resultadoPrevioModal"));
+
+  // Datos de dimensiones desde el DOM
+  const anchoElem = document.getElementById("inputAnchoElemento").value;
+  const altoElem = document.getElementById("inputAltoElemento").value;
+  const anchoHoja = document.getElementById("inputAnchoHoja").value;
+  const altoHoja = document.getElementById("inputAltoHoja").value;
+
+  // Cantidad de pliegos/hojas calculada por el backend
+  const pliegos = Number(data.resultado_grafico).toLocaleString("es-AR", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
+
+  // Armar texto final
+  let detalleFinal = "";
+
+  detalleFinal += `${data.producto_final}\n\n`;
+
+  detalleFinal += `Dimensiones: ${anchoElem} × ${altoElem} cm\n`;
+  //detalleFinal += `Dimensiones de la hoja/pliego: ${anchoHoja} × ${altoHoja} cm\n`;
+  detalleFinal += `Cantidad de hojas/m2: ${pliegos}`;
+
+  // Insertar en el modal
+  document.getElementById("detalle_prev").textContent = detalleFinal;
+  
+  // --- Actualizar la sesión en el backend ---
+  fetch("/presupuestos/actualizarDetalle", {
+      method: "POST",
+      headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": getCookie("csrftoken")
+      },
+      body: JSON.stringify({ detalle: detalleFinal })
+  })
+  .then(res => res.json())
+  .then(data => {
+      console.log("Detalle actualizado en sesión:", data);
+  })
+  .catch(err => {
+      console.error("Error al actualizar detalle:", err);
+  });
+
   modal.show();
 }
 

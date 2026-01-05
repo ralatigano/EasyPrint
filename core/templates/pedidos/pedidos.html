@@ -17,7 +17,39 @@
 <!--------------------------------------------------------------------------- Block content --------------------------------------------------------------------------->
 {% block content %}
 <div class="container">
-    <div class="row">    
+    <div class="row">
+        <div class="row mb-3">
+            <div class="col-md-4">
+                <label for="filtroCliente" class="form-label">Cliente</label>
+                <select id="filtroCliente" class="form-select">
+                <option value="">Todos</option>
+                {% for cliente in Clientes %}
+                    <option value="{{ cliente.referencia }}">{{ cliente.referencia }}</option>
+                {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-4">
+                <label for="filtroProducto" class="form-label">Producto</label>
+                <select id="filtroProducto" class="form-select">
+                <option value="">Todos</option>
+                {% for sugerencia in Sugerencias %}
+                    <option value="{{ sugerencia.texto }}">{{ sugerencia.texto }}</option>
+                {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-4">
+                <label for="filtroEstado" class="form-label">Estado</label>
+                <select id="filtroEstado" class="form-select">
+                <option value="">Todos</option>
+                {% for estado in Estados %}
+                    <option value="{{ estado }}">{{ estado }}</option>
+                {% endfor %}
+                </select>
+            </div>
+        </div>
+    
         <div class="col-sm-12 col-md-12 col-lg-12 col-xl-12">
             <div class="tabla-scroll">
                 <table id="Pedidos" class="table table-hover">
@@ -130,7 +162,7 @@
 {% block modal %}
 <!-- Modal Ver Detalles -->
 <div class="modal fade" id="detallesModal" tabindex="-1" aria-labelledby="detallesModalLabel" data-bs-backdrop="static" aria-hidden="true">   
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header">
                 <h1 class="modal-title-detalles fs-5" id="detallesModalLabel">Modal Title</h1>
@@ -140,7 +172,8 @@
                 <table class="table">
                     <thead>
                         <tr>
-                        <th>Nombre</th>
+                        <th>Insumo</th>
+                        <th>Producto</th>
                         <th>Información Adicional</th>
                         <th>Empaquetado</th>
                         <th>Cantidad</th>

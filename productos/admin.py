@@ -40,22 +40,22 @@ class ComponenteProductoAdmin(admin.ModelAdmin):
 @admin.register(ProductoCotizado)
 class ProductoCotizadoAdmin(admin.ModelAdmin):
     list_display = (
-        'producto',
-        'producto__tercerizado',
-        'producto__factor',
-        'producto__categoria',
-        'producto__activo',
+        'insumo',
+        'insumo__tercerizado',
+        'insumo__factor',
+        'insumo__categoria',
+        'insumo__activo',
         'cantidad',
         'empaquetado',
         'resultado'
     )
     list_filter = (
-        'producto__tercerizado',
-        'producto__activo',
-        'producto__categoria',
+        'insumo__tercerizado',
+        'insumo__activo',
+        'insumo__categoria',
         'empaquetado'
     )
-    search_fields = ('producto__nombre', 'cliente')
+    search_fields = ('insumo__nombre', 'cliente')
     readonly_fields = ('resultado',)
     ordering = ('-id',)
 

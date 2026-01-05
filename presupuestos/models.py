@@ -22,3 +22,11 @@ class Presupuesto(models.Model):
         ordering = ["-created"]
         verbose_name = "Presupuesto"
         verbose_name_plural = "Presupuestos"
+
+
+class DetalleSugerido(models.Model):
+    texto = models.CharField(max_length=255, unique=True)
+    frecuencia = models.PositiveIntegerField(default=1)
+
+    def __str__(self):
+        return self.texto

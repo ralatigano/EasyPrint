@@ -150,7 +150,7 @@ $('#detallesModal').on('show.bs.modal', function (event) {
           data.productos.forEach(function (producto) {
             var empaquetado = producto.empaquetado ? 'Si' : 'No';
             $('#productosTableBody').append(
-                '<tr><td>' + producto.producto + '</td><td>' + producto.info_adic + '</td><td>' + empaquetado + '</td><td>' + producto.cantidad + '</td></tr>'
+                '<tr><td>' + producto.insumo + '</td><td>' + producto.descripcion + '</td><td>' + producto.info_adic + '</td><td>' + empaquetado + '</td><td>' + producto.cantidad + '</td></tr>'
             );
         });
       }
@@ -190,3 +190,34 @@ $('#detallesModal').on('show.bs.modal', function (event) {
         });
     }
 })();
+
+
+//Manejo de filtros en vista de pedidos.
+function aplicarFiltros() {
+  const clienteFiltro = document.getElementById("filtroCliente").value.toLowerCase();
+  const productoFiltro = document.getElementById("filtroProducto").value.toLowerCase();
+  const estadoFiltro = document.getElementById("filtroEstado").value.toLowerCase();
+
+  const filas = document.querySelectorAll("#tableBody_Pedido tr");
+
+  filas.forEach(fila => {
+    const cliente = fila.children[1].textContent.toLowerCase();
+    const productos = fila.children[2].querySelector(".contenido").textContent.toLowerCase();
+    const estado = fila.children[3].querySelector(".contenido").textContent.toLowerCase();
+
+    const coincideCliente = !clienteFiltro || cliente.includes(clienteFiltro);
+    const coincideProducto = !productoFiltro || productos.includes(productoFiltro);
+    const coincideEstado = !estadoFiltro || estado.includes(estadoFiltro);
+
+    if (coincideCliente && coincideProducto && coincideEstado) {
+      fila.style.display = "";
+    } else {
+      fila.style.display = "none";
+    }
+  });
+}
+
+// Escuchar cambios en los filtros
+["filtroCliente", "filtroProducto", "filtroEstado"].forEach(id => {
+  document.getElementById(id).addEventListener("change", aplicarFiltros);
+});

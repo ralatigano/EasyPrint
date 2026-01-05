@@ -1,5 +1,6 @@
 from django.contrib import admin
-from .models import Presupuesto
+from .models import Presupuesto, DetalleSugerido
+
 # Register your models here.
 
 
@@ -13,3 +14,9 @@ class AdminPresupuesto(admin.ModelAdmin):
 
 
 admin.site.register(Presupuesto, AdminPresupuesto)
+
+
+@admin.register(DetalleSugerido)
+class DetalleSugeridoAdmin(admin.ModelAdmin):
+    list_display = ("texto", "frecuencia")
+    search_fields = ("texto",)
