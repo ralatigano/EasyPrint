@@ -5,7 +5,7 @@ from .views import (
     Inicio, presupuestos, guardar_presupuesto, editar_presupuesto, editar_producto_cotizado, generar_presupuesto_pdf,
     obtener_cliente, cambiar_cliente, productos_por_presupuesto,
     borrar_imagen_generada, generar_grafico, calcular_cotizacion_final, agregar_producto, descartar_producto, delete_calc_presupuesto,
-    destroy_calc_presupuesto, info_prod_cotizado, actualizar_detalle,
+    destroy_calc_presupuesto, info_prod_cotizado, actualizar_detalle, set_cliente_session
 )
 
 
@@ -38,6 +38,8 @@ urlpatterns = [
     path('verPresupuesto/<int:np>', editar_presupuesto, name='verPresupuesto'),
     path('descargarPresupuesto/<int:np>',
          generar_presupuesto_pdf, name='descargarPresupuestoPDF'),
+    # Vista auxiliar para guardar el cliente en la sesión para poder usarlo en el flujo de guardar presupuesto o confirmar pedido.
+    path('setClienteSession', set_cliente_session, name='setClienteSession'),
     # Funcionalidad para editar el cliente desde la vista de presupuestos.
     path('obtenerCliente/', obtener_cliente, name='obtenerCliente'),
     path('cambiarCliente/', cambiar_cliente, name='cambiarCliente'),

@@ -68,7 +68,18 @@
             <!-- Input para el nombre del cliente -->
             <div class="mb-3">
                 <label for="nuevoCliente" class="col-form-label">Nombre del Cliente:</label>
-                <input type="text" class="form-control" id="nuevoCliente" name="nuevoCliente" placeholder="Nombre del cliente">
+                <input list="lista_clientes_modal"
+                    type="text"
+                    class="form-control"
+                    id="nuevoCliente"
+                    name="nuevoCliente"
+                    placeholder="Nombre del cliente">
+
+                <datalist id="lista_clientes_modal">
+                    {% for c in Clientes %}
+                        <option value="{{ c.referencia }}"></option>
+                    {% endfor %}
+                </datalist>
             </div>
             </div>
             <div class="modal-footer">

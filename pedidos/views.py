@@ -29,8 +29,7 @@ def pedidos(request):
     Peds = Pedido.objects.order_by('-numero').all()
     clientes = Cliente.objects.all().order_by("nombre")
     sugerencias = DetalleSugerido.objects.order_by('-frecuencia')
-    estados = ['Sin seña', 'Señado', 'En proceso',
-               'Para retirar', 'Entregado', 'Pagado', 'Cancelado']
+    estados = [e[0] for e in Pedido.ESTADOS]
     data = {
         'Peds': Peds,
         'Clientes': clientes,
@@ -61,37 +60,41 @@ def completar_pedido(request):
     vendedor = request.session.get('vendedor')
     img = request.session.get('img')
     n_ped = armar_numero_pedido()
+    estados = [e[0] for e in Pedido.ESTADOS]
     t = 0
     d = 0
     t_d = 0
-    c = ''
     if editando_presup:
         pre = Presupuesto.objects.get(numero=np_global)
-        cli = pre.cliente
+        cli = pre.cliente.referencia
         Prods = ProductoCotizado.objects.filter(presupuesto=np_global)
     else:
-        client_input = request.GET.get('cliente', '').strip()
+        client_input = request.session.get('cliente_input', 'Consumidor final')
         cli = client_input
         Prods = ProductoCotizado.objects.filter(
             presupuesto=None).filter(vendedor=vendedor)
+    print(f'cli: {cli}, request.GET.get(cliente_input): {client_input}')
     lista = []
     for p in Prods:
         lista.append(f'{p.cantidad} {p.insumo}')
         t = t + p.resultado
         d = d + p.desc_plata
-        c = cli
     t_d = round(t - d, 2)
+    lista_clientes = Cliente.objects.all().order_by('-frecuencia', 'nombre')
     data = {
         'img': img,
         'editando_presup': editando_presup,
         'np': np_global,
         'n_ped': n_ped,
-        'cliente': c,
+        'cliente': cli,
         'prods': lista,
         'total': t,
         'descuento': d,
         'total_neto': t_d,
+        'clientes': lista_clientes,
+        'Estados': estados
     }
+    request.session.pop('cliente_input', None)
     return render(request, 'pedidos/completar_pedido.html', data)
 
 # Vista que maneja el POST del modal correspondiente para editar el estado de un pedido.
@@ -226,8 +229,11 @@ def confirmar_pedido(request):
     np_global = request.session.get('np_global', 0)
     vendedor = request.session.get('vendedor')
     n_pedido = request.POST['n_pedido']
-    pre = request.POST['total_neto']
-    se = request.POST['senia']
+    precio = float(request.POST['total_neto'].replace(',', '.'))
+    senia = float(request.POST['senia'].replace(',', '.'))
+    saldo = round(precio - senia, 2)
+    fecha_entrega = datetime.strptime(
+        request.POST['fecha_entrega'], "%Y-%m-%d").date()
     url = '/pedidos' if editando_presup else '/presupuestos/guardarPresupuesto'
 
     # Obtener productos cotizados
@@ -245,10 +251,43 @@ def confirmar_pedido(request):
     consumidor_final = Cliente.objects.get(nombre="Consumidor final")
     client_input = request.POST['cliente'].strip()
     if client_input:
-        client_obj = Cliente.objects.filter(
-            nombre__iexact=client_input).first()
-        if not client_obj:
-            client_obj = Cliente.objects.create(nombre=client_input)
+
+        # Caso 1: viene "Nombre | Negocio"
+        if "|" in client_input:
+            nombre, negocio = [x.strip() for x in client_input.split("|", 1)]
+
+            client_obj = Cliente.objects.filter(
+                nombre__iexact=nombre,
+                negocio__iexact=negocio
+            ).first()
+
+            if client_obj:
+                client_obj.frecuencia = (client_obj.frecuencia or 0) + 1
+                client_obj.save()
+            else:
+                client_obj = Cliente.objects.create(
+                    nombre=nombre,
+                    negocio=negocio,
+                    frecuencia=1
+                )
+
+        # Caso 2: viene solo nombre → cliente nuevo o cliente sin negocio
+        else:
+            client_obj = Cliente.objects.filter(
+                nombre__iexact=client_input,
+                negocio__isnull=True
+            ).first()
+
+            if client_obj:
+                client_obj.frecuencia = (client_obj.frecuencia or 0) + 1
+                client_obj.save()
+            else:
+                client_obj = Cliente.objects.create(
+                    nombre=client_input,
+                    negocio=None,
+                    frecuencia=1
+                )
+
     else:
         client_obj = consumidor_final
 
@@ -258,13 +297,13 @@ def confirmar_pedido(request):
             numero=n_pedido,
             producto=', '.join(list_p),
             descripcion=request.POST['info_adic'],
-            precio=float(pre.replace(',', '.')),
-            senia=float(se.replace(',', '.')),
-            saldo=round(float(pre.replace(',', '.')) -
-                        float(se.replace(',', '.')), 2),
+            precio=precio,
+            senia=senia,
+            saldo=saldo,
             estado=request.POST['estado'],
             presupuesto=request.POST['n_presupuesto'],
             cliente=client_obj,
+            fecha_entrega=fecha_entrega,
         )
 
         # Segunda pasada: actualizar insumos
@@ -288,16 +327,18 @@ def confirmar_pedido(request):
 
 def get_productos_info(request):
     presupuesto_id = request.GET.get('presupuesto_id')
-
+    pedido_numero = request.GET.get('pedido_numero')
+    print(presupuesto_id, pedido_numero)
     if not presupuesto_id:
         return JsonResponse({'error': 'Presupuesto ID no proporcionado'}, status=400)
 
+    # Obtener productos cotizados
     productos = ProductoCotizado.objects.filter(presupuesto_id=presupuesto_id)
 
     productos_info = []
     for p in productos:
         productos_info.append({
-            'insumo': p.insumo.nombre,  # 👈 nombre del producto
+            'insumo': p.insumo.nombre,
             'producto_final': p.producto_final or '',
             'descripcion': p.descripcion or '',
             'info_adic': p.info_adic or '',
@@ -305,7 +346,29 @@ def get_productos_info(request):
             'cantidad': p.cantidad,
         })
 
-    return JsonResponse({'productos': productos_info})
+    # Si NO se envió pedido_numero → devolver solo productos (modal de detalles)
+    if not pedido_numero:
+        return JsonResponse({'productos': productos_info})
+
+    # Si SÍ se envió pedido_numero → devolver también datos del pedido
+    try:
+        pedido = Pedido.objects.get(numero=pedido_numero)
+        pedido_info = {
+            'numero': pedido.numero,
+            'cliente': pedido.cliente.referencia,
+            'fecha_pedido': pedido.created.strftime('%d/%m/%Y'),
+            'fecha_entrega': pedido.fecha_entrega.strftime('%d/%m/%Y') if pedido.fecha_entrega else '',
+            'precio': pedido.precio,
+            'senia': pedido.senia,
+            'saldo': pedido.saldo,
+        }
+    except Pedido.DoesNotExist:
+        pedido_info = {}
+
+    return JsonResponse({
+        'productos': productos_info,
+        'pedido': pedido_info
+    })
 
 
 @login_required

@@ -16,51 +16,57 @@
 <form action="/pedidos/confirmarPedido" method="POST">
     {% csrf_token %}
     <div class="form-group cliente">
-        <label for="cliente" style="font-weight: bold; color:white">Cliente:</label>
-        <input type="text" id="cliente" name="cliente" class="form-control" placeholder="Cliente" value="{{cliente}}">
+        <label for="cliente" style="font-weight: bold">Cliente:</label>
+        <input list="lista_clientes" id="cliente" name="cliente" class="form-control" placeholder="Cliente" value="{{cliente}}" required>
+        <datalist id="lista_clientes">
+            {% for c in clientes %}
+                <option value="{{ c.referencia }}"></option>
+            {% endfor %}
+        </datalist>
     </div>
     <div class="form-group n_pedido">
-        <label for="n_pedido" style="font-weight: bold; color:white">N° Pedido</label>
+        <label for="n_pedido" style="font-weight: bold">N° Pedido</label>
         <input type="text" id="n_pedido" name="n_pedido" class="form-control" value="{{n_ped}}" readonly>
     </div>
     <div class="form-group codigo">
-        <label for="n_presupuesto" style="font-weight: bold; color:white">N° Presupuesto:</label>
+        <label for="n_presupuesto" style="font-weight: bold">N° Presupuesto:</label>
         <input type="text" id="n_presupuesto" name="n_presupuesto" class="form-control" value="{{np}}" readonly>
     </div>
     <div class="form-group productos">
-        <label for="productos" style="font-weight: bold; color:white">Productos:</label>  
+        <label for="productos" style="font-weight: bold">Productos:</label>  
         <ul id="productos" name="productos" class="form-control" style="list-style-type:none">
         {% for p in prods %}
             <li>{{p}}</li> 
         {% endfor %}
         </ul>
     </div>
+    <div class="form-group fecha-entrega">
+        <label for="fecha_entrega" style="font-weight: bold">Fecha de entrega:</label>
+        <input type="date" id="fecha_entrega" name="fecha_entrega" class="form-control" required>
+    </div>
     <div class="form-group info_adic">
-        <label for="info_adic" style="font-weight: bold; color:white">Información adicional</label>
+        <label for="info_adic" style="font-weight: bold">Información adicional</label>
         <input type="textarea" id="info_adic" name="info_adic" class="form-control" placeholder="Información adicional">
     </div>
     <div class="form-group">
-        <label for="total" style="font-weight: bold; color:white">Subtotal: $</label>
+        <label for="total" style="font-weight: bold">Subtotal: $</label>
         <input type="text" id="total" name="total" class="form-control" value="{{total|localize}}" readonly>
-        <label for="descuento" style="font-weight: bold; color:white">Descuento: $</label>
+        <label for="descuento" style="font-weight: bold">Descuento: $</label>
         <input type="text" id="descuento" name="descuento" class="form-control" value="{{descuento|localize}}" readonly>
-        <label for="total_neto" style="font-weight: bold; color:white">Total Neto: $</label>
+        <label for="total_neto" style="font-weight: bold">Total Neto: $</label>
         <input type="text" id="total_neto" name="total_neto" class="form-control" value="{{total_neto|localize}}" readonly>
     </div>
     <div class="form-group categoria">
-        <label for="estado" style="font-weight: bold; color:white">Estado</label>
-        <select name="estado" id="estado" class="form-control">
-            <option value="Sin seña">Sin seña</option>
-            <option value="Señado">Señado</option>
-            <option value="Em proceso">En proceso</option>
-            <option value="Para retirar">Para retirar</option>
-            <option value="Entregado">Entregado</option>
-            <option value="Pagado">Pagado</option>
-            <option value="Cancelado">Cancelado</option>
+        <label for="estado" style="font-weight: bold">Estado</label>
+        <select name="estado" id="estado" class="form-control select">
+            <option value="">Elegir un estado</option>
+            {% for estado in Estados %}
+                <option value="{{ estado }}">{{ estado }}</option>
+            {% endfor %}
         </select>
     </div>
     <div class="form-group">
-        <label for="senia" style="font-weight: bold; color:white">Seña: $</label>
+        <label for="senia" style="font-weight: bold">Seña: $</label>
         <input type="text" id="senia" name="senia" class="form-control" value=0>
     </div>
     <br>

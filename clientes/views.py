@@ -16,12 +16,13 @@ def clientes(request):
     usuario_nombre = request.session.get('usuario_nombre')
     img = request.session.get('img')
     clientes = Cliente.objects.all().order_by('-created')
-
+    categorias = [c[1] for c in Cliente.CONTACTO]
     data = {
         'usuario': usuario_nombre,
         'autorizado': autorizado,
         'img': img,
         'clientes': clientes,
+        'Categorias': categorias
     }
 
     return render(request, 'clientes/clientes.html', data)

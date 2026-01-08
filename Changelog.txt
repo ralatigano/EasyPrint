@@ -147,3 +147,19 @@ Versión v3.1.0
         *Se estructura las vistas y modales de modo que muestren la información que solicita el cliente en función de las modificaciones que se hicieron sobre el modelo de
         producto cotizado.
         *Se agregan filtros a la vista de pedidos para poder ocultar/mostrar pedidos según el estado, los productos finales que involucran o el cliente.
+
+****************** #/#/#### ******************
+Versión v3.1.1
+    -Pedidos
+        *Se modifican las opciones disponibles para el estado de un pedido para que se ajusten mejor a la necesidad del cliente.
+        *Se agraga un campo de fecha de entrega en la vista de confirmación de pedido y se modifica el modelo en función de eso.
+        *Se agrega un modal de información complementaria (fechas, seña, saldo, etc) para que el usuario pueda capturar la información ordenada y compartirla con el cliente.
+        *Se corrige el comportamiento de los inputs de cliente para que sugieran clientes existentes en la base de datos facilitando su uso.
+        *Se corrige la vista de completar pedido para que se vea apropiadamente cuando se utiliza el tema claro.
+        *Se automatiza el pasaje de los estados de un pedido para que dependan directamente de los valores del modelo.
+    -Presupuestos
+        *Se corrige el comportamiento el input de cliente para que sugieran clientes existentes en la base de datos facilitando su uso en la vista de nuevo presupuesto.
+    -Clientes
+        *Se agrega el atributo de frecuencia al modelo para poder optimizar la sugerencias en la interfaz.
+        *Se corrigen detalles de la vista de clientes para que muestre la información de forma mas prolija en la tabla.
+        *Se automatiza el pasaje de los métodos de contacto para que dependan directamente de los valores del modelo.

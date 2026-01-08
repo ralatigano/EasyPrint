@@ -194,12 +194,17 @@
   {% if Prods %}
   <div class="container mt-4">
       <div class="row mb-3">
-          <div class="col-12 cliente-field">
-              <label for="cliente">Cliente:</label>
-              <input type="text" id="cliente_input" name="cliente_input" class="form-control"
-                    value="{{ cliente|default:'Consumidor final' }}"
-                    placeholder="Nombre del cliente">
-          </div>
+        <div class="col-12 cliente-field">
+            <label for="cliente">Cliente:</label>
+            <input list="lista_clientes"  type="text" id="cliente_input" name="cliente_input" class="form-control"
+                  value="{{ cliente|default:'Consumidor final' }}"
+                  placeholder="Nombre del cliente">
+            <datalist id="lista_clientes">
+                {% for c in clientes %}
+                    <option value="{{ c.referencia }}"></option>
+                {% endfor %}
+            </datalist>
+        </div>
       </div>
 
       <div class="row">
@@ -274,11 +279,17 @@
                   </a>
               {% endif %}
 
-              <a id="guardarPresupuestoLink" href="#" onclick="guardarPresupuesto()" class="btn btn-outline-dark" title="Guardar presupuesto para editar o descargar luego.">
+              <a id="guardarPresupuestoLink"
+                href="#"
+                onclick="syncClienteYEnviar('/presupuestos/guardarPresupuesto')"
+                class="btn btn-outline-dark">
                   <i class="fa-solid fa-sd-card"></i> Guardar presupuesto
               </a>
-
-              <a id="completarPedidoLink" href="/pedidos/completarPedido" class="btn btn-outline-dark" title="Confirmar pedido si el cliente ya está decidido.">
+              
+              <a id="completarPedidoLink"
+                href="#"
+                onclick="syncClienteYEnviar('/pedidos/completarPedido')"
+                class="btn btn-outline-dark">
                   <i class="fa-solid fa-check"></i> Confirmar pedido
               </a>
           </div>

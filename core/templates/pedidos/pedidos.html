@@ -65,7 +65,7 @@
                             <th class="centered">Seña</th>
                             <th class="centered">Saldo</th>
                             <th class="centered">Presupuesto</th>
-                            <th class="centered">Fecha de creación</th>
+                            <th class="centered">Fecha de entrega</th>
                         </tr>
                     </thead>
                     <tbody id="tableBody_Pedido">
@@ -75,6 +75,14 @@
                                     <div class="numero">
                                         <div class="contenido">{{ p.numero }}</div>
                                         <div class="acciones">
+                                            <button type="button"
+                                                    class="btn btn-dark btn-xs"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#confirmacionModal"
+                                                    data-info="{{ p.numero }}|{{ p.presupuesto }}"
+                                                    title="Ver confirmación para enviar al cliente">
+                                                <i class="fa-solid fa-circle-info"></i>
+                                            </button>
                                             <a href="/pedidos/eliminarPedido/{{ p.numero }}" class="btn btn-dark btn-xs btnEliminacion" title="Eliminar pedido">
                                                 <i class="fa-solid fa-trash-can"></i>
                                             </a>
@@ -147,7 +155,7 @@
                                     <a href="/presupuestos/verPresupuesto/{{ p.presupuesto }}">{{ p.presupuesto }}</a>
                                 </td>
 
-                                <td>{{ p.created }}</td>
+                                <td>{{ p.fecha_entrega }}</td>
 
                             </tr>
                         {% endfor %} 
@@ -160,6 +168,30 @@
 {% endblock %}
 <!--------------------------------------------------------------------------- Block modal --------------------------------------------------------------------------->
 {% block modal %}
+<!-- Modal confirmaación seña -->
+<div class="modal fade" id="confirmacionModal" tabindex="-1" aria-labelledby="confirmacionModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content p-4">
+      <div class="modal-header">
+        <h5 class="modal-title" id="confirmacionModalLabel">Confirmación del pedido</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        <p><strong>Cliente:</strong> <span id="confCliente"></span></p>
+        <p><strong>Fecha de pedido:</strong> <span id="confFechaPedido"></span></p>
+        <p><strong>Fecha de entrega potencial:</strong> <span id="confFechaEntrega"></span></p>
+        <hr>
+        <div id="confProductos" class="mb-3"></div>
+        <hr>
+        <p><strong>Precio:</strong> $ <span id="confPrecio"></span></p>
+        <p><strong>Seña:</strong> $ <span id="confSenia"></span></p>
+        <p><strong>Saldo:</strong> $ <span id="confSaldo"></span></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+
 <!-- Modal Ver Detalles -->
 <div class="modal fade" id="detallesModal" tabindex="-1" aria-labelledby="detallesModalLabel" data-bs-backdrop="static" aria-hidden="true">   
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
@@ -205,14 +237,10 @@
                     <input type="text" id="cambiarPedido_estado" name="cambiarPedido_estado" readonly="true" hidden>
                     <label for="estado" style="font-weight: bold">Seleccionar el nuevo estado:</label>
                     <select name="estado" id="estado" class="form-control select">
-                        <option value="Elegir un estado">Elegir un estado</option>
-                        <option value="Sin seña">Sin seña</option>
-                        <option value="Señado">Señado</option>
-                        <option value="En proceso">En proceso</option>
-                        <option value="Para retirar">Para retirar</option>
-                        <option value="Entregado">Entregado</option>
-                        <option value="Pagado">Pagado</option>
-                        <option value="Cancelado">Cancelado</option>
+                        <option value="">Elegir un estado</option>
+                        {% for estado in Estados %}
+                            <option value="{{ estado }}">{{ estado }}</option>
+                        {% endfor %}
                     </select>
                 </div>
                 <div class="modal-footer">

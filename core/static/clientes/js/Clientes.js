@@ -31,14 +31,12 @@ window.addEventListener("load", async() => {
 });
 
 // Función que controla el modal de editar cliente, toma valores del data-bs-whatever y los muestra en el modal
-const editarClienteModal = document.getElementById('editarClienteModal')
+const editarClienteModal = document.getElementById('editarClienteModal');
 editarClienteModal.addEventListener('show.bs.modal', event => {
-  //botón que lanza el modal
-  const button = event.relatedTarget
-  //obtengo el código del producto y su nombre para mostrarlo en el modal
-  //{{c.id}}|{{c.nombre}}|{{c.negocio}}|{{c.cuit}}|{{c.telefono}}|{{c.direccion}}|{{c.metodo_contacto}}
-  const recipient = button.getAttribute('data-bs-whatever')
-  var partes = recipient.split('|');
+  const button = event.relatedTarget;
+  const recipient = button.getAttribute('data-bs-whatever');
+  const partes = recipient.split('|');
+
   const id = partes[0];
   const nombre = partes[1];
   const negocio = partes[2];
@@ -47,21 +45,32 @@ editarClienteModal.addEventListener('show.bs.modal', event => {
   const direccion = partes[5];
   const met_contacto = partes[6];
 
-  //cambio el texto del título del modal
-  const modalTitle = editarClienteModal.querySelector('.modal-title')
-  modalTitle.textContent = `Editar Cliente: ${nombre}`
+  const modalTitle = editarClienteModal.querySelector('.modal-title');
+  modalTitle.textContent = `Editar Cliente: ${nombre}`;
+
+  // Helper para aplicar clase si está vacío
+  function setCampo(idCampo, valor, placeholder) {
+    const campo = $(`#${idCampo}`);
+    campo.val(valor);
+    campo.attr("placeholder", placeholder);
+    if (!valor || valor.trim() === "") {
+      campo.addClass("campo-vacio");
+    } else {
+      campo.removeClass("campo-vacio");
+    }
+  }
 
   $("#id").val(id);
-  $("#nombre").val(nombre);
-  $("#negocio").val(negocio);
-  $("#cuit").val(cuit);
-  $("#telefono").val(telefono);
-  $("#direccion").val(direccion);
+  setCampo("nombre", nombre, "Sin dato");
+  setCampo("negocio", negocio, "Sin dato");
+  setCampo("cuit", cuit, "Sin dato");
+  setCampo("telefono", telefono, "Sin dato");
+  setCampo("direccion", direccion, "Sin dato");
+
   $("#met_contacto").val(met_contacto);
 
-  var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+  var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
   var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-    return new bootstrap.Tooltip(tooltipTriggerEl)
+    return new bootstrap.Tooltip(tooltipTriggerEl);
   });
-
 });

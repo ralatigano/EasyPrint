@@ -47,6 +47,7 @@ def Inicio(request):
         totalNeto = total-descuento
     Cat = Categoria.objects.all()
     Sugerencias = DetalleSugerido.objects.order_by("-frecuencia")
+    lista_clientes = Cliente.objects.all().order_by('-frecuencia', 'nombre')
     data = {
         'usuario': usuario_nombre,
         'img': img,
@@ -57,7 +58,8 @@ def Inicio(request):
         'total': total,
         'descuento': descuento,
         'totalNeto': totalNeto,
-        'Sugerencias': Sugerencias
+        'Sugerencias': Sugerencias,
+        'clientes': lista_clientes,
     }
 
     return render(request, 'presupuestos/inicio.html', data)
@@ -318,12 +320,13 @@ def presupuestos(request):
     autorizado = request.session.get('autorizado')
     usuario_nombre = request.session.get('usuario_nombre')
     img = request.session.get('img')
-
+    clientes = Cliente.objects.all().order_by('-frecuencia', 'nombre')
     data = {
         'Pres': Pres,
         'usuario': usuario_nombre,
         'img': img,
         'autorizado': autorizado,
+        'Clientes': clientes,
     }
     return render(request, 'presupuestos/presupuestos.html', data)
 
@@ -480,18 +483,47 @@ def guardar_presupuesto(request):
                 request, f'No se ha podido editar el presupuesto. Error({e})')
             return redirect('/presupuestos/inicio')
     else:
-        # Procesamos el campo "cliente" enviado en el POST (se espera que sea un nombre)
-        client_input = request.GET.get('cliente', '').strip()
+        client_input = request.session.get('cliente_input', '').strip()
         if client_input:
-            # Se busca en la DB por nombre (sin distinguir mayúsculas/minúsculas)
-            client_obj = Cliente.objects.filter(
-                nombre__iexact=client_input).first()
-            if not client_obj:
-                # Si no se encuentra, se crea una nueva instancia de Cliente
-                client_obj = Cliente.objects.create(nombre=client_input)
+            # Caso 1: viene "Nombre | Negocio"
+            if "|" in client_input:
+                nombre, negocio = [x.strip()
+                                   for x in client_input.split("|", 1)]
+
+                client_obj = Cliente.objects.filter(
+                    nombre__iexact=nombre,
+                    negocio__iexact=negocio
+                ).first()
+
+                if client_obj:
+                    client_obj.frecuencia = (client_obj.frecuencia or 0) + 1
+                    client_obj.save()
+                else:
+                    client_obj = Cliente.objects.create(
+                        nombre=nombre,
+                        negocio=negocio,
+                        frecuencia=1
+                    )
+            # Caso 2: viene solo nombre → cliente nuevo o cliente sin negocio
+            else:
+                client_obj = Cliente.objects.filter(
+                    nombre__iexact=client_input,
+                    negocio__isnull=True
+                ).first()
+
+                if client_obj:
+                    client_obj.frecuencia = (client_obj.frecuencia or 0) + 1
+                    client_obj.save()
+                else:
+                    client_obj = Cliente.objects.create(
+                        nombre=client_input,
+                        negocio=None,
+                        frecuencia=1
+                    )
         else:
-            # Si el campo está vacío, se asigna el cliente "Consumidor final"
+            # Si no vino nada, usamos Consumidor Final
             client_obj = consumidor_final
+
         try:
             pre = Presupuesto.objects.create(
                 numero=n_presupuesto,
@@ -508,7 +540,7 @@ def guardar_presupuesto(request):
             pre.total = t
             pre.desc_plata = d
             pre.save()
-
+            request.session.pop('cliente_input', None)
             messages.success(
                 request, f'Se ha creado y guardado el presupuesto {n_presupuesto} correctamente.')
         except Exception as e:
@@ -728,3 +760,10 @@ def productos_por_presupuesto(request, presupuesto_numero):
         for p in productos
     ]
     return JsonResponse({"data": data})
+
+
+@login_required
+def set_cliente_session(request):
+    cliente = request.POST.get('cliente', '').strip()
+    request.session['cliente_input'] = cliente
+    return JsonResponse({'ok': True})

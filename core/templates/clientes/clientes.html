@@ -33,13 +33,30 @@
                     <tbody id="tableBody_Clientes">
                         {% for c in clientes %}
                             <tr>
-                                <td>{{c.nombre}}</td>
-                                <td>{{c.negocio}}</td>
-                                <td>{{c.cuit}}</td>
-                                <td><a href="https://wa.me/{{c.telefono}}" target="_blank" rel="noopener noreferrer">{{c.telefono}}</a></td>
-                                <td><a href="https://www.google.com/maps/search/?api=1&query={{c.direccion_google}}" target="_blank" rel="noopener noreferrer">{{c.direccion}}</a></td>
+                                <td>{{c.nombre|default:"-"}}</td>
+                                <td>{{c.negocio|default:"-"}}</td>
+                                <td>{{c.cuit|default:"-"}}</td>
+                                <td>                
+                                    {% if c.telefono %}
+                                        <a href="https://wa.me/{{ c.telefono }}" target="_blank" rel="noopener noreferrer">
+                                            {{ c.telefono }}
+                                        </a>
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
                                 <td>
-                                    <button type="button" class="btn btn-dark btn-xs" data-bs-toggle="modal" data-bs-target="#editarClienteModal" data-bs-whatever="{{c.id}}|{{c.nombre}}|{{c.negocio}}|{{c.cuit}}|{{c.telefono}}|{{c.direccion}}|{{c.metodo_contacto}}"><i class="fa-solid fa-pencil sm"></i></button>
+                                    {% if c.direccion %}
+                                        <a href="https://www.google.com/maps/search/?api=1&query={{ c.direccion_google }}"
+                                        target="_blank" rel="noopener noreferrer">
+                                            {{ c.direccion }}
+                                        </a>
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <button type="button" class="btn btn-dark btn-xs" data-bs-toggle="modal" data-bs-target="#editarClienteModal" data-bs-whatever="{{c.id}}|{{c.nombre}}|{{c.negocio|default_if_none:''}}|{{c.cuit|default_if_none:''}}|{{c.telefono|default_if_none:''}}|{{c.direccion|default_if_none:''}}|{{c.metodo_contacto}}"><i class="fa-solid fa-pencil sm"></i></button>
                                 </td>
                             </tr>
                         {% endfor %} 
@@ -75,12 +92,11 @@
                     <label for="negocio" style="font-weight: bold">Negocio:</label>
                     <input type="text" id="negocio" name="negocio" required> 
                     <label for="met_contacto" style="font-weight: bold">Método de contacto:</label>
-                    <select name="met_contacto" id="met_contacto" class="form-control select" required>
-                        <option value="Elige una categoría">Elige una opción</option>
-                        <option value="0">Visita local</option>
-                        <option value="1">WhatsApp</option>
-                        <option value="2">Instagram</option>
-                        <option value="3">Facebook</option>
+                    <select name="met_contacto" id="met_contacto" class="form-control select" placeholder="Elige una opción" required>
+                        <option value="">Elige una opción</option>
+                        {% for categoria in Categorias %}
+                            <option value="{{ categoria }}">{{ categoria }}</option>
+                        {% endfor %}
                     </select>
                 
                     <label for="telefono" style="font-weight: bold">Teléfono:</label>

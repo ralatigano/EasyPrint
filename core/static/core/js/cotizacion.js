@@ -533,16 +533,16 @@ function descartarProducto() {
   });
 }
 
-function guardarPresupuesto() {
-    const clienteInput = document.getElementById("cliente");
-    const cliente = clienteInput ? clienteInput.value.trim() : "";
+// function guardarPresupuesto() {
+//     const clienteInput = document.getElementById("cliente");
+//     const cliente = clienteInput ? clienteInput.value.trim() : "";
 
-    // Armamos la URL con el cliente como parámetro GET
-    const url = `/presupuestos/guardarPresupuesto?cliente=${encodeURIComponent(cliente)}`;
+//     // Armamos la URL con el cliente como parámetro GET
+//     const url = `/presupuestos/guardarPresupuesto?cliente=${encodeURIComponent(cliente)}`;
 
-    // Redirigimos
-    window.location.href = url;
-}
+//     // Redirigimos
+//     window.location.href = url;
+// }
 
 
 /* Funcionalidad para evitar la eliminación de objetos listados en la cotización por un click involuntario. */
@@ -572,4 +572,19 @@ function getCookie(name) {
     }
   }
   return cookieValue;
+}
+
+function syncClienteYEnviar(url) {
+    const cliente = document.getElementById("cliente_input").value;
+
+    fetch("/presupuestos/setClienteSession", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+            "X-CSRFToken": getCookie("csrftoken")
+        },
+        body: "cliente=" + encodeURIComponent(cliente)
+    }).then(() => {
+        window.location.href = url;
+    });
 }

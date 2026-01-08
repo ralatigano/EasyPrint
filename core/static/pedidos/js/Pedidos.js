@@ -157,6 +157,54 @@ $('#detallesModal').on('show.bs.modal', function (event) {
   });
 });
 
+$('#confirmacionModal').on('show.bs.modal', function (event) {
+    var button = $(event.relatedTarget);
+    var info = button.data('info').split('|');
+    var numero = info[0];
+    var presupuestoId = info[1];
+
+    var modal = $(this);
+
+    // Título dinámico
+    modal.find('.modal-title-confirmacion').text('Confirmación del pedido: ' + numero);
+
+    $.ajax({
+        url: '/pedidos/obtenerDatosProductos',
+        type: 'GET',
+        data: {
+            'presupuesto_id': presupuestoId,
+            'pedido_numero': numero
+        },
+        success: function (data) {
+
+            // Datos del pedido
+            modal.find('#confCliente').text(data.pedido.cliente);
+            modal.find('#confFechaPedido').text(data.pedido.fecha_pedido);
+            modal.find('#confFechaEntrega').text(
+                data.pedido.fecha_entrega && data.pedido.fecha_entrega.trim() !== ''
+                    ? data.pedido.fecha_entrega
+                    : 'A determinar'
+            );
+            modal.find('#confPrecio').text(data.pedido.precio);
+            modal.find('#confSenia').text(data.pedido.senia);
+            modal.find('#confSaldo').text(data.pedido.saldo);
+
+            // Productos
+            var html = '';
+            data.productos.forEach(function (p) {
+                html += `
+                    <p>
+                        <strong>${p.cantidad} ${p.producto_final}</strong><br>
+                        ${p.info_adic}
+                    </p>
+                `;
+            });
+
+            modal.find('#confProductos').html(html);
+        }
+    });
+});
+
 /* Funcionalidad para evitar la eliminación de objetos listados en la vista por un click involuntario. */
 (function () {
     const btnEliminacion = document.querySelectorAll(".btnEliminacion");

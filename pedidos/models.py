@@ -3,27 +3,32 @@ from django.contrib.auth.models import User
 from clientes.models import Cliente
 from django.utils import timezone
 
-# Create your models here.
-estado_pedido = [('Sin seña', 'Sin seña'), ('Señado', 'Señado'),
-                 ('En proceso', 'En proceso'), ('Para retirar', 'Para retirar'),
-                 ('Entregado', 'Entregado'), ('Pagado', 'Pagado'), ('Cancelado', 'Cancelado')]
+# Create your models here
 
 
 class Pedido(models.Model):
+
+    ESTADOS = [('No iniciado', 'No iniciado'),
+               ('En proceso', 'En proceso'),
+               ('Terminado (falta pago)', 'Terminado (falta pago)'),
+               ('Terminado y pagado', 'Terminado y pagado'),
+               ]
+
     numero = models.IntegerField(primary_key=True)
     producto = models.TextField(blank=True, null=True)
     descripcion = models.CharField(max_length=200)
     precio = models.FloatField()
     senia = models.FloatField(null=True, blank=True)
     saldo = models.FloatField(null=True, blank=True)
-    estado = models.TextField(choices=estado_pedido,
-                              default='Sin seña', max_length=100)
+    estado = models.TextField(choices=ESTADOS,
+                              default='No iniciado', max_length=100)
     bloqueado_cancelado = models.BooleanField(default=False)
     cliente = models.ForeignKey(
         on_delete=models.CASCADE, to=Cliente, default=None, blank=True)
     presupuesto = models.IntegerField(null=True, blank=True)
     encargado = models.ForeignKey(
         on_delete=models.CASCADE, to=User, default=None, blank=True, null=True)
+    fecha_entrega = models.DateField(null=True, blank=True)
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now_add=True)
 
