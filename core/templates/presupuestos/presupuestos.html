@@ -77,7 +77,7 @@
 
                 <datalist id="lista_clientes_modal">
                     {% for c in Clientes %}
-                        <option value="{{ c.referencia }}"></option>
+                        <option value="{{ c.id }}|{{ c.referencia }}"></option>
                     {% endfor %}
                 </datalist>
             </div>

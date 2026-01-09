@@ -197,11 +197,11 @@
         <div class="col-12 cliente-field">
             <label for="cliente">Cliente:</label>
             <input list="lista_clientes"  type="text" id="cliente_input" name="cliente_input" class="form-control"
-                  value="{{ cliente|default:'Consumidor final' }}"
+                  value="{{cliente}}"
                   placeholder="Nombre del cliente">
             <datalist id="lista_clientes">
                 {% for c in clientes %}
-                    <option value="{{ c.referencia }}"></option>
+                    <option value="{{ c.id }}|{{ c.referencia }}"></option>
                 {% endfor %}
             </datalist>
         </div>

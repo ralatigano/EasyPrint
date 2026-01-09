@@ -9,6 +9,7 @@ from clientes.models import Cliente
 from django.contrib.auth.models import User
 from django.contrib import messages
 from .functions import *
+from clientes.functions import parsear_cliente
 from django.http import JsonResponse, Http404, HttpResponse
 from datetime import datetime
 from django.utils import timezone
@@ -66,14 +67,15 @@ def completar_pedido(request):
     t_d = 0
     if editando_presup:
         pre = Presupuesto.objects.get(numero=np_global)
-        cli = pre.cliente.referencia
+        cliente_obj = Cliente.objects.get(id=pre.cliente.id)
+        cli = f"{cliente_obj.id}|{cliente_obj.referencia}"
         Prods = ProductoCotizado.objects.filter(presupuesto=np_global)
     else:
-        client_input = request.session.get('cliente_input', 'Consumidor final')
-        cli = client_input
+        client_input = request.session.get('cliente_input', '').strip()
+        cliente_obj = parsear_cliente(client_input)
+        cli = f"{cliente_obj.id}|{cliente_obj.referencia}"
         Prods = ProductoCotizado.objects.filter(
             presupuesto=None).filter(vendedor=vendedor)
-    print(f'cli: {cli}, request.GET.get(cliente_input): {client_input}')
     lista = []
     for p in Prods:
         lista.append(f'{p.cantidad} {p.insumo}')
@@ -94,7 +96,7 @@ def completar_pedido(request):
         'clientes': lista_clientes,
         'Estados': estados
     }
-    request.session.pop('cliente_input', None)
+    # request.session.pop('cliente_input', None)
     return render(request, 'pedidos/completar_pedido.html', data)
 
 # Vista que maneja el POST del modal correspondiente para editar el estado de un pedido.
@@ -183,7 +185,6 @@ def cambiar_enc(request):
 def agregar_descripcion(request):
 
     n_pedido = request.POST['cambiarPedido_desc']
-    print(n_pedido, request.POST['cambiarPedido_desc'])
     try:
         pedido = Pedido.objects.get(numero=n_pedido)
         if pedido.descripcion != request.POST['descripcion']:
@@ -248,48 +249,8 @@ def confirmar_pedido(request):
     list_p = [f'{p.cantidad} {p.producto_final}' for p in Prods]
 
     # Procesar cliente
-    consumidor_final = Cliente.objects.get(nombre="Consumidor final")
-    client_input = request.POST['cliente'].strip()
-    if client_input:
-
-        # Caso 1: viene "Nombre | Negocio"
-        if "|" in client_input:
-            nombre, negocio = [x.strip() for x in client_input.split("|", 1)]
-
-            client_obj = Cliente.objects.filter(
-                nombre__iexact=nombre,
-                negocio__iexact=negocio
-            ).first()
-
-            if client_obj:
-                client_obj.frecuencia = (client_obj.frecuencia or 0) + 1
-                client_obj.save()
-            else:
-                client_obj = Cliente.objects.create(
-                    nombre=nombre,
-                    negocio=negocio,
-                    frecuencia=1
-                )
-
-        # Caso 2: viene solo nombre → cliente nuevo o cliente sin negocio
-        else:
-            client_obj = Cliente.objects.filter(
-                nombre__iexact=client_input,
-                negocio__isnull=True
-            ).first()
-
-            if client_obj:
-                client_obj.frecuencia = (client_obj.frecuencia or 0) + 1
-                client_obj.save()
-            else:
-                client_obj = Cliente.objects.create(
-                    nombre=client_input,
-                    negocio=None,
-                    frecuencia=1
-                )
-
-    else:
-        client_obj = consumidor_final
+    client_input = request.POST.get('cliente', '').strip()
+    client_obj = parsear_cliente(client_input)
 
     try:
         # Crear el pedido
@@ -328,7 +289,6 @@ def confirmar_pedido(request):
 def get_productos_info(request):
     presupuesto_id = request.GET.get('presupuesto_id')
     pedido_numero = request.GET.get('pedido_numero')
-    print(presupuesto_id, pedido_numero)
     if not presupuesto_id:
         return JsonResponse({'error': 'Presupuesto ID no proporcionado'}, status=400)
 
@@ -646,3 +606,40 @@ def exportar_viajes_cadete(request):
     response['Content-Disposition'] = 'attachment; filename=viajes_no_pagados.xlsx'
     wb.save(response)
     return response
+
+
+@login_required
+def cambiar_cliente_pedido(request):
+    pedido_numero = request.POST.get('pedidoNumero')
+    presupuesto_numero = request.POST.get('presupuestoNumero')
+    cliente_input = request.POST.get('nuevoCliente', '').strip()
+
+    if not pedido_numero or not presupuesto_numero:
+        messages.error(request, "Datos incompletos para cambiar el cliente.")
+        return redirect('/pedidos')
+
+    # Nuevo sistema basado en ID
+    cliente = parsear_cliente(cliente_input)
+
+    # Actualizar pedido
+    try:
+        pedido = Pedido.objects.get(numero=pedido_numero)
+        pedido.cliente = cliente
+        pedido.save()
+    except Pedido.DoesNotExist:
+        messages.error(request, "No se encontró el pedido.")
+        return redirect('/pedidos')
+
+    # Actualizar presupuesto asociado
+    try:
+        presupuesto = Presupuesto.objects.get(numero=presupuesto_numero)
+        presupuesto.cliente = cliente
+        presupuesto.save()
+    except Presupuesto.DoesNotExist:
+        messages.warning(
+            request,
+            "El pedido fue actualizado, pero no se encontró el presupuesto asociado."
+        )
+
+    messages.success(request, "Cliente actualizado correctamente.")
+    return redirect('/pedidos')

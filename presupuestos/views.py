@@ -6,6 +6,7 @@ from .models import Presupuesto
 from django.contrib.auth.models import User
 from django.contrib import messages
 from .functions import *
+from clientes.functions import parsear_cliente
 from presupuestos.models import DetalleSugerido
 from productos.models import ProductoCotizado, Categoria, Producto
 from clientes.models import Cliente
@@ -48,6 +49,7 @@ def Inicio(request):
     Cat = Categoria.objects.all()
     Sugerencias = DetalleSugerido.objects.order_by("-frecuencia")
     lista_clientes = Cliente.objects.all().order_by('-frecuencia', 'nombre')
+    cliente = Cliente.objects.get(nombre="Consumidor final")
     data = {
         'usuario': usuario_nombre,
         'img': img,
@@ -59,6 +61,7 @@ def Inicio(request):
         'descuento': descuento,
         'totalNeto': totalNeto,
         'Sugerencias': Sugerencias,
+        'cliente': f"{cliente.id}|{cliente.referencia}",
         'clientes': lista_clientes,
     }
 
@@ -484,45 +487,7 @@ def guardar_presupuesto(request):
             return redirect('/presupuestos/inicio')
     else:
         client_input = request.session.get('cliente_input', '').strip()
-        if client_input:
-            # Caso 1: viene "Nombre | Negocio"
-            if "|" in client_input:
-                nombre, negocio = [x.strip()
-                                   for x in client_input.split("|", 1)]
-
-                client_obj = Cliente.objects.filter(
-                    nombre__iexact=nombre,
-                    negocio__iexact=negocio
-                ).first()
-
-                if client_obj:
-                    client_obj.frecuencia = (client_obj.frecuencia or 0) + 1
-                    client_obj.save()
-                else:
-                    client_obj = Cliente.objects.create(
-                        nombre=nombre,
-                        negocio=negocio,
-                        frecuencia=1
-                    )
-            # Caso 2: viene solo nombre → cliente nuevo o cliente sin negocio
-            else:
-                client_obj = Cliente.objects.filter(
-                    nombre__iexact=client_input,
-                    negocio__isnull=True
-                ).first()
-
-                if client_obj:
-                    client_obj.frecuencia = (client_obj.frecuencia or 0) + 1
-                    client_obj.save()
-                else:
-                    client_obj = Cliente.objects.create(
-                        nombre=client_input,
-                        negocio=None,
-                        frecuencia=1
-                    )
-        else:
-            # Si no vino nada, usamos Consumidor Final
-            client_obj = consumidor_final
+        client_obj = parsear_cliente(client_input)
 
         try:
             pre = Presupuesto.objects.create(
@@ -575,12 +540,13 @@ def editar_presupuesto(request, np):
         totalNeto = total-descuento
     pres = Presupuesto.objects.get(numero=np)
     cli = pres.cliente
+    cliente_str = f"{cli.id}|{cli.referencia}" if cli else ""
 
     data = {
         'usuario': usuario_nombre,
         'img': img,
         'autorizado': autorizado,
-        'cliente': cli,
+        'cliente': cliente_str,
         'np': np,
         'Cat': Cat,
         'Prods': Prods,
@@ -645,34 +611,38 @@ def cambiar_cliente(request):
     presupuesto_numero = request.POST.get('numero')
     nuevo_cliente_input = request.POST.get('cliente', '').strip()
 
-    # Obtenemos el presupuesto; en caso de no existir retorna 404
     presupuesto = get_object_or_404(Presupuesto, numero=presupuesto_numero)
 
-    # Obtenemos la instancia predeterminada
-    consumidor_final = Cliente.objects.get(nombre="Consumidor final")
-
-    if nuevo_cliente_input:
-        # Buscamos por nombre sin distinguir mayúsculas/minúsculas
-        client_obj = Cliente.objects.filter(
-            nombre__iexact=nuevo_cliente_input).first()
-        if not client_obj:
-            # Si no existe, se crea uno nuevo
-            client_obj = Cliente.objects.create(nombre=nuevo_cliente_input)
-    else:
-        client_obj = consumidor_final
+    # Nuevo sistema basado en ID
+    client_obj = parsear_cliente(nuevo_cliente_input)
 
     presupuesto.cliente = client_obj
     presupuesto.save()
 
-    return JsonResponse({'success': True, 'nuevo_cliente': client_obj.nombre})
+    return JsonResponse({
+        'success': True,
+        'nuevo_cliente': client_obj.referencia
+    })
 
 
 def obtener_cliente(request):
     presupuesto_numero = request.GET.get('numero')
+
     try:
         presupuesto = Presupuesto.objects.get(numero=presupuesto_numero)
-        cliente_name = presupuesto.cliente.nombre if presupuesto.cliente else ""
-        return JsonResponse({'cliente': cliente_name})
+        cliente = presupuesto.cliente
+
+        if cliente:
+            return JsonResponse({
+                'id': cliente.id,
+                'referencia': cliente.referencia
+            })
+        else:
+            return JsonResponse({
+                'id': None,
+                'referencia': ""
+            })
+
     except Presupuesto.DoesNotExist:
         raise Http404("Presupuesto no encontrado")
 
@@ -765,5 +735,7 @@ def productos_por_presupuesto(request, presupuesto_numero):
 @login_required
 def set_cliente_session(request):
     cliente = request.POST.get('cliente', '').strip()
+    if cliente.lower() in ["", "none", "null"]:
+        cliente = ""
     request.session['cliente_input'] = cliente
     return JsonResponse({'ok': True})

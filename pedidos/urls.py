@@ -1,6 +1,6 @@
 from django.urls import path
 from .views import (
-    pedidos, cambiar_estado, cambiar_enc, agregar_descripcion,
+    pedidos, cambiar_estado, cambiar_enc, agregar_descripcion, cambiar_cliente_pedido,
     agregar_senia, completar_pedido, confirmar_pedido, get_productos_info,
     eliminar_pedido, preparar_completar_pedido,
     viajes_cadete, guardar_viaje_cadete, borrar_viaje_cadete, info_viaje_cadete, actualizar_estado_viajes, exportar_viajes_cadete
@@ -20,6 +20,8 @@ urlpatterns = [
     path('agregarSenia', agregar_senia, name='agregar_senia'),
     path('eliminarPedido/<int:pedido_id>',
          eliminar_pedido, name='eliminarPedido'),
+    path('cambiarClientePedido',
+         cambiar_cliente_pedido, name='cambiar_cliente_pedido'),
     # responde a una petición ajax para cargar un modal con información de los productos de un pedido
     path('obtenerDatosProductos', get_productos_info,
          name='obtenerDatosProductos'),

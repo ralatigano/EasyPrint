@@ -47,7 +47,8 @@ cambiarClienteModal.addEventListener('show.bs.modal', function (event) {
     .then(response => response.json())
     .then(data => {
       // Si se obtuvo el dato, lo asignamos al input del cliente
-      document.getElementById('nuevoCliente').value = data.cliente || '';
+      document.getElementById('nuevoCliente').value =
+      data.id && data.referencia ? `${data.id}|${data.referencia}` : '';
     })
     .catch(error => console.error('Error obteniendo cliente:', error));
 });
@@ -57,9 +58,14 @@ document.getElementById('cambiarClienteForm').addEventListener('submit', functio
   e.preventDefault(); // Prevenir el comportamiento por defecto del form
 
   // Obtenemos los datos del formulario
-  var presupuestoNumero = document.getElementById('presupuestoNumero').value;
-  var nuevoCliente = document.getElementById('nuevoCliente').value.trim();
+  const presupuestoNumero = document.getElementById('presupuestoNumero').value;
+  let nuevoCliente = document.getElementById('nuevoCliente').value.trim();
   const csrftoken = getCookie('csrftoken');
+
+    if (!nuevoCliente) {
+        nuevoCliente = ""; // Para que parsear_cliente use Consumidor Final
+    }
+
   // Enviamos la petición AJAX para actualizar al cliente
   fetch('/presupuestos/cambiarCliente/', {
     method: 'POST',

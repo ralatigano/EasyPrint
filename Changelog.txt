@@ -148,7 +148,7 @@ Versión v3.1.0
         producto cotizado.
         *Se agregan filtros a la vista de pedidos para poder ocultar/mostrar pedidos según el estado, los productos finales que involucran o el cliente.
 
-****************** #/#/#### ******************
+****************** 7/1/2026 ******************
 Versión v3.1.1
     -Pedidos
         *Se modifican las opciones disponibles para el estado de un pedido para que se ajusten mejor a la necesidad del cliente.
@@ -163,3 +163,9 @@ Versión v3.1.1
         *Se agrega el atributo de frecuencia al modelo para poder optimizar la sugerencias en la interfaz.
         *Se corrigen detalles de la vista de clientes para que muestre la información de forma mas prolija en la tabla.
         *Se automatiza el pasaje de los métodos de contacto para que dependan directamente de los valores del modelo.
+
+****************** 8/1/2026 ******************
+Versión v3.1.2
+    -Pedidos
+        *Se corrigen errores en el flujo de creación de presupuestos/pedidos que provocaba errores en relación al registro de clientes existentes o nuevos.
+        *Se agrega un botón que abre un modal para editar el cliente del pedido en la vista de pedidos. Los cambios de cliente también se reflejan en el presupuesto asociado.

@@ -269,3 +269,15 @@ function aplicarFiltros() {
 ["filtroCliente", "filtroProducto", "filtroEstado"].forEach(id => {
   document.getElementById(id).addEventListener("change", aplicarFiltros);
 });
+
+cambiarClienteModal.addEventListener('show.bs.modal', function (event) {
+    const button = event.relatedTarget;
+    const info = button.getAttribute('data-bs-whatever');
+    const [clienteId, clienteRef, pedidoNumero, presupuestoNumero] = info.split('|');
+
+    document.getElementById('pedidoNumero').value = pedidoNumero;
+    document.getElementById('presupuestoNumero').value = presupuestoNumero;
+
+    // Rellenar el input con <id>|<referencia>
+    document.getElementById('nuevoCliente').value = `${clienteId}|${clienteRef}`;
+});

@@ -20,7 +20,7 @@
         <input list="lista_clientes" id="cliente" name="cliente" class="form-control" placeholder="Cliente" value="{{cliente}}" required>
         <datalist id="lista_clientes">
             {% for c in clientes %}
-                <option value="{{ c.referencia }}"></option>
+                <option value="{{ c.id }}|{{ c.referencia }}"></option>
             {% endfor %}
         </datalist>
     </div>

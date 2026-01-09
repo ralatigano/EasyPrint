@@ -90,7 +90,12 @@
                                     </div>
                                 </td>
 
-                                <td>{{ p.cliente }}</td>
+                                <td>
+                                    {{ p.cliente }}
+                                    <div class="acciones">
+                                        <button type="button" class="btn btn-dark btn-xs" data-bs-toggle="modal" data-bs-target="#cambiarClienteModal" data-bs-whatever="{{ p.cliente.id }}|{{ p.cliente.referencia }}|{{ p.numero }}|{{ p.presupuesto }}"><i class="fa-solid fa-pencil"></i></button>
+                                    </div>
+                                </td>
 
                                 <td>
                                     <div class="celda-grid">
@@ -219,6 +224,47 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-dark btn-fuente" data-bs-dismiss="modal">Volver atras</button>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para cambiar el cliente -->
+<div class="modal fade" id="cambiarClienteModal" tabindex="-1" aria-labelledby="cambiarClienteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+        <!-- Formulario interno del modal -->
+        <form id="cambiarClienteForm" action="{% url 'cambiar_cliente_pedido' %}" method="POST">
+            {% csrf_token %}
+            <div class="modal-header">
+            <h5 class="modal-title" id="cambiarClienteModalLabel">Cambiar Cliente</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+            <!-- Input oculto: almacena el número de pedido -->
+            <input type="hidden" id="pedidoNumero" name="pedidoNumero">
+            <input type="hidden" id="presupuestoNumero" name="presupuestoNumero">
+            <!-- Input para el nombre del cliente -->
+            <div class="mb-3">
+                <label for="nuevoCliente" class="col-form-label">Nombre del Cliente:</label>
+                <input list="lista_clientes_modal"
+                    type="text"
+                    class="form-control"
+                    id="nuevoCliente"
+                    name="nuevoCliente"
+                    placeholder="Nombre del cliente">
+
+                <datalist id="lista_clientes_modal">
+                    {% for c in Clientes %}
+                        <option value="{{ c.id }}|{{ c.referencia }}"></option>
+                    {% endfor %}
+                </datalist>
+            </div>
+            </div>
+            <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-primary">Guardar cambios</button>
+            </div>
+        </form>
         </div>
     </div>
 </div>
