@@ -64,7 +64,9 @@
       {% block footer %}
         <!--Aquí va el pie del contenido de cada plantilla-->
       {% endblock %}
-      <div class="version" style="text-align: center;"> Cotizador Easyprint v3.1.2 </div>
+      <div class="version" style="text-align: center;"> 
+        {% include core/partials/version.html %}
+      </div>
     </main>
 
   </div>

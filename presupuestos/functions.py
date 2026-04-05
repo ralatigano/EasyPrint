@@ -156,11 +156,13 @@ def procesar_cotizacion_con_grafico(
             elementos_empaquetados.append(rectangulo_ajustado)
 
     cant_empaquetados = len(elementos_empaquetados)
+    elementos_a_dibujar = elementos_empaquetados[:
+                                                 cantidad_deseada] if cantidad_deseada > 1 else elementos_empaquetados[:1]
 
     # Calcular altura máxima ocupada
     altura_max_ocupada = max(
-        (r[1] + r[3] + separacion / 2) for r in elementos_empaquetados
-    ) if elementos_empaquetados else 0
+        (r[1] + r[3] + separacion / 2) for r in elementos_a_dibujar
+    ) if elementos_a_dibujar else 0
 
     if alto_hoja == 100000:
         alto_hoja = altura_max_ocupada * 1.2
@@ -186,7 +188,7 @@ def procesar_cotizacion_con_grafico(
     ax.add_patch(hoja)
 
     # Etiquetas
-    for r in elementos_empaquetados:
+    for r in elementos_a_dibujar:
         rect_x = r[0] + separacion / 2
         rect_y = r[1] + separacion / 2
         ax.add_patch(plt.Rectangle(
