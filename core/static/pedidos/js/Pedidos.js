@@ -241,34 +241,95 @@ $('#confirmacionModal').on('show.bs.modal', function (event) {
 
 
 //Manejo de filtros en vista de pedidos.
-function aplicarFiltros() {
-  const clienteFiltro = document.getElementById("filtroCliente").value.toLowerCase();
-  const productoFiltro = document.getElementById("filtroProducto").value.toLowerCase();
-  const estadoFiltro = document.getElementById("filtroEstado").value.toLowerCase();
+const FILTROS_KEY = 'pedidos_filtros';
+const IDS_FILTRO = ['filtroCliente', 'filtroProducto', 'filtroEstado'];
 
-  const filas = document.querySelectorAll("#tableBody_Pedido tr");
+function manejarTodos(selectEl, e) {
+    const opcionTodos = selectEl.querySelector('option[value=""]');
+    if (!opcionTodos) return;
 
-  filas.forEach(fila => {
-    const cliente = fila.children[1].textContent.toLowerCase();
-    const productos = fila.children[2].querySelector(".contenido").textContent.toLowerCase();
-    const estado = fila.children[3].querySelector(".contenido").textContent.toLowerCase();
-
-    const coincideCliente = !clienteFiltro || cliente.includes(clienteFiltro);
-    const coincideProducto = !productoFiltro || productos.includes(productoFiltro);
-    const coincideEstado = !estadoFiltro || estado.includes(estadoFiltro);
-
-    if (coincideCliente && coincideProducto && coincideEstado) {
-      fila.style.display = "";
+    if (e.target === opcionTodos || opcionTodos.selected) {
+        // Si se clickeó "Todos" o quedó seleccionado, deseleccionar todo lo demás
+        if (opcionTodos.selected) {
+            Array.from(selectEl.options).forEach(o => {
+                if (o.value !== '') o.selected = false;
+            });
+        }
     } else {
-      fila.style.display = "none";
+        opcionTodos.selected = false;
     }
-  });
 }
 
-// Escuchar cambios en los filtros
-["filtroCliente", "filtroProducto", "filtroEstado"].forEach(id => {
-  document.getElementById(id).addEventListener("change", aplicarFiltros);
+['filtroCliente', 'filtroProducto', 'filtroEstado'].forEach(id => {
+    const el = document.getElementById(id);
+    el.addEventListener('change', (e) => {
+        manejarTodos(el, e);
+        aplicarFiltros();
+    });
 });
+function getSeleccionados(id) {
+    return Array.from(document.getElementById(id).selectedOptions)
+                .map(o => o.value.toLowerCase());
+}
+
+function aplicarFiltros() {
+    const clienteFiltro   = document.getElementById('filtroCliente').value;
+    const productosFiltro = getSeleccionados('filtroProducto');
+    const estadosFiltro   = getSeleccionados('filtroEstado');
+
+    sessionStorage.setItem(FILTROS_KEY, JSON.stringify({
+        cliente:   clienteFiltro,
+        productos: productosFiltro,
+        estados:   estadosFiltro
+    }));
+
+    document.querySelectorAll('#tableBody_Pedido tr').forEach(fila => {
+        const clienteId = fila.children[1].dataset.clienteId || '';
+        const productos = fila.children[2].querySelector('.contenido').textContent.toLowerCase();
+        const estado    = fila.children[3].querySelector('.contenido').textContent.toLowerCase();
+
+        const okCliente  = !clienteFiltro        || clienteId === clienteFiltro;
+        const okProducto = !productosFiltro.length || productosFiltro.some(p => productos.includes(p));
+        const okEstado   = !estadosFiltro.length   || estadosFiltro.includes(estado);
+
+        fila.style.display = (okCliente && okProducto && okEstado) ? '' : 'none';
+    });
+}
+
+function restaurarFiltros() {
+    const guardados = sessionStorage.getItem(FILTROS_KEY);
+    if (!guardados) return;
+
+    const { cliente, productos, estados } = JSON.parse(guardados);
+
+    if (cliente) document.getElementById('filtroCliente').value = cliente;
+
+    ['filtroProducto', 'filtroEstado'].forEach((id, i) => {
+        const vals = i === 0 ? productos : estados;
+        if (!vals?.length) return;
+        Array.from(document.getElementById(id).options).forEach(o => {
+            o.selected = vals.includes(o.value.toLowerCase());
+        });
+    });
+
+    aplicarFiltros();
+}
+
+function limpiarFiltros() {
+    sessionStorage.removeItem(FILTROS_KEY);
+    document.getElementById('filtroCliente').value = '';
+    ['filtroProducto', 'filtroEstado'].forEach(id => {
+        Array.from(document.getElementById(id).options).forEach(o => o.selected = false);
+    });
+    document.querySelectorAll('#tableBody_Pedido tr').forEach(f => f.style.display = '');
+}
+
+document.getElementById('filtroCliente').addEventListener('change', aplicarFiltros);
+document.getElementById('filtroProducto').addEventListener('change', aplicarFiltros);
+document.getElementById('filtroEstado').addEventListener('change', aplicarFiltros);
+document.getElementById('limpiarFiltros').addEventListener('click', limpiarFiltros);
+
+window.addEventListener('load', restaurarFiltros);
 
 cambiarClienteModal.addEventListener('show.bs.modal', function (event) {
     const button = event.relatedTarget;

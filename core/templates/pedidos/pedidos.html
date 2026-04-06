@@ -18,35 +18,48 @@
 {% block content %}
 <div class="container">
     <div class="row">
-        <div class="row mb-3">
-            <div class="col-md-4">
-                <label for="filtroCliente" class="form-label">Cliente</label>
-                <select id="filtroCliente" class="form-select">
-                <option value="">Todos</option>
-                {% for cliente in Clientes %}
-                    <option value="{{ cliente.referencia }}">{{ cliente.referencia }}</option>
-                {% endfor %}
+        <div class="row mb-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label">Cliente</label>
+                <select id="filtroCliente" class="form-select" multiple size="3">
+                    <option value="">Todos</option>
+                    {% for cliente in Clientes %}
+                        <option value="{{ cliente.id }}">{{ cliente.referencia }}</option>
+                    {% endfor %}
                 </select>
             </div>
-
-            <div class="col-md-4">
-                <label for="filtroProducto" class="form-label">Producto</label>
-                <select id="filtroProducto" class="form-select">
-                <option value="">Todos</option>
-                {% for sugerencia in Sugerencias %}
-                    <option value="{{ sugerencia.texto }}">{{ sugerencia.texto }}</option>
-                {% endfor %}
+            <div class="col-md-3">
+                <label class="form-label d-flex align-items-center gap-1">
+                    Producto
+                    <i class="fa-solid fa-circle-question text-secondary d-none d-md-inline"
+                    style="font-size:0.8rem; cursor:help;"
+                    title="Mantené Ctrl presionado para seleccionar varias opciones"></i>
+                </label>
+                <select id="filtroProducto" class="form-select" multiple size="3">
+                    <option value="">Todos</option>
+                    {% for sugerencia in Sugerencias %}
+                        <option value="{{ sugerencia.texto }}">{{ sugerencia.texto }}</option>
+                    {% endfor %}
                 </select>
             </div>
-
-            <div class="col-md-4">
-                <label for="filtroEstado" class="form-label">Estado</label>
-                <select id="filtroEstado" class="form-select">
-                <option value="">Todos</option>
-                {% for estado in Estados %}
-                    <option value="{{ estado }}">{{ estado }}</option>
-                {% endfor %}
+            <div class="col-md-3">
+                <label class="form-label d-flex align-items-center gap-1">
+                    Estado
+                    <i class="fa-solid fa-circle-question text-secondary d-none d-md-inline"
+                    style="font-size:0.8rem; cursor:help;"
+                    title="Mantené Ctrl presionado para seleccionar varias opciones"></i>
+                </label>
+                <select id="filtroEstado" class="form-select" multiple size="3">
+                    <option value="">Todos</option>
+                    {% for estado in Estados %}
+                        <option value="{{ estado }}">{{ estado }}</option>
+                    {% endfor %}
                 </select>
+            </div>
+            <div class="col-md-3">
+                <button id="limpiarFiltros" class="btn btn-outline-secondary w-100" style="height:38px;">
+                    <i class="fa-solid fa-xmark"></i> Limpiar filtros
+                </button>
             </div>
         </div>
     
@@ -90,7 +103,7 @@
                                     </div>
                                 </td>
 
-                                <td>
+                                <td data-cliente-id="{{ p.cliente.id }}">
                                     {{ p.cliente }}
                                     <div class="acciones">
                                         <button type="button" class="btn btn-dark btn-xs" data-bs-toggle="modal" data-bs-target="#cambiarClienteModal" data-bs-whatever="{{ p.cliente.id }}|{{ p.cliente.referencia }}|{{ p.numero }}|{{ p.presupuesto }}"><i class="fa-solid fa-pencil"></i></button>
