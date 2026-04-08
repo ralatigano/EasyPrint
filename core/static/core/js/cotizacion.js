@@ -461,11 +461,11 @@ function mostrarModalResultado(data) {
   document.getElementById("producto_final_prev").textContent = data.producto_final;
   document.getElementById("info_adic_prev").textContent = data.info_adic;
   document.getElementById("cant_prev").textContent = data.cantidad;
-  document.getElementById("cant_area_prev").textContent = formatearNumero(data.resultado_grafico);
-  document.getElementById("precio_prev").textContent = formatearNumero(data.precio_total);
+  document.getElementById("cant_area_prev").textContent = formatearNumeroLocal(data.resultado_grafico);
+  document.getElementById("precio_prev").textContent = formatearNumeroLocal(data.precio_total);
   document.getElementById("descuento_prev").textContent = data.descuento || "—";
   document.getElementById("empaquetado_prev").textContent = data.empaquetado;
-  document.getElementById("t_produccion_prev").textContent = formatearNumero(data.tiempo_produccion);
+  document.getElementById("t_produccion_prev").textContent = formatearNumeroLocal(data.tiempo_produccion);
   document.getElementById("detalle_prev").textContent = data.detalle;
 
   const modal = new bootstrap.Modal(document.getElementById("resultadoPrevioModal"));
@@ -477,10 +477,7 @@ function mostrarModalResultado(data) {
   const altoHoja = document.getElementById("inputAltoHoja").value;
 
   // Cantidad de pliegos/hojas calculada por el backend
-  const pliegos = Number(data.resultado_grafico).toLocaleString("es-AR", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  });
+  const pliegos = formatearNumeroLocal(data.resultado_grafico);
 
   // Armar texto final
   let detalleFinal = "";

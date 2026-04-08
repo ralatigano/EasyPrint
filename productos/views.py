@@ -8,6 +8,7 @@ import openpyxl
 from openpyxl import Workbook
 from django.http import HttpResponse, Http404
 from django.utils import timezone
+from core.utils import format_ar, parse_ar
 # Create your views here.
 app_name = 'productos'
 
@@ -88,7 +89,7 @@ def guardar_producto(request):
         tercerizado = request.POST.get("tercerizado") == "on"
         precio = float(request.POST.get(
             "productoPrecio") or 0)
-        margen = float(request.POST.get("productoMargen") or 1)
+        margen = float(parse_ar(request.POST.get("productoMargen")) or 1)
         categoria = get_object_or_404(Categoria, id=categoria_id)
 
         # 2. Crear o editar producto
@@ -498,7 +499,7 @@ def guardar_insumo(request):
         insumo.unidad_medida = data.get("unidad_medida")
         insumo.unidad_composicion = data.get("unidad_composicion")
         insumo.factor_conversion = data.get("factor_conversion") or 1
-        insumo.precio = data.get("precio_unitario") or 0
+        insumo.precio = parse_ar(data.get("precio_unitario")) or 0
         insumo.activo = data.get("activo") == "on"
         cantidad_repuesta = data.get("stock") or 0
         insumo.stock = cantidad_repuesta

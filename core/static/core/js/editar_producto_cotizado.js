@@ -65,13 +65,13 @@ function mostrarModal(data) {
   const nombreProductoSpan = document.getElementById('nombre_producto_editar');
   nombreProductoSpan.textContent = data.producto_nombre;
   infoAdicionalInput.value = data.info_adicional || '';
-  precioInput.value = parseFloat(data.precio);
+  precioInput.value = `$ ${formatearNumeroLocal(data.precio)}`;
   descuentoInput.value = data.descuento || 0;
   tiempoInput.value = data.tiempo_estimado || 0;
   empaquetadoCheckbox.checked = data.empaquetado || false;
   precioArbCheckbox.checked = data.precio_arbitrario || false;
 
-  nuevoPrecioSpan.textContent = `$ ${formatearNumero(data.precio)}`;
+  nuevoPrecioSpan.textContent = `$ ${formatearNumeroLocal(data.precio)}`;
 
   inicializarEditor(data);
 }
@@ -91,7 +91,7 @@ function inicializarEditor(data) {
   descuentoInput.addEventListener('input', actualizarVista);
   empaquetadoCheckbox.addEventListener('change', actualizarVista);
 
-  nuevoPrecioSpan.textContent = `$ ${formatearNumero(data.resultado)}`;
+  nuevoPrecioSpan.textContent = `$ ${formatearNumeroLocal(data.resultado)}`;
   nuevoPrecioSpan.setAttribute('title', 'Precio cotizado originalmente con descuento aplicado.');
 
   precioArbCheckbox.addEventListener('change', function () {
@@ -141,7 +141,7 @@ function actualizarVista() {
 
   if (CotizacionEditor.esPrecioArbitrario) {
     const precioManual = parseFloat(precioInput.value) || 0;
-    nuevoPrecioSpan.textContent = `$ ${formatearNumero(precioManual)}`;
+    nuevoPrecioSpan.textContent = `$ ${formatearNumeroLocal(precioManual)}`;
     resultadoInput.value = precioManual.toFixed(2);
     nuevoPrecioSpan.setAttribute('title', 'Precio arbitrario definido por el usuario. No se aplican cálculos.');
     return;
@@ -149,7 +149,7 @@ function actualizarVista() {
 
   const nuevoPrecio = calcularPrecioFinal();
   resultadoInput.value = nuevoPrecio.toFixed(2);
-  nuevoPrecioSpan.textContent = `$ ${formatearNumero(nuevoPrecio)}`;
+  nuevoPrecioSpan.textContent = `$ ${formatearNumeroLocal(nuevoPrecio)}`;
   nuevoPrecioSpan.setAttribute('title', generarResumenTooltip());
   //precioInput.value = nuevoPrecio.toFixed(2);
 }
@@ -174,11 +174,11 @@ function generarResumenTooltip() {
   const subtotal = precioBase + deltaManoObra + deltaEmpaquetado;
   const total = subtotal * (1 - descuentoNuevo / 100);
 
-  return `  Base: $${formatearNumero(precioBase)}
-  Mano de obra (${tiempoNuevo} hs): $${formatearNumero(deltaManoObra)}
-  Empaquetado: $${formatearNumero(deltaEmpaquetado)}
-  Descuento: -${formatearNumero(descuentoNuevo)}%
-  Total: $${formatearNumero(total)}`;
+  return `  Base: $${formatearNumeroLocal(precioBase)}
+  Mano de obra (${tiempoNuevo} hs): $${formatearNumeroLocal(deltaManoObra)}
+  Empaquetado: $${formatearNumeroLocal(deltaEmpaquetado)}
+  Descuento: -${formatearNumeroLocal(descuentoNuevo)}%
+  Total: $${formatearNumeroLocal(total)}`;
 }
 
 function resetEditor() {

@@ -1,5 +1,4 @@
 {% load static %}
-{% load l10n %}
 <!DOCTYPE html>
 <html lang="es">
   <head>
@@ -39,7 +38,7 @@
           <strong>Advertencia de stock:</strong>
           <ul>
             {% for f in request.faltantes_activos %}
-              <li>Faltan {{ f.cantidad_faltante|floatformat:2 }} {{ f.insumo.unidad_composicion }} de <strong>{{ f.insumo.nombre }}</strong> para el pedido <strong>{{ f.pedido.numero }}</strong>.</li>
+              <li>Faltan {{ f.cantidad_faltante|floatformat:2 }} {{ f.insumo.unidad_composicion }} de <strong>{{ f.insumo.nombre }}</strong> para el pedido <strong>{% localize off %}{{ f.pedido.numero }}{% endlocalize %}</strong>.</li>
             {% endfor %}
           </ul>
           <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>

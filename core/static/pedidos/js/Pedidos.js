@@ -19,7 +19,8 @@ const initDataTable=async() => {
             { responsivePriority: 8, targets: 7 }, // Seña
             { responsivePriority: 9, targets: 8 }, // Saldo
             { responsivePriority: 10, targets: 9 }, // Presupuesto
-            { responsivePriority: 11, targets: 10 } // Fecha de creación
+            { responsivePriority: 11, targets: 10 }, // Fecha de creación
+            { targets: [6, 7, 8], className: 'text-nowrap' },
         ],
         language: {
             lengthMenu: 'Mostrar _MENU_ pedidos por página',
@@ -185,9 +186,9 @@ $('#confirmacionModal').on('show.bs.modal', function (event) {
                     ? data.pedido.fecha_entrega
                     : 'A determinar'
             );
-            modal.find('#confPrecio').text(data.pedido.precio);
-            modal.find('#confSenia').text(data.pedido.senia);
-            modal.find('#confSaldo').text(data.pedido.saldo);
+            modal.find('#confPrecio').text(formatearNumeroLocal(data.pedido.precio));
+            modal.find('#confSenia').text(formatearNumeroLocal(data.pedido.senia));
+            modal.find('#confSaldo').text(formatearNumeroLocal(data.pedido.saldo));
 
             // Productos
             var html = '';

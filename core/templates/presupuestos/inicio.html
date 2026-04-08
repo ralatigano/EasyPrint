@@ -300,36 +300,7 @@
 {% endblock %}
 <!--------------------------------------------------------------------------- Block modal --------------------------------------------------------------------------->
 {% block modal %}
-<!-- Modal resultado del cálculo -->
-<div class="modal fade" id="resultadoPrevioModal" tabindex="-1" aria-labelledby="resultadoPrevioModalLabel" data-bs-backdrop="static" aria-hidden="true">   
-    <form action="" method="POST" id="">
-        {% csrf_token %}
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h1 class="modal-title-prod fs-5" id="resultadoPrevioModalLabel">Cálculo rápido</h1>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <p>Producto: <span id="prod_prev" style="font-weight: bold"> </span></p>
-                    <p>Cantidad: <span id="cant_prev" style="font-weight: bold"> </span></p>
-                    <p>Cantidad hojas/Área/Metros: <span id="cant_area_prev" style="font-weight: bold"> </span></p>
-                    <p>Precio: $ <span id="precio_prev" style="font-weight: bold"> </span></p>
-                    <p>Descuento: <span id="descuento_prev" style="font-weight: bold"></span></p>
-                    <p>Empaquetado: <span id="empaquetado_prev" style="font-weight: bold"> </span></p>
-                    <p>Tiempo de producción [hs]: <span id="t_produccion_prev" style="font-weight: bold"> </span></p>
-                    <p>Producto final: <span id="producto_final_prev" style="font-weight: bold"></span></p>
-                    <p>Información adicional: <span id="info_adic_prev" style="font-weight: bold"></span></p>
-                    <p>Detalle: <span id="detalle_prev"></span></p>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-dark"><a href="/presupuestos/agregarProducto" style="text-decoration: none;"> Agregar </a></button>
-                    <button type="button" class="btn btn-outline-dark" onclick="descartarProducto()">Descartar</button>
-                </div>
-            </div>
-        </div>
-    </form>
-</div>
+{% include 'presupuestos/partials/modales.html' %}
 <!-- ⚙️ Modal reutilizable -->
 {% include 'core/modal_editar_producto.html' %}
 {% endblock %}

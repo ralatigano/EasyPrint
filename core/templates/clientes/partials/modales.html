@@ -1,0 +1,44 @@
+<!-- Modal Editar Cliente -->
+<div class="modal fade" id="editarClienteModal" tabindex="-1" aria-labelledby="editarClienteModalLabel" data-bs-backdrop="static" aria-hidden="true">   
+    <form action="editarCliente" method="POST">
+        {% csrf_token %}
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="editarClienteModal">Modal title</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input id="id" name="id" hidden>
+
+                    <label for="nombre" style="font-weight: bold">Nombre:</label>
+                    <input id="nombre" name="nombre" required>
+
+                    <label for="cuit" style="font-weight: bold">CUIT:</label>
+                    <input id="cuit" name="cuit">
+
+                    <label for="negocio" style="font-weight: bold">Negocio:</label>
+                    <input type="text" id="negocio" name="negocio" required> 
+                    <label for="met_contacto" style="font-weight: bold">Método de contacto:</label>
+                    <select name="met_contacto" id="met_contacto" class="form-control select" placeholder="Elige una opción" required>
+                        <option value="">Elige una opción</option>
+                        {% for categoria in Categorias %}
+                            <option value="{{ categoria }}">{{ categoria }}</option>
+                        {% endfor %}
+                    </select>
+                
+                    <label for="telefono" style="font-weight: bold">Teléfono:</label>
+                    <input type="text" id="telefono" name="telefono"> 
+
+                    <label for="direccion" style="font-weight: bold">Dirección:</label>
+                    <input type="text" id="direccion" name="direccion"> 
+                
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-dark btn-xs btn-fuente" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-dark btn-xs btn-fuente">Guardar cambios</a></button> 
+                </div>
+            </div>
+        </div>
+    </form>
+</div>

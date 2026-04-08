@@ -86,17 +86,17 @@
                             <tr>
                                 <td>
                                     <div class="numero">
-                                        <div class="contenido">{{ p.numero }}</div>
+                                        <div class="contenido">{% localize off %}{{ p.numero }}{% endlocalize %}</div>
                                         <div class="acciones">
                                             <button type="button"
                                                     class="btn btn-dark btn-xs"
                                                     data-bs-toggle="modal"
                                                     data-bs-target="#confirmacionModal"
-                                                    data-info="{{ p.numero }}|{{ p.presupuesto }}"
+                                                    data-info="{% localize off %}{{ p.numero }}{% endlocalize %}|{% localize off %}{{ p.presupuesto }}{% endlocalize %}"
                                                     title="Ver confirmación para enviar al cliente">
                                                 <i class="fa-solid fa-circle-info"></i>
                                             </button>
-                                            <a href="/pedidos/eliminarPedido/{{ p.numero }}" class="btn btn-dark btn-xs btnEliminacion" title="Eliminar pedido">
+                                            <a href="/pedidos/eliminarPedido/{% localize off %}{{ p.numero }}{% endlocalize %}" class="btn btn-dark btn-xs btnEliminacion" title="Eliminar pedido">
                                                 <i class="fa-solid fa-trash-can"></i>
                                             </a>
                                         </div>
@@ -106,7 +106,7 @@
                                 <td data-cliente-id="{{ p.cliente.id }}">
                                     {{ p.cliente }}
                                     <div class="acciones">
-                                        <button type="button" class="btn btn-dark btn-xs" data-bs-toggle="modal" data-bs-target="#cambiarClienteModal" data-bs-whatever="{{ p.cliente.id }}|{{ p.cliente.referencia }}|{{ p.numero }}|{{ p.presupuesto }}"><i class="fa-solid fa-pencil"></i></button>
+                                        <button type="button" class="btn btn-dark btn-xs" data-bs-toggle="modal" data-bs-target="#cambiarClienteModal" data-bs-whatever="{{ p.cliente.id }}|{{ p.cliente.referencia }}|{% localize off %}{{ p.numero }}{% endlocalize %}|{% localize off %}{{ p.presupuesto }}{% endlocalize %}"><i class="fa-solid fa-pencil"></i></button>
                                     </div>
                                 </td>
 
@@ -114,7 +114,7 @@
                                     <div class="celda-grid">
                                         <div class="contenido">{{ p.producto }}</div>
                                         <div class="acciones">
-                                            <button type="button" class="btn btn-info btn-xs" data-bs-toggle="modal" data-bs-target="#detallesModal" data-info="{{ p.numero }}|{{ p.presupuesto }}" title="Haz click para ver más detalles del pedido">
+                                            <button type="button" class="btn btn-info btn-xs" data-bs-toggle="modal" data-bs-target="#detallesModal" data-info="{% localize off %}{{ p.numero }}{% endlocalize %}|{% localize off %}{{ p.presupuesto }}{% endlocalize %}" title="Haz click para ver más detalles del pedido">
                                                 <i class="fa-solid fa-eye sm"></i>
                                             </button>
                                         </div>
@@ -125,7 +125,7 @@
                                     <div class="estado">
                                         <div class="contenido">{{ p.estado }}</div>
                                         <div class="acciones">
-                                            <button type="button" class="btn btn-dark btn-xs" data-bs-toggle="modal" data-bs-target="#cambiarEstadoModal" data-bs-whatever="{{ p.numero }}">
+                                            <button type="button" class="btn btn-dark btn-xs" data-bs-toggle="modal" data-bs-target="#cambiarEstadoModal" data-bs-whatever="{% localize off %}{{ p.numero }}{% endlocalize %}">
                                                 <i class="fa-solid fa-pencil sm"></i>
                                             </button>
                                         </div>
@@ -136,7 +136,7 @@
                                     <div class="celda-grid">
                                         <div class="contenido">{{ p.nombre_encargado }}</div>
                                         <div class="acciones">
-                                            <button type="button" class="btn btn-dark btn-xs" data-bs-toggle="modal" data-bs-target="#cambiarEncargadoModal" data-bs-whatever="{{ p.numero }}">
+                                            <button type="button" class="btn btn-dark btn-xs" data-bs-toggle="modal" data-bs-target="#cambiarEncargadoModal" data-bs-whatever="{% localize off %}{{ p.numero }}{% endlocalize %}">
                                                 <i class="fa-solid fa-pencil sm"></i>
                                             </button>
                                         </div>
@@ -147,30 +147,36 @@
                                     <div class="celda-grid">
                                         <div class="contenido">{{ p.descripcion }}</div>
                                         <div class="acciones">
-                                            <button type="button" class="btn btn-dark btn-xs" data-bs-toggle="modal" data-bs-target="#agregarDescripcionModal" data-bs-whatever="{{ p.numero }}|{{ p.descripcion }}">
+                                            <button type="button" class="btn btn-dark btn-xs" data-bs-toggle="modal" data-bs-target="#agregarDescripcionModal" data-bs-whatever="{% localize off %}{{ p.numero }}{% endlocalize %}|{{ p.descripcion }}">
                                                 <i class="fa-solid fa-pencil sm"></i>
                                             </button>
                                         </div>
                                     </div>
                                 </td>
 
-                                <td>$ {{ p.precio }}</td>
-
+                                <td>
+                                    <div class="text-nowrap">
+                                        $ {{ p.precio }}
+                                    </div>
+                                </td>
                                 <td>
                                     <div class="celda-grid">
-                                        <div class="contenido">$ {{ p.senia }}</div>
+                                        <div class="contenido text-nowrap">$ {{ p.senia }}</div>
                                         <div class="acciones">
-                                            <button type="button" class="btn btn-dark btn-xs" data-bs-toggle="modal" data-bs-target="#agregarSeniaModal" data-bs-whatever="{{ p.numero }}">
+                                            <button type="button" class="btn btn-dark btn-xs" data-bs-toggle="modal" data-bs-target="#agregarSeniaModal" data-bs-whatever="{% localize off %}{{ p.numero }}{% endlocalize %}">
                                                 <i class="fa-solid fa-pencil sm"></i>
                                             </button>
                                         </div>
                                     </div>
                                 </td>
-
-                                <td>$ {{ p.saldo }}</td>
+                                <td>
+                                    <div class="text-nowrap">
+                                        $ {{ p.saldo }}
+                                    </div>
+                                </td>
 
                                 <td>
-                                    <a href="/presupuestos/verPresupuesto/{{ p.presupuesto }}">{{ p.presupuesto }}</a>
+                                    <a href="/presupuestos/verPresupuesto/{% localize off %}{{ p.presupuesto }}{% endlocalize %}">{% localize off %}{{ p.presupuesto }}{% endlocalize %}</a>
                                 </td>
 
                                 <td>{{ p.fecha_entrega }}</td>
@@ -186,207 +192,7 @@
 {% endblock %}
 <!--------------------------------------------------------------------------- Block modal --------------------------------------------------------------------------->
 {% block modal %}
-<!-- Modal confirmaación seña -->
-<div class="modal fade" id="confirmacionModal" tabindex="-1" aria-labelledby="confirmacionModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content p-4">
-      <div class="modal-header">
-        <h5 class="modal-title" id="confirmacionModalLabel">Confirmación del pedido</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-      </div>
-      <div class="modal-body">
-        <p><strong>Cliente:</strong> <span id="confCliente"></span></p>
-        <p><strong>Fecha de pedido:</strong> <span id="confFechaPedido"></span></p>
-        <p><strong>Fecha de entrega potencial:</strong> <span id="confFechaEntrega"></span></p>
-        <hr>
-        <div id="confProductos" class="mb-3"></div>
-        <hr>
-        <p><strong>Precio:</strong> $ <span id="confPrecio"></span></p>
-        <p><strong>Seña:</strong> $ <span id="confSenia"></span></p>
-        <p><strong>Saldo:</strong> $ <span id="confSaldo"></span></p>
-      </div>
-    </div>
-  </div>
-</div>
-
-
-<!-- Modal Ver Detalles -->
-<div class="modal fade" id="detallesModal" tabindex="-1" aria-labelledby="detallesModalLabel" data-bs-backdrop="static" aria-hidden="true">   
-    <div class="modal-dialog modal-lg modal-dialog-scrollable">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h1 class="modal-title-detalles fs-5" id="detallesModalLabel">Modal Title</h1>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <table class="table">
-                    <thead>
-                        <tr>
-                        <th>Insumo</th>
-                        <th>Producto</th>
-                        <th>Información Adicional</th>
-                        <th>Empaquetado</th>
-                        <th>Cantidad</th>
-                        </tr>
-                    </thead>
-                    <tbody id="productosTableBody">
-                        <!-- Aquí se cargará la tabla mediante AJAX -->
-                    </tbody>
-                </table>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-dark btn-fuente" data-bs-dismiss="modal">Volver atras</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Modal para cambiar el cliente -->
-<div class="modal fade" id="cambiarClienteModal" tabindex="-1" aria-labelledby="cambiarClienteModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-        <!-- Formulario interno del modal -->
-        <form id="cambiarClienteForm" action="{% url 'cambiar_cliente_pedido' %}" method="POST">
-            {% csrf_token %}
-            <div class="modal-header">
-            <h5 class="modal-title" id="cambiarClienteModalLabel">Cambiar Cliente</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-            </div>
-            <div class="modal-body">
-            <!-- Input oculto: almacena el número de pedido -->
-            <input type="hidden" id="pedidoNumero" name="pedidoNumero">
-            <input type="hidden" id="presupuestoNumero" name="presupuestoNumero">
-            <!-- Input para el nombre del cliente -->
-            <div class="mb-3">
-                <label for="nuevoCliente" class="col-form-label">Nombre del Cliente:</label>
-                <input list="lista_clientes_modal"
-                    type="text"
-                    class="form-control"
-                    id="nuevoCliente"
-                    name="nuevoCliente"
-                    placeholder="Nombre del cliente">
-
-                <datalist id="lista_clientes_modal">
-                    {% for c in Clientes %}
-                        <option value="{{ c.id }}|{{ c.referencia }}"></option>
-                    {% endfor %}
-                </datalist>
-            </div>
-            </div>
-            <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-            <button type="submit" class="btn btn-primary">Guardar cambios</button>
-            </div>
-        </form>
-        </div>
-    </div>
-</div>
-
-<!-- Modal Cambiar Estado -->
-<div class="modal fade" id="cambiarEstadoModal" tabindex="-1" aria-labelledby="cambiarEstadoModalLabel" data-bs-backdrop="static" aria-hidden="true">   
-    <form action="/pedidos/cambiarEstado" method="POST">
-        {% csrf_token %}
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h1 class="modal-title-estado fs-5" id="cambiarEstadoModalLabel">Modal title</h1>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <input type="text" id="cambiarPedido_estado" name="cambiarPedido_estado" readonly="true" hidden>
-                    <label for="estado" style="font-weight: bold">Seleccionar el nuevo estado:</label>
-                    <select name="estado" id="estado" class="form-control select">
-                        <option value="">Elegir un estado</option>
-                        {% for estado in Estados %}
-                            <option value="{{ estado }}">{{ estado }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-dark btn-fuente" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-dark btn-fuente">Guardar cambios</a></button> 
-                </div>
-            </div>
-        </div>
-    </form>
-</div>
-            
-
-<!-- Modal Cambiar Encargado -->
-<div class="modal fade" id="cambiarEncargadoModal" tabindex="-1" aria-labelledby="cambiarEncargadoModalLabel" data-bs-backdrop="static" aria-hidden="true">   
-    <form action="/pedidos/cambiarEncargado" method="POST">
-        {% csrf_token %}
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h1 class="modal-title-enc fs-5" id="cambiarEncargadoModalLabel">Modal title</h1>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <input type="text" id="cambiarPedido_enc" name="cambiarPedido_enc" readonly="true" hidden>
-                    <label for="encargadoSelect" style="font-weight: bold">Asignar este pedido a:</label>
-                    <select name="encargadoSelect" id="encargadoSelect" class="form-control select">
-                        <!-- Opciones cargadas dinámicamente -->
-                    </select>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-dark btn-fuente" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-dark btn-fuente">Guardar cambios</a></button> 
-                </div>
-            </div>
-        </div>
-    </form>
-</div>
-
-
-<!-- Modal Agregar descripción -->
-<div class="modal fade" id="agregarDescripcionModal" tabindex="-1" aria-labelledby="agregarDescripcionModalLabel" data-bs-backdrop="static" aria-hidden="true">   
-    <form action="/pedidos/agregarDescripcion" method="POST">
-        {% csrf_token %}
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h1 class="modal-title-desc fs-5" id="agregarDescripcionModalLabel">Modal title</h1>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <input type="text" id="cambiarPedido_desc" name="cambiarPedido_desc" readonly="true" hidden>
-                    <label for="descripcion" style="font-weight: bold">Agregar anotación al pedido:</label>
-                    <textarea rows="4" cols="50" id="descripcion" name="descripcion"></textarea>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-dark btn-fuente" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-dark btn-fuente">Guardar cambios</a></button> 
-                </div>
-            </div>
-        </div>
-    </form>
-</div>
-
-<!-- Modal Agregar nueva senia -->
-<div class="modal fade" id="agregarSeniaModal" tabindex="-1" aria-labelledby="agregarSeniaModalLabel" data-bs-backdrop="static" aria-hidden="true">   
-    <form action="/pedidos/agregarSenia" method="POST">
-        {% csrf_token %}
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h1 class="modal-title-senia fs-5" id="agregarSeniaModalLabel">Modal title</h1>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <input type="text" id="cambiarPedido_senia" name="cambiarPedido_senia" readonly="true" hidden>
-                    <label for="senia" style="font-weight: bold">Ingresa el monto de la seña $ (formato #.##):</label>
-                    <input type="text" id="senia" name="senia">
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-dark btn-fuente" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-dark btn-fuente">Guardar cambios</a></button> 
-                </div>
-            </div>
-        </div>
-    </form>
-</div>
-
+    {% include 'pedidos/partials/modales.html' %}
 {% endblock %}
 <!--------------------------------------------------------------------------- Block footer --------------------------------------------------------------------------->
 {% block footer %}

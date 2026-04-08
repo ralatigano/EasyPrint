@@ -15,6 +15,7 @@ from datetime import datetime
 from django.utils import timezone
 import json
 from openpyxl import Workbook
+from core.utils import format_ar, parse_ar
 
 # Create your views here.
 app_name = 'pedidos'
@@ -447,10 +448,11 @@ def guardar_viaje_cadete(request):
         return redirect("/pedidos/viajesCadete")
 
     viaje_id = request.POST.get("viajeId")
+    print(f'Viaje ID: {viaje_id}')
     fecha = request.POST.get("fecha")
     origen = request.POST.get("origen")
     destino = request.POST.get("destino")
-    precio = request.POST.get("precio")
+    precio = parse_ar(request.POST.get("precio"))
     pagado = request.POST.get("pagado") == "on"
     fecha_pago = request.POST.get("fecha_pago")
 

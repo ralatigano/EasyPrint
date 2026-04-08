@@ -5,6 +5,7 @@ from datetime import datetime
 from productos.models import Producto, Categoria
 from rectpack import newPacker, SkylineMwf, MaxRectsBssf
 from rectpack import SORT_RATIO
+from core.utils import format_ar
 
 
 def configurar_matplotlib():
@@ -179,7 +180,7 @@ def procesar_cotizacion_con_grafico(
     plt.gca().invert_yaxis()
 
     # Título con datos
-    titulo = f"{cantidad_deseada} elementos de {ancho_elemento}x{alto_elemento} cm con {separacion} cm de separación"
+    titulo = f"{cantidad_deseada} elementos de {format_ar(ancho_elemento)} x {format_ar(alto_elemento)} cm con {format_ar(separacion)} cm de separación"
     ax.set_title(titulo)
 
     # Fondo hoja
@@ -225,7 +226,7 @@ def procesar_cotizacion_con_grafico(
             "tipo": tipo
         }
     elif tipo_calculo == "B":
-        mensaje = f"Hacen falta {area_ocupada:.2f} m² para imprimir {cantidad_deseada} elementos."
+        mensaje = f"Hacen falta {format_ar(area_ocupada)} m² para imprimir {cantidad_deseada} elementos."
         tipo = "D"
         return {
             "grafico_url": grafico_url,
@@ -235,7 +236,7 @@ def procesar_cotizacion_con_grafico(
             "tipo": tipo
         }
     elif tipo_calculo == "C":
-        mensaje = f"Hacen falta {largo_ocupado:.2f} metros lineales para imprimir {cantidad_deseada} elementos."
+        mensaje = f"Hacen falta {format_ar(largo_ocupado)} metros lineales para imprimir {cantidad_deseada} elementos."
         tipo = "D"
         return {
             "grafico_url": grafico_url,

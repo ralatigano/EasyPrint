@@ -95,12 +95,13 @@ document.addEventListener("DOMContentLoaded", function () {
           return res.json();
         })
         .then(data => {
+          console.log(data);
           modalTitle.textContent = `Editar viaje del ${data.fecha}`;
           document.getElementById("viajeId").value = data.id;
           document.getElementById("fecha").value = data.fecha;
           document.getElementById("origen").value = data.origen;
           document.getElementById("destino").value = data.destino;
-          document.getElementById("precio").value = data.precio;
+          document.getElementById("precio").value = `$ ` + formatearNumeroLocal(data.precio);
           document.getElementById("pagado").checked = data.pagado;
           document.getElementById("fecha_pago").value = data.fecha_pago ?? "";
         })

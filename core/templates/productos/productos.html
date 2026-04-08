@@ -100,76 +100,7 @@
 {% endblock %}
 <!--------------------------------------------------------------------------- Block modal --------------------------------------------------------------------------->
 {% block modal %}
-<div class="modal fade" id="crearProductoModal" tabindex="-1" aria-labelledby="crearProductoModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="crearProductoModalLabel">Nuevo producto</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                {% csrf_token %}
-                <input type="hidden" name="id_producto" value="0">
-
-                <div class="mb-3">
-                    <label class="form-label">Nombre</label>
-                    <input type="text" id="productoNombre" name="productoNombre" class="form-control">
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Categoría</label>
-                    <select id="productoCategoria" name="productoCategoria" class="form-select">
-                        <!-- Opciones dinámicas -->
-                    </select>
-                </div>
-                <div class="row mb-2">
-                    <div class="col">
-                        <label for="productoAncho" class="form-label">Ancho (cm)</label>
-                        <input type="number" step="0.01" class="form-control" id="productoAncho" name="productoAncho"
-                            title="Para productos por unidad, usar ancho=1 y alto=1. Si se comercializa por m² o fracción, indicar dimensiones reales.">
-                    </div>
-                    <div class="col">
-                        <label for="productoAlto" class="form-label">Alto (cm)</label>
-                        <input type="number" step="0.01" class="form-control" id="productoAlto" name="productoAlto"
-                            title="Para productos por unidad, usar ancho=1 y alto=1. Si se comercializa por m² o fracción, indicar dimensiones reales.">
-                    </div>
-                </div>
-
-                <!-- ❓ Checkbox para tercerización -->
-                <div class="mb-3 form-check">
-                    <input type="checkbox" class="form-check-input" id="tercerizado-checkbox"  name="tercerizado" onchange="toggleInsumos(this.checked)" checked>
-                    <label class="form-check-label" for="tercerizado-checkbox">Producto tercerizado</label>
-                </div>
-                <div class="mb-2" id="precioProveedorWrapper">
-                    <label for="productoPrecioProveedor" class="form-label">Precio de proveedor</label>
-                    <input type="number" step="0.01" class="form-control" id="productoPrecioProveedor" name="productoPrecioProveedor"
-                            title="Precio fijo que nos cobra el proveedor por unidad. Solo se usa si el producto es tercerizado.">
-                </div>
-
-                <!-- 🔩 Sección de insumos -->
-                <div id="seccion-insumos" style="display: none;">
-                    <h6>Insumos del producto</h6>
-                    <div id="insumos-container" class="d-flex flex-column gap-2"></div>
-                    <button type="button" class="btn btn-outline-primary mt-2" onclick="agregarFilaInsumo()">➕ Agregar insumo</button>
-                </div>
-                <div class="mb-2">
-                    <label for="productoMargen" class="form-label">Margen de rentabilidad</label>
-                    <input type="number" step="0.01" class="form-control" id="productoMargen" name="productoMargen" value="1"
-                            title="Multiplica el costo base (por insumos o proveedor) para obtener el precio final del producto. Ej: 1.3 → 30% margen">
-                </div>
-
-                <!-- 📊 Resumen de costos -->
-                <div id="resumen-costos" class="mt-4">
-                    <p><strong>Costo total insumos:</strong> <span id="costo-total" name="costo-total">$0.00</span></p>
-                    <p><strong>Costo final (con factor):</strong> <span id="costo-final">$0.00</span></p>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-success" onclick="guardarProducto()">Guardar producto</button>
-            </div>
-        </div>
-    </div>
-</div>
+{% include 'productos/partials/modales.html' %}
 {% endblock %}
 {% block footer %}
 <!--------------------------------------------------------------------------- Block footer --------------------------------------------------------------------------->

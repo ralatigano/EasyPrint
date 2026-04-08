@@ -48,31 +48,7 @@
 {% endblock %}
 <!--------------------------------------------------------------------------- Block modal --------------------------------------------------------------------------->
 {% block modal %}
-<!-- Modal Editar Categoria -->
-<div class="modal fade" id="editarCategoriaModal" tabindex="-1" aria-labelledby="editarCategoriaModalLabel" data-bs-backdrop="static" aria-hidden="true">   
-    <form action="/productos/guardarCategoria/" method="POST">
-        {% csrf_token %}
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="editarClienteModal">Modal title</h1>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <input id="id" name="id" hidden>
-
-                    <label for="nombre" style="font-weight: bold">Nombre:</label>
-                    <input id="nombre" name="nombre" required>
-                
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-dark btn-xs btn-fuente" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-dark btn-xs btn-fuente">Guardar</a></button> 
-                </div>
-            </div>
-        </div>
-    </form>
-</div>
+{% include 'productos/partials/modales.html' %}
 {% endblock %}
 <!--------------------------------------------------------------------------- Block footer --------------------------------------------------------------------------->
 {% block footer %}

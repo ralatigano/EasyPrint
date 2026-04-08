@@ -31,15 +31,15 @@
                     <tbody id="tableBody_Presupuesto">
                         {% for pres in Pres %}
                             <tr>
-                                <td><a href="/presupuestos/verPresupuesto/{{pres.numero}}">{{pres.numero}}</a></td>
-                                <td>{{pres.cliente}} <button type="button" class="btn btn-dark btn-xs" data-bs-toggle="modal" data-bs-target="#cambiarClienteModal" data-bs-whatever="{{pres.numero}}"><i class="fa-solid fa-pencil"></i></button></td>
-                                <td>$ {{pres.total|localize}}</td>
+                                <td><a href="/presupuestos/verPresupuesto/{% localize off %}{{pres.numero}}{% endlocalize %}">{% localize off %}{{pres.numero}}{% endlocalize %}</a></td>
+                                <td>{{pres.cliente}} <button type="button" class="btn btn-dark btn-xs" data-bs-toggle="modal" data-bs-target="#cambiarClienteModal" data-bs-whatever="{% localize off %}{{pres.numero}}{% endlocalize %}"><i class="fa-solid fa-pencil"></i></button></td>
+                                <td>$ {{pres.total}}</td>
                                 <td>{{pres.created}}</td>
                                 <td>
-                                    <button class="btn btn-dark btn-xs ver-productos-btn" data-numero="{{pres.numero}}" title="Ver los productos de este presupuesto"><i class="fa-solid fa-eye"></i></button>
-                                    <a href="/presupuestos/verPresupuesto/{{pres.numero}}" class="btn btn-dark btn-xs" title="Editar este presupuesto agregando/quitando/modificando los/sus productos"><i class="fa-solid fa-pencil"></i></a>
-                                    <a href="/presupuestos/descargarPresupuesto/{{pres.numero}}" class="btn btn-dark btn-xs" title="Descargar este presupuesto en formato PDF"><i class="fa-solid fa-share-nodes"></i></a>
-                                    <a href="/pedidos/prepararCompletarPedido/{{pres.numero}}" class="btn btn-dark btn-xs" title="Convertir este presupuesto en un pedido"><i class="fa-solid fa-check"></i></a>
+                                    <button class="btn btn-dark btn-xs ver-productos-btn" data-numero="{% localize off %}{{pres.numero}}{% endlocalize %}" title="Ver los productos de este presupuesto"><i class="fa-solid fa-eye"></i></button>
+                                    <a href="/presupuestos/verPresupuesto/{% localize off %}{{pres.numero}}{% endlocalize %}" class="btn btn-dark btn-xs" title="Editar este presupuesto agregando/quitando/modificando los/sus productos"><i class="fa-solid fa-pencil"></i></a>
+                                    <a href="/presupuestos/descargarPresupuesto/{% localize off %}{{pres.numero}}{% endlocalize %}" class="btn btn-dark btn-xs" title="Descargar este presupuesto en formato PDF"><i class="fa-solid fa-share-nodes"></i></a>
+                                    <a href="/pedidos/prepararCompletarPedido/{% localize off %}{{pres.numero}}{% endlocalize %}" class="btn btn-dark btn-xs" title="Convertir este presupuesto en un pedido"><i class="fa-solid fa-check"></i></a>
                                 </td>
                             </tr>
                         {% endfor %} 
@@ -52,75 +52,7 @@
 {% endblock %}
 <!--------------------------------------------------------------------------- Block modal --------------------------------------------------------------------------->
 {% block modal %}
-<!-- Modal para cambiar el cliente -->
-<div class="modal fade" id="cambiarClienteModal" tabindex="-1" aria-labelledby="cambiarClienteModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-        <!-- Formulario interno del modal -->
-        <form id="cambiarClienteForm">
-            <div class="modal-header">
-            <h5 class="modal-title" id="cambiarClienteModalLabel">Cambiar Cliente</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-            </div>
-            <div class="modal-body">
-            <!-- Input oculto: almacena el número de presupuesto -->
-            <input type="hidden" id="presupuestoNumero" name="presupuestoNumero">
-            <!-- Input para el nombre del cliente -->
-            <div class="mb-3">
-                <label for="nuevoCliente" class="col-form-label">Nombre del Cliente:</label>
-                <input list="lista_clientes_modal"
-                    type="text"
-                    class="form-control"
-                    id="nuevoCliente"
-                    name="nuevoCliente"
-                    placeholder="Nombre del cliente">
-
-                <datalist id="lista_clientes_modal">
-                    {% for c in Clientes %}
-                        <option value="{{ c.id }}|{{ c.referencia }}"></option>
-                    {% endfor %}
-                </datalist>
-            </div>
-            </div>
-            <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-            <button type="submit" class="btn btn-primary">Guardar cambios</button>
-            </div>
-        </form>
-        </div>
-    </div>
-</div>
-<!-- Modal para ver los productos que componen un presupuesto -->
-<div class="modal fade" id="modalProductosPresupuesto" tabindex="-1" role="dialog" aria-labelledby="modalLabelProductos" aria-hidden="true">
-    <div class="modal-dialog modal-lg" role="document">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="modalLabelProductos">Productos del presupuesto</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-                </div>
-                <div class="modal-body">
-                    <table class="table table-bordered table-sm">
-                    <thead>
-                        <tr>
-                        <th>Producto</th>
-                        <th>Cantidad</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tablaProductosPresupuesto">
-                        <!-- Se llenará por Ajax -->
-                    </tbody>
-                    </table>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <a id="btnEditarPresupuesto" href="#" class="btn btn-dark">Editar presupuesto</a>
-                    <a id="btnConvertirPedido" href="#" class="btn btn-dark">Convertir en pedido</a>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+{% include 'presupuestos/partials/modales.html' %}
 {% endblock %}
 
 <!--------------------------------------------------------------------------- Block footer --------------------------------------------------------------------------->

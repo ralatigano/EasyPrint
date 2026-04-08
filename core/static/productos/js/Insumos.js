@@ -36,11 +36,9 @@ const initDataTable = async () => {
           const stockText = $(this).find('td:eq(4)').text().trim();
           const stock = parseFloat(stockText.replace(',', '.'));
 
-          console.log(`Fila ${index}: stockText="${stockText}", stock=${stock}`);
 
           if (!isNaN(stock)) {
             if (stock === 0) {
-              console.log(`🟥 Fila ${index} con stock 0`);
 
               $(this).find('td').each(function() {
                 $(this).css({
@@ -49,7 +47,6 @@ const initDataTable = async () => {
               });
 
             } else if (stock <= 10) {
-              console.log(`🟨 Fila ${index} con stock bajo (${stock})`);
 
               $(this).find('td').each(function() {
                 $(this).css({
@@ -77,17 +74,21 @@ document.addEventListener("DOMContentLoaded", function () {
   const infoModificacion = document.getElementById("info-modificacion");
   const idInput = document.getElementById("id_insumo");
 
+  // Reset siempre al abrir el modal, antes de que lleguen los datos
+  modalElement.addEventListener("show.bs.modal", function () {
+    modalElement.querySelector("form").reset();
+    document.getElementById("activo").checked = true;
+    infoModificacion.textContent = "Última modificación: - por -";
+  });
+
   document.querySelectorAll("[data-bs-toggle='modal'][data-bs-target='#crearEditarInsumoModal']").forEach(button => {
     button.addEventListener("click", function () {
       const id = button.getAttribute("data-id");
 
       if (id === "0") {
-        // Modo creación
+        // Modo creación — el reset ya lo maneja show.bs.modal
         modalTitle.textContent = "Nuevo insumo";
         idInput.value = "0";
-        modalElement.querySelector("form").reset();
-        document.getElementById("activo").checked = true;
-        insumoModal.show();
       } else {
         // Modo edición
         fetch(`/productos/infoInsumo/${id}`)
@@ -97,17 +98,15 @@ document.addEventListener("DOMContentLoaded", function () {
           })
           .then(data => {
             idInput.value = data.id;
-            document.getElementById("nombre").value = data.nombre || "";
+            document.getElementById("nombre_insumo").value = data.nombre || "";
             document.getElementById("unidad_medida").value = data.unidad_medida || "";
             document.getElementById("unidad_composicion").value = data.unidad_composicion || "";
             document.getElementById("factor_conversion").value = data.factor_conversion ?? 1;
-            // document.getElementById("ancho").value = data.ancho ?? "";
-            // document.getElementById("alto").value = data.alto ?? "";
             document.getElementById("stock").value = data.stock ?? "";
-            document.getElementById("precio_unitario").value = data.precio_unitario ?? "";
+            document.getElementById("precio_unitario").value = "$ " + formatearNumeroLocal(data.precio_unitario ?? 0);
             document.getElementById("activo").checked = !!data.activo;
             modalTitle.textContent = `Editar insumo: ${data.nombre}`;
-            // Mostrar info de modificación si existe
+
             if (data.ultima_modificacion && data.modificado_por) {
               const fecha = new Date(data.ultima_modificacion);
               const fechaFormateada = fecha.toLocaleString("es-AR", {
@@ -118,11 +117,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 minute: "2-digit"
               });
               infoModificacion.textContent = `Última modificación: ${fechaFormateada} por ${data.modificado_por}`;
-            } else {
-              infoModificacion.textContent = `Última modificación: - por -`;
             }
-
-            insumoModal.show();
           })
           .catch(error => {
             console.error("Error al cargar insumo:", error);

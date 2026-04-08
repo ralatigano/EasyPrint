@@ -317,16 +317,27 @@ const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]
 const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
 
 
-/**
- * Formatea un número con dos decimales y separador de miles.
- * Si el valor no es un número válido, lo devuelve sin cambios.
- *
- * @param {string|number} valor - El número a formatear.
- * @return {string} El número formateado o el valor original si no es un número válido.
- */
-function formatearNumero(valor) {
-  const num = typeof valor === 'string' ? parseFloat(valor.replace(',', '.')) : valor;
-  return isNaN(num)
-    ? valor
-    : num.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+// Convierte un número real a formato es-AR (coma + miles + 2 decimales)
+function formatearNumeroLocal(valor) {
+    if (valor === null || valor === undefined || valor === "") return "";
+    const numero = Number(valor);
+    if (isNaN(numero)) return "";
+    return numero.toLocaleString("es-AR", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+}
+
+// Convierte un string formateado (1.234,56) a número real JS (1234.56)
+function parsearNumeroLocal(str) {
+    if (!str) return 0;
+
+    // Elimina separadores de miles
+    let limpio = str.replace(/\./g, "");
+
+    // Reemplaza coma decimal por punto
+    limpio = limpio.replace(",", ".");
+
+    const numero = Number(limpio);
+    return isNaN(numero) ? 0 : numero;
 }

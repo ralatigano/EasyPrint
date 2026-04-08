@@ -1,0 +1,41 @@
+<!-- Modal Editar Producto -->
+<div class="modal fade" id="editarUsuarioModal" tabindex="-1" aria-labelledby="editarUsuarioModalLabel" data-bs-backdrop="static" aria-hidden="true">   
+    <form action="/editarUsuario" method="POST">
+        {% csrf_token %}
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title-prod fs-5" id="editarUsuarioModalLabel">Modal title</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="text" id="id" name="id" hidden>
+                    
+                    <label for="username" style="font-weight: bold">Nombre de usuario:</label>
+                    <input type="text" id="username" name="username" data-bs-toggle="tooltip" title="Te recomendamos que uses la inicial del nombre + apellido para que lo recuerdes."></textarea>
+
+                    <label for="nombre" style="font-weight: bold">Nombre:</label>
+                    <input type="text" id="nombre" name="nombre">
+                    
+                    <label for="apellido" style="font-weight: bold">Apellido:</label>
+                    <input type="text" id="apellido" name="apellido">
+                    
+                    <label for="email" style="font-weight: bold">Correo electrónico:</label>
+                    <input type="email" id="email" name="email">
+                    
+                    <label for="telefono" style="font-weight: bold">Teléfono:</label>
+                    <input type="text" id="telefono" name="telefono">
+
+                    <label for="grupo" style="font-weight: bold">Grupo/s:</label>
+                    <select id="grupo" name="grupo"  multiple data-bs-toggle="tooltip" title="Haz click para cambiar el grupo.">
+                    </select>
+                
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-dark btn-fuente" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-dark btn-fuente">Guardar cambios</a></button> 
+                </div>
+            </div>
+        </div>
+    </form>
+</div>

@@ -164,7 +164,7 @@ async function actualizarPU(select) {
     const res = await fetch(`/productos/datosInsumo/${id}`);
     const { precio, u_de_uso } = await res.json();
 
-    fila.querySelector('.pu-insumo').textContent = `$${precio}`;
+    fila.querySelector('.pu-insumo').textContent = `$ ${formatearNumeroLocal(precio)}`;
     fila.querySelector('.unidad-uso').textContent = u_de_uso;
     actualizarSubtotal(fila);
   } catch (err) {
@@ -175,9 +175,9 @@ async function actualizarPU(select) {
 // 🔢 Calcula subtotal individual
 function actualizarSubtotal(fila) {
   const cantidad = parseFloat(fila.querySelector('.cantidad-insumo').value) || 0;
-  const pu = parseFloat(fila.querySelector('.pu-insumo').textContent.replace('$', '')) || 0;
+  const pu = parsearNumeroLocal(fila.querySelector('.pu-insumo').textContent.replace('$', '')) || 0;
   const subtotal = cantidad * pu;
-  fila.querySelector('.subtotal-insumo').textContent = `$${subtotal.toFixed(2)}`;
+  fila.querySelector('.subtotal-insumo').textContent = `$ ${formatearNumeroLocal(subtotal)}`;
   actualizarResumen();
 }
 
@@ -187,21 +187,21 @@ function actualizarResumen() {
   const inputPrecio = document.getElementById('productoPrecioProveedor');
   const inputMargen = document.getElementById('productoMargen');
 
-  precioProveedor = parseFloat(inputPrecio?.value) || 0;
-  margenRentabilidad = parseFloat(inputMargen?.value) || factorConversion;
-
+  precioProveedor = parsearNumeroLocal(inputPrecio?.value) || 0;
+  margenRentabilidad = parsearNumeroLocal(inputMargen?.value) || factorConversion;
+  
   let costoBase = 0;
 
   if (esTercerizado) {
     costoBase = precioProveedor;
   } else {
     document.querySelectorAll('.subtotal-insumo').forEach(span => {
-      costoBase += parseFloat(span.textContent.replace('$', '')) || 0;
+      costoBase += parsearNumeroLocal(span.textContent.replace('$', '')) || 0;
     });
   }
 
-  document.getElementById('costo-total').textContent = `$${costoBase.toFixed(2)}`;
-  document.getElementById('costo-final').textContent = `$${(costoBase * margenRentabilidad).toFixed(2)}`;
+  document.getElementById('costo-total').textContent = `$ ${formatearNumeroLocal(costoBase)}`;
+  document.getElementById('costo-final').textContent = `$ ${formatearNumeroLocal(costoBase * margenRentabilidad)}`;
 }
 
 // 🔁 Modal abierto: inicialización
@@ -233,9 +233,9 @@ async function completarFormulario(idProducto) {
     document.getElementById('productoCategoria').value = data.categoria_id;
     document.getElementById('productoAncho').value = data.ancho;
     document.getElementById('productoAlto').value = data.alto;
-    document.getElementById('productoMargen').value = data.margen;
+    document.getElementById('productoMargen').value = formatearNumeroLocal(data.margen);
     document.getElementById('tercerizado-checkbox').checked = data.tercerizado;
-    document.getElementById('productoPrecioProveedor').value = data.precio_proveedor;
+    document.getElementById('productoPrecioProveedor').value = formatearNumeroLocal(data.precio_proveedor);
 
     toggleInsumos(data.tercerizado); // actualiza visual
 
@@ -305,7 +305,7 @@ async function guardarProducto() {
   formData.append("productoAlto", document.getElementById("productoAlto").value || '');
   formData.append("productoMargen", document.getElementById("productoMargen").value || '');
   const precioTexto = document.getElementById("costo-total").textContent;
-  const precioLimpio = precioTexto.replace(/\$/g, "").replace(/,/g, "").trim();
+  const precioLimpio = parsearNumeroLocal(precioTexto.replace(/\$/g, "").replace(/,/g, "").trim());
   formData.append("productoPrecio", precioLimpio);
   formData.append("tercerizado", document.getElementById("tercerizado-checkbox").checked ? "on" : "");
 

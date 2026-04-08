@@ -1,0 +1,102 @@
+<!-- ------------------------------------------------------------------------------Modales inicio------------------------------------------------------------------------------ -->
+<!-- Modal resultado del cálculo -->
+<div class="modal fade" id="resultadoPrevioModal" tabindex="-1" aria-labelledby="resultadoPrevioModalLabel" data-bs-backdrop="static" aria-hidden="true">   
+    <form action="" method="POST" id="">
+        {% csrf_token %}
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title-prod fs-5" id="resultadoPrevioModalLabel">Cálculo rápido</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Producto: <span id="prod_prev" style="font-weight: bold"> </span></p>
+                    <p>Cantidad: <span id="cant_prev" style="font-weight: bold"> </span></p>
+                    <p>Cantidad hojas/Área/Metros: <span id="cant_area_prev" style="font-weight: bold"> </span></p>
+                    <p>Precio: $ <span id="precio_prev" style="font-weight: bold"> </span></p>
+                    <p>Descuento: <span id="descuento_prev" style="font-weight: bold"></span></p>
+                    <p>Empaquetado: <span id="empaquetado_prev" style="font-weight: bold"> </span></p>
+                    <p>Tiempo de producción [hs]: <span id="t_produccion_prev" style="font-weight: bold"> </span></p>
+                    <p>Producto final: <span id="producto_final_prev" style="font-weight: bold"></span></p>
+                    <p>Información adicional: <span id="info_adic_prev" style="font-weight: bold"></span></p>
+                    <p>Detalle: <span id="detalle_prev"></span></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-dark"><a href="/presupuestos/agregarProducto" style="text-decoration: none;"> Agregar </a></button>
+                    <button type="button" class="btn btn-outline-dark" onclick="descartarProducto()">Descartar</button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- ------------------------------------------------------------------------------Modales presupuestos------------------------------------------------------------------------------ -->
+<!-- Modal para cambiar el cliente -->
+<div class="modal fade" id="cambiarClienteModal" tabindex="-1" aria-labelledby="cambiarClienteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+        <!-- Formulario interno del modal -->
+        <form id="cambiarClienteForm">
+            <div class="modal-header">
+            <h5 class="modal-title" id="cambiarClienteModalLabel">Cambiar Cliente</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+            <!-- Input oculto: almacena el número de presupuesto -->
+            <input type="hidden" id="presupuestoNumero" name="presupuestoNumero">
+            <!-- Input para el nombre del cliente -->
+            <div class="mb-3">
+                <label for="nuevoCliente" class="col-form-label">Nombre del Cliente:</label>
+                <input list="lista_clientes_modal"
+                    type="text"
+                    class="form-control"
+                    id="nuevoCliente"
+                    name="nuevoCliente"
+                    placeholder="Nombre del cliente">
+
+                <datalist id="lista_clientes_modal">
+                    {% for c in Clientes %}
+                        <option value="{{ c.id }}|{{ c.referencia }}"></option>
+                    {% endfor %}
+                </datalist>
+            </div>
+            </div>
+            <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-primary">Guardar cambios</button>
+            </div>
+        </form>
+        </div>
+    </div>
+</div>
+<!-- Modal para ver los productos que componen un presupuesto -->
+<div class="modal fade" id="modalProductosPresupuesto" tabindex="-1" role="dialog" aria-labelledby="modalLabelProductos" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalLabelProductos">Productos del presupuesto</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <table class="table table-bordered table-sm">
+                    <thead>
+                        <tr>
+                        <th>Producto</th>
+                        <th>Cantidad</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaProductosPresupuesto">
+                        <!-- Se llenará por Ajax -->
+                    </tbody>
+                    </table>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <a id="btnEditarPresupuesto" href="#" class="btn btn-dark">Editar presupuesto</a>
+                    <a id="btnConvertirPedido" href="#" class="btn btn-dark">Convertir en pedido</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
