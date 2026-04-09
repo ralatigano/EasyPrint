@@ -14,7 +14,7 @@
     <div class="titulo">
         <h1>Productos</h1>
     </div>
-    {% if autorizado %}
+    {% if es_gerencia %}
     <div class="grupo-botones">
         <button type="button" class="btn btn-dark btn-fuente btn-xs" data-bs-toggle="modal" data-bs-target="#crearProductoModal" data-bs-whatever="nuevo">
             <i class="fa-solid fa-square-plus"></i> Agregar un producto 
@@ -69,9 +69,8 @@
                             <th class="centered">Precio</th>
                             <th class="centered">Categoría</th>
                             <th class="centered">Tercerizado</th>
-                            {% if autorizado %}
-                                <th class="centered">Editar/Borrar</th>
-                            {% endif %}
+                            <th class="centered">Acciones</th>
+
                         </tr>
                     </thead>
                     <tbody id="tableBody_Productos">
@@ -83,9 +82,9 @@
                             <td>$ {% if p.tercerizado %}{{p.precio_proveedor|localize}} {% else %}{{p.precio|localize}}{% endif %}</td>
                             <td>{{p.categoria}}</td>
                             <td>{% if p.tercerizado %}Si{% else %}No{% endif %}</td>
-                            {% if autorizado %}
                                 <td>
                                     <button type="button" class="btn btn-dark btn-xs" data-bs-toggle="modal" data-bs-target="#crearProductoModal" data-bs-whatever="{{p.id}}" onclick=""><i class="fa-solid fa-pencil sm"></i></button>
+                                    {% if es_gerencia %}
                                     <a href="borrarProducto/{{ p.id }}"
                                         class="btn btn-dark btn-xs btnEliminacion"
                                         data-tipo="producto"
@@ -93,8 +92,9 @@
                                         title="Eliminar producto">
                                             <i class="fa-solid fa-trash-can"></i>
                                     </a>
+                                    {% endif %}
                                 </td>
-                            {% endif %}
+                            </tr>
                         </tr>                
                     {% endfor %}
                     </tbody>

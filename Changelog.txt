@@ -170,9 +170,10 @@ Versión v3.1.2
         *Se corrigen errores en el flujo de creación de presupuestos/pedidos que provocaba errores en relación al registro de clientes existentes o nuevos.
         *Se agrega un botón que abre un modal para editar el cliente del pedido en la vista de pedidos. Los cambios de cliente también se reflejan en el presupuesto asociado.
 
-****************** #/#/2026 ******************
+****************** 8/4/2026 ******************
 Versión v3.1.3
     -General
+        *Se mejora la dinámica de los roles para diferenciar el acceso a secciones/funciones según el usuario logueado.
         *Se corrije el formato de los números para que respeten la conveción de '.' como separador de miles y ',' como separador decimal.
         *Se cambia el flujo de advertencia y eliminación de todas las instancias. Incluso, se agregan impedimentos extra para los pedidos y los clientes.
 
@@ -182,6 +183,7 @@ Versión v3.1.3
     -Pedidos
         *Se modifica el funcionamiento de los filtros de modo que persistan hasta que el usuario decida eliminarlos. Además, se puede filtrar por varias opciones del mismo grupo a la vez.
         *Se cambian atributos del modelo para permitir que se puedan eliminar ciertas instancias sin que se borren también los pedidos vinculados a estas.
-        
+
     -Clientes
         *Se agrega la funcionalidad para eliminar clientes siempre y cuando no tengan pedidos pendientes en curso.
+        *Se agregan opciones de contacto: Ticktok y Otros.

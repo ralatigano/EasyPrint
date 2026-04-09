@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import clientes, editar_cliente, obtener_cliente
+from .views import clientes, editar_cliente, obtener_cliente, borrar_cliente
 
 
 urlpatterns = [
@@ -9,4 +9,6 @@ urlpatterns = [
     path('editarCliente', editar_cliente, name='editar_clientes'),
     path('obtenerCliente/<int:cliente_id>',
          obtener_cliente, name='obtenerCliente'),
+    path('borrarCliente/<int:cliente_id>',
+         borrar_cliente, name='borrarCliente'),
 ]

@@ -19,6 +19,7 @@ from weasyprint import HTML
 from datetime import date
 from decimal import Decimal, InvalidOperation
 import json
+from core.decorators import solo_gerencia
 
 # Create your views here.
 app_name = 'presupuestos'
@@ -26,7 +27,7 @@ app_name = 'presupuestos'
 
 # Página principal de la app para hacer una nueva cotización.
 
-
+@login_required
 def Inicio(request):
     autorizado = request.session.get('autorizado')
     usuario_nombre = request.session.get('usuario_nombre')
@@ -68,6 +69,7 @@ def Inicio(request):
     return render(request, 'presupuestos/inicio.html', data)
 
 
+@login_required
 def generar_grafico(request):
 
     tipo = request.POST.get("tipo")
@@ -102,6 +104,7 @@ def generar_grafico(request):
     return JsonResponse(resultado)
 
 
+@login_required
 @csrf_exempt
 def calcular_cotizacion_final(request):
     if request.method == "POST":
@@ -187,6 +190,7 @@ def calcular_cotizacion_final(request):
         })
 
 
+@login_required
 @csrf_exempt
 def actualizar_detalle(request):
     if request.method == "POST":
@@ -208,7 +212,7 @@ def actualizar_detalle(request):
 
 # Vista que procesa una llamada desde el frontend para borrar todos los gráficos que se generan durante la cotización.
 
-
+@login_required
 @csrf_exempt
 def borrar_imagen_generada(request):
     if request.method == 'POST':
@@ -414,6 +418,7 @@ def edit_producto_cotizado(request):
 # Borra un ítem particular del presupuesto que se esta armando.
 
 
+@login_required
 def delete_calc_presupuesto(request, r):
     editando_presup = request.session.get('editando_presup', False)
     np_global = request.session.get('np_global', 0)
@@ -432,6 +437,7 @@ def delete_calc_presupuesto(request, r):
 # Borra todos los ítems del presupuesto que se está armando./Borra los elementos de la BD que no tienen un presupuesto asociado.
 
 
+@login_required
 def destroy_calc_presupuesto(request):
     vendedor = request.session.get('vendedor')
     Calcs = ProductoCotizado.objects.filter(
@@ -449,6 +455,7 @@ def destroy_calc_presupuesto(request):
 # nuevos ítems. El presupuesto original queda sin ítems.
 
 
+@login_required
 def guardar_presupuesto(request):
     editando_presup = request.session.get('editando_presup', False)
     np_global = request.session.get('np_global', 0)
@@ -625,6 +632,7 @@ def cambiar_cliente(request):
     })
 
 
+@login_required
 def obtener_cliente(request):
     presupuesto_numero = request.GET.get('numero')
 
@@ -647,6 +655,7 @@ def obtener_cliente(request):
         raise Http404("Presupuesto no encontrado")
 
 
+@login_required
 def info_prod_cotizado(request, producto_id):
     try:
         producto = ProductoCotizado.objects.get(id=producto_id)
@@ -670,6 +679,7 @@ def info_prod_cotizado(request, producto_id):
         raise Http404("Producto no encontrado")
 
 
+@login_required
 def editar_producto_cotizado(request):
     editando_presup = request.session.get('editando_presup', False)
     np_global = request.session.get('np_global', 0)
@@ -723,6 +733,7 @@ def editar_producto_cotizado(request):
         return redirect('/presupuestos/inicio')
 
 
+@login_required
 def productos_por_presupuesto(request, presupuesto_numero):
     productos = ProductoCotizado.objects.filter(presupuesto=presupuesto_numero)
     data = [

@@ -9,6 +9,7 @@ from openpyxl import Workbook
 from django.http import HttpResponse, Http404
 from django.utils import timezone
 from core.utils import format_ar, parse_ar
+from core.decorators import solo_gerencia
 # Create your views here.
 app_name = 'productos'
 
@@ -33,6 +34,7 @@ def productos(request):
     return render(request, 'productos/productos.html', data)
 
 
+@login_required
 def obtener_producto(request, producto_id):
     producto = get_object_or_404(Producto, id=producto_id)
     data = {
@@ -58,6 +60,7 @@ def obtener_producto(request, producto_id):
     return JsonResponse(data)
 
 
+@login_required
 def obtener_dimensiones_producto(request, producto_id):
     producto = get_object_or_404(Producto, id=producto_id)
     data = {
@@ -67,6 +70,7 @@ def obtener_dimensiones_producto(request, producto_id):
     return JsonResponse(data)
 
 
+@login_required
 def obtener_productos_categoria(request, categoria_id):
     productos = Producto.objects.filter(
         categoria_id=categoria_id).values("id", "nombre")
@@ -77,6 +81,7 @@ def obtener_productos_categoria(request, categoria_id):
 
 
 @login_required
+@solo_gerencia
 def guardar_producto(request):
     try:
 
@@ -150,6 +155,7 @@ def guardar_producto(request):
 
 
 @login_required
+@solo_gerencia
 def borrar_producto(request, producto_id):
     try:
         prod = Producto.objects.filter(pk=producto_id)
@@ -162,16 +168,19 @@ def borrar_producto(request, producto_id):
 # Devuelve los insumos activos en formato JSON para ser utilizados en una petición AJAX desde el frontend.
 
 
+@login_required
 def insumos_select(request):
     insumos = Insumo.objects.filter(activo=True).values('id', 'nombre')
     return JsonResponse(list(insumos), safe=False)
 
 
+@login_required
 def categorias_select(request):
     categorias = Categoria.objects.all().values('id', 'nombre')
     return JsonResponse(list(categorias), safe=False)
 
 
+@login_required
 def datos_insumo(request, id):
     try:
         insumo = Insumo.objects.get(pk=id)
@@ -184,7 +193,7 @@ def datos_insumo(request, id):
 
 # Función que carga productos desde un archivo excel.
 
-
+@login_required
 def importar_productos_excel(request):
     if request.method == 'POST' and request.FILES.get('excel_file'):
         excel_file = request.FILES['excel_file']
@@ -380,7 +389,8 @@ def exportar_productos_excel(request):
 
 # Vista que permite borrar todos los productos.
 
-
+@login_required
+@solo_gerencia
 def borrar_todos_productos(request):
     try:
         Producto.objects.all().delete()
@@ -395,6 +405,7 @@ def borrar_todos_productos(request):
 
 
 @login_required
+@solo_gerencia
 def categorias(request):
     autorizado = request.session.get('autorizado')
     usuario_nombre = request.session.get('usuario_nombre')
@@ -411,6 +422,7 @@ def categorias(request):
     return render(request, 'productos/categorias.html', data)
 
 
+@login_required
 def obtener_categoria(request, categoria_id):
     try:
         categoria = Categoria.objects.get(id=categoria_id)
@@ -419,6 +431,8 @@ def obtener_categoria(request, categoria_id):
         return JsonResponse({'error': 'Categoría no encontrada'}, status=404)
 
 
+@login_required
+@solo_gerencia
 def guardar_categoria(request):
     if request.method == 'POST':
         categoria_id = request.POST.get('id')
@@ -447,6 +461,8 @@ def guardar_categoria(request):
     return redirect('categorias')  # Si no es POST, redirigir
 
 
+@login_required
+@solo_gerencia
 def borrar_categoria(request, categoria_id):
     try:
         cat = Categoria.objects.get(id=categoria_id)
@@ -458,6 +474,7 @@ def borrar_categoria(request, categoria_id):
     return redirect('/productos/categorias', messages)
 
 
+@login_required
 def listar_categorias(request):
     categorias = list(Categoria.objects.values_list('nombre', flat=True))
     return JsonResponse({'categorias': categorias})
@@ -513,6 +530,7 @@ def guardar_insumo(request):
         return redirect("insumos")
 
 
+@login_required
 def info_insumo(request, insumo_id):
     print("insumo_id", insumo_id)
     try:
@@ -540,6 +558,7 @@ def info_insumo(request, insumo_id):
 
 
 @login_required
+@solo_gerencia
 def borrar_insumo(request, insumo_id):
     try:
         prod = Insumo.objects.filter(pk=insumo_id)
@@ -553,6 +572,7 @@ def borrar_insumo(request, insumo_id):
     return redirect('insumos')
 
 
+@login_required
 def importar_insumos_excel(request):
     try:
         if request.method == 'POST' and request.FILES.get('excel_file'):
@@ -626,6 +646,7 @@ def importar_insumos_excel(request):
     return redirect('insumos')
 
 
+@login_required
 def exportar_insumos_excel(request):
     wb = openpyxl.Workbook()
     ws = wb.active
@@ -653,6 +674,8 @@ def exportar_insumos_excel(request):
     return response
 
 
+@login_required
+@solo_gerencia
 def borrar_todos_insumos(request):
     try:
         Insumo.objects.all().delete()
@@ -664,6 +687,7 @@ def borrar_todos_insumos(request):
     return redirect('insumos')
 
 
+@login_required
 def procesar_reposicion_insumo_por_edicion(request, insumo, nuevo_valor):
     """
     Reemplaza el stock del insumo por el nuevo valor ingresado por el usuario.

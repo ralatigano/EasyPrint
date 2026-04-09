@@ -11,7 +11,7 @@ class Presupuesto(models.Model):
     seña = models.FloatField(null=True, blank=True)
     saldo = models.FloatField(null=True, blank=True)
     cliente = models.ForeignKey(
-        on_delete=models.CASCADE, to='clientes.Cliente', default=None, blank=True, null=True)
+        on_delete=models.SET_NULL, to='clientes.Cliente', default=None, blank=True, null=True)
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now_add=True)
 

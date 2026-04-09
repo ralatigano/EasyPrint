@@ -9,6 +9,7 @@ from django.contrib.auth.models import User, Group
 from .models import Usuario
 from datetime import datetime
 from .forms import RegistroUsuarioForm
+from core.decorators import solo_gerencia
 
 # Create your views here.
 
@@ -51,6 +52,7 @@ def iniciar_sesion(request):
 
 
 @login_required
+@solo_gerencia
 def registrar_usuario(request):
     autorizado = request.session.get('autorizado')
     usuario_nombre = request.session.get('usuario_nombre')
@@ -226,6 +228,7 @@ def obtener_usuarios(request):
     return JsonResponse({'usuarios': usuarios_list})
 
 
+@login_required
 def info_usuario(request, usuario_id):
     try:
         usuario = User.objects.get(id=usuario_id)
@@ -240,6 +243,7 @@ def info_usuario(request, usuario_id):
 
 
 @login_required
+@solo_gerencia
 def usuarios(request):
     autorizado = request.session.get('autorizado')
     usuario_nombre = request.session.get('usuario_nombre')
@@ -281,6 +285,7 @@ def info_grupos(request):
 
 
 @login_required
+@solo_gerencia
 def editar_usuario(request):
     if request.method == 'POST':
         user_id = request.POST.get('id')
@@ -337,6 +342,7 @@ def editar_usuario(request):
 
 
 @login_required
+@solo_gerencia
 def borrar_usuario(request, usuario_id):
     try:
         usu = User.objects.filter(id=usuario_id)

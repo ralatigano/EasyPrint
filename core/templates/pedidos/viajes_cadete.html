@@ -40,7 +40,7 @@
                               Estado
                             </th>
                             <th class="centered">Fecha de pago</th>
-                            <th class="centered">Editar/Borrar</th>
+                            <th class="centered">Acciones</th>
                         </tr>
                     </thead>
                     <tbody id="tableBody_ViajesCadete">
@@ -61,6 +61,7 @@
                                             title="Editar este registro">
                                         <i class="fa-solid fa-pencil"></i>
                                     </button>
+                                    {% if es_gerencia %}
                                     <a href="/pedidos/borrarViajeCadete/{{ v.id }}"
                                         class="btn btn-dark btn-xs btnEliminacion"
                                         data-tipo="viaje"
@@ -68,6 +69,7 @@
                                         title="Eliminar viaje">
                                             <i class="fa-solid fa-trash-can"></i>
                                     </a>
+                                    {% endif %}
                                 </td>
                             </tr>
                         {% endfor %} 
@@ -107,6 +109,7 @@
                                 </td>
                                 <td>{{ v.fecha_pago }}</td>
                                 <td>
+                                    {% if es_gerencia %}
                                     <a href="/pedidos/borrarViajeCadete/{{ v.id }}"
                                         class="btn btn-dark btn-xs btnEliminacion"
                                         data-tipo="viaje"
@@ -114,6 +117,7 @@
                                         title="Eliminar viaje">
                                             <i class="fa-solid fa-trash-can"></i>
                                     </a>
+                                    {% endif %}
                                 </td>
                             </tr>
                         {% endfor %}

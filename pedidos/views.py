@@ -16,6 +16,7 @@ from django.utils import timezone
 import json
 from openpyxl import Workbook
 from core.utils import format_ar, parse_ar
+from core.decorators import solo_gerencia
 
 # Create your views here.
 app_name = 'pedidos'
@@ -47,6 +48,7 @@ def pedidos(request):
 # Vista que setea algunos valores necesarios para poder ingresar a completar pedido desde la vista de presupuestos.
 
 
+@login_required
 def preparar_completar_pedido(request, presupuesto_numero):
     request.session['editando_presup'] = True
     request.session['np_global'] = presupuesto_numero
@@ -287,6 +289,7 @@ def confirmar_pedido(request):
     return redirect(url)
 
 
+@login_required
 def get_productos_info(request):
     presupuesto_id = request.GET.get('presupuesto_id')
     pedido_numero = request.GET.get('pedido_numero')
@@ -334,6 +337,7 @@ def get_productos_info(request):
 
 
 @login_required
+@solo_gerencia
 def eliminar_pedido(request, pedido_id):
     try:
         pedido = Pedido.objects.get(numero=pedido_id)
@@ -354,6 +358,7 @@ def eliminar_pedido(request, pedido_id):
     return redirect('/pedidos')
 
 
+@login_required
 def actualizar_stock_insumos(producto, cantidad, modo='descontar', request=None, pedido=None):
     advertencias = []
     componentes = ComponenteProducto.objects.filter(
@@ -443,6 +448,7 @@ def viajes_cadete(request):
     return render(request, 'pedidos/viajes_cadete.html', data)
 
 
+@login_required
 def guardar_viaje_cadete(request):
     if request.method != "POST":
         messages.error(request, "Acceso inválido al formulario.")
@@ -508,6 +514,8 @@ def guardar_viaje_cadete(request):
     return redirect("/pedidos/viajesCadete")
 
 
+@login_required
+@solo_gerencia
 def borrar_viaje_cadete(request, viaje_id):
     try:
         viaje = ViajeCadete.objects.get(id=viaje_id)
@@ -521,6 +529,7 @@ def borrar_viaje_cadete(request, viaje_id):
     return redirect('/pedidos/viajesCadete')
 
 
+@login_required
 def info_viaje_cadete(request, viaje_id):
     try:
         viaje = ViajeCadete.objects.get(id=viaje_id)
@@ -538,6 +547,7 @@ def info_viaje_cadete(request, viaje_id):
         raise Http404("Viaje no encontrado")
 
 
+@login_required
 @csrf_exempt
 def actualizar_estado_viajes(request):
     if request.method != "POST":
@@ -571,6 +581,7 @@ def actualizar_estado_viajes(request):
         return JsonResponse({"redirect_url": reverse("viajesCadete")})
 
 
+@login_required
 def exportar_viajes_cadete(request):
     # Filtrar solo los viajes no pagados
     viajes = ViajeCadete.objects.filter(fecha_pago__isnull=True)

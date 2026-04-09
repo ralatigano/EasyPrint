@@ -96,6 +96,7 @@
                                                     title="Ver confirmación para enviar al cliente">
                                                 <i class="fa-solid fa-circle-info"></i>
                                             </button>
+                                            {% if es_gerencia %}
                                             <a href="/pedidos/eliminarPedido/{% localize off %}{{ p.numero }}{% endlocalize %}"
                                                 class="btn btn-dark btn-xs btnEliminacion"
                                                 data-tipo="pedido"
@@ -103,6 +104,7 @@
                                                 title="Eliminar pedido">
                                                     <i class="fa-solid fa-trash-can"></i>
                                             </a>
+                                            {% endif %}
                                         </div>
                                     </div>
                                 </td>

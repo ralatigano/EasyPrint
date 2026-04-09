@@ -57,6 +57,7 @@
                                 </td>
                                 <td>
                                     <button type="button" class="btn btn-dark btn-xs" data-bs-toggle="modal" data-bs-target="#editarClienteModal" data-bs-whatever="{{c.id}}|{{c.nombre}}|{{c.negocio|default_if_none:''}}|{% localize off %}{{c.cuit|default_if_none:''}}{% endlocalize %}|{{c.telefono|default_if_none:''}}|{{c.direccion|default_if_none:''}}|{{c.metodo_contacto}}"><i class="fa-solid fa-pencil sm"></i></button>
+                                    {% if es_gerencia %}
                                     <a href="/clientes/borrarCliente/{{ c.id }}"
                                         class="btn btn-dark btn-xs btnEliminacion"
                                         data-tipo="cliente"
@@ -64,6 +65,7 @@
                                         title="Eliminar cliente">
                                             <i class="fa-solid fa-trash-can"></i>
                                     </a>
+                                    {% endif %}
                                 </td>
                             </tr>
                         {% endfor %} 
