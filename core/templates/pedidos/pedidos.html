@@ -96,8 +96,12 @@
                                                     title="Ver confirmación para enviar al cliente">
                                                 <i class="fa-solid fa-circle-info"></i>
                                             </button>
-                                            <a href="/pedidos/eliminarPedido/{% localize off %}{{ p.numero }}{% endlocalize %}" class="btn btn-dark btn-xs btnEliminacion" title="Eliminar pedido">
-                                                <i class="fa-solid fa-trash-can"></i>
+                                            <a href="/pedidos/eliminarPedido/{% localize off %}{{ p.numero }}{% endlocalize %}"
+                                                class="btn btn-dark btn-xs btnEliminacion"
+                                                data-tipo="pedido"
+                                                data-fetch-url="/pedidos/obtenerDatosProductos?pedido_numero={% localize off %}{{ p.numero }}{% endlocalize %}&presupuesto_id={% localize off %}{{ p.presupuesto }}{% endlocalize %}"
+                                                title="Eliminar pedido">
+                                                    <i class="fa-solid fa-trash-can"></i>
                                             </a>
                                         </div>
                                     </div>

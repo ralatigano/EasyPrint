@@ -421,7 +421,7 @@ def delete_calc_presupuesto(request, r):
         prod = ProductoCotizado.objects.get(id=r)
         prod.delete()
         messages.success(
-            request, f'El producto {prod.producto} se ha borrado correctamente.')
+            request, f'El producto {prod.producto_final} se ha borrado correctamente.')
     except Exception as e:
         messages.error(
             request, f'No se ha podido borrar el producto. Error({e})')

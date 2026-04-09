@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import clientes, editar_cliente
+from .views import clientes, editar_cliente, obtener_cliente
 
 
 urlpatterns = [
@@ -7,4 +7,6 @@ urlpatterns = [
     path('', clientes, name='clientes'),
     # CRUD clientes
     path('editarCliente', editar_cliente, name='editar_clientes'),
+    path('obtenerCliente/<int:cliente_id>',
+         obtener_cliente, name='obtenerCliente'),
 ]

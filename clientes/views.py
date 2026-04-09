@@ -3,6 +3,8 @@ from django.contrib.auth.decorators import login_required
 from .models import Cliente
 from django.contrib import messages
 from datetime import date
+from django.http import JsonResponse
+from pedidos.models import Pedido
 
 # Create your views here.
 app_name = 'clientes'
@@ -51,3 +53,28 @@ def editar_cliente(request):
                 request, 'Error al actualizar el cliente. Error: ' + str(e))
 
         return redirect('/clientes')
+
+
+def obtener_cliente(request, cliente_id):
+    try:
+        cliente = Cliente.objects.get(id=cliente_id)
+    except Cliente.DoesNotExist:
+        return JsonResponse({'error': 'Cliente no encontrado'}, status=404)
+
+    # Pedidos que impiden el borrado
+    pedidos_activos = Pedido.objects.filter(
+        cliente=cliente
+    ).exclude(
+        estado='Terminado y pagado'
+    )
+
+    bloqueado = pedidos_activos.exists()
+
+    return JsonResponse({
+        'referencia': cliente.referencia,
+        'nombre': cliente.nombre,
+        'bloqueado': bloqueado,
+        'pedidos_activos': list(
+            pedidos_activos.values('numero', 'estado')
+        ) if bloqueado else [],
+    })

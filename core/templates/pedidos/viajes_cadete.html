@@ -63,8 +63,10 @@
                                     </button>
                                     <a href="/pedidos/borrarViajeCadete/{{ v.id }}"
                                         class="btn btn-dark btn-xs btnEliminacion"
-                                        title="Eliminar este registro">
-                                        <i class="fa-solid fa-trash-can"></i>
+                                        data-tipo="viaje"
+                                        data-fetch-url="/pedidos/infoViajeCadete/{{ v.id }}"
+                                        title="Eliminar viaje">
+                                            <i class="fa-solid fa-trash-can"></i>
                                     </a>
                                 </td>
                             </tr>
@@ -107,8 +109,10 @@
                                 <td>
                                     <a href="/pedidos/borrarViajeCadete/{{ v.id }}"
                                         class="btn btn-dark btn-xs btnEliminacion"
-                                        title="Eliminar este registro">
-                                        <i class="fa-solid fa-trash-can"></i>
+                                        data-tipo="viaje"
+                                        data-fetch-url="/pedidos/infoViajeCadete/{{ v.id }}"
+                                        title="Eliminar viaje">
+                                            <i class="fa-solid fa-trash-can"></i>
                                     </a>
                                 </td>
                             </tr>

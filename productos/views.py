@@ -179,7 +179,7 @@ def datos_insumo(request, id):
     except Insumo.DoesNotExist:
         raise Http404("Insumo no encontrado")
 
-    return JsonResponse({'precio': precio, 'u_de_uso': insumo.unidad_composicion})
+    return JsonResponse({'nombre': insumo.nombre, 'precio': precio, 'u_de_uso': insumo.unidad_composicion})
 
 
 # Función que carga productos desde un archivo excel.

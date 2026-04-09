@@ -24,10 +24,10 @@ class Pedido(models.Model):
                               default='No iniciado', max_length=100)
     bloqueado_cancelado = models.BooleanField(default=False)
     cliente = models.ForeignKey(
-        on_delete=models.CASCADE, to=Cliente, default=None, blank=True)
+        on_delete=models.SET_NULL, to=Cliente, default=None, blank=True, null=True)
     presupuesto = models.IntegerField(null=True, blank=True)
     encargado = models.ForeignKey(
-        on_delete=models.CASCADE, to=User, default=None, blank=True, null=True)
+        on_delete=models.SET_NULL, to=User, default=None, blank=True, null=True)
     fecha_entrega = models.DateField(null=True, blank=True)
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now_add=True)

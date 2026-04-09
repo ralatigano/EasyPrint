@@ -4,7 +4,7 @@ from .views import (
     editar_perfil, cambiar_contrasena, restablecer_contrasena,
     correo_contrasena, dark_mode, get_dark_mode,
     obtener_usuarios, editar_usuario, usuarios,
-    info_grupos, borrar_usuario,
+    info_grupos, info_usuario, borrar_usuario,
 )
 
 urlpatterns = [
@@ -30,6 +30,7 @@ urlpatterns = [
     # Edición de usuario
     path('editarUsuario', editar_usuario, name='editarUsuario'),
     path('infoGrupos', info_grupos, name='infoGrupos'),
+    path('obtenerUsuario/<int:usuario_id>', info_usuario, name='infoUsuario'),
     # Eliminar usuario
     path('borrarUsuario/<int:usuario_id>',
          borrar_usuario, name='borrarUsuario'),

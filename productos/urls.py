@@ -27,6 +27,8 @@ urlpatterns = [
     path('obtenerInsumos', insumos_select, name='obtener_insumos'),
     path('datosInsumo/<int:id>', datos_insumo, name='datos_insumo'),
     path('obtenerCategorias', categorias_select, name='obtener_categorias'),
+    path('obtenerInfoCategoria/<int:categoria_id>',
+         obtener_categoria, name='obtener_info_categoria'),
     path('productosPorCategoria/<int:categoria_id>',
          obtener_productos_categoria, name='obtener_productos_categoria'),
     # Tabla categorias

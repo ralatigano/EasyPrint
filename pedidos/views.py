@@ -322,6 +322,7 @@ def get_productos_info(request):
             'precio': pedido.precio,
             'senia': pedido.senia,
             'saldo': pedido.saldo,
+            'estado': pedido.estado,
         }
     except Pedido.DoesNotExist:
         pedido_info = {}

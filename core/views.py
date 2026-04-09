@@ -226,7 +226,19 @@ def obtener_usuarios(request):
     return JsonResponse({'usuarios': usuarios_list})
 
 
+def info_usuario(request, usuario_id):
+    try:
+        usuario = User.objects.get(id=usuario_id)
+        return JsonResponse({
+            'nombre_completo': f"{usuario.first_name} {usuario.last_name}".strip()
+            or usuario.username  # fallback si no tiene nombre
+        })
+    except User.DoesNotExist:
+        return JsonResponse({'error': 'Usuario no encontrado'}, status=404)
+
 # Vista que presenta una tabla de los usuarios con las funcionalidades del CRUD de dicho objeto.
+
+
 @login_required
 def usuarios(request):
     autorizado = request.session.get('autorizado')

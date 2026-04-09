@@ -86,7 +86,13 @@
                             {% if autorizado %}
                                 <td>
                                     <button type="button" class="btn btn-dark btn-xs" data-bs-toggle="modal" data-bs-target="#crearProductoModal" data-bs-whatever="{{p.id}}" onclick=""><i class="fa-solid fa-pencil sm"></i></button>
-                                    <a href="borrarProducto/{{p.id}}" class="btn btn-dark btn-xs btnEliminacion"><i class="fa-solid fa-trash-can"></i></a>
+                                    <a href="borrarProducto/{{ p.id }}"
+                                        class="btn btn-dark btn-xs btnEliminacion"
+                                        data-tipo="producto"
+                                        data-fetch-url="/productos/obtenerProducto/{{ p.id }}"
+                                        title="Eliminar producto">
+                                            <i class="fa-solid fa-trash-can"></i>
+                                    </a>
                                 </td>
                             {% endif %}
                         </tr>                

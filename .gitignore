@@ -155,6 +155,7 @@ cython_debug/
 
 # Lista de correcciones y mejoras pendientes
 Correcciones y mejoras.txt
+Estructura modal eliminar.txt
 
 exportar_productos.py
 productos_exportados.json

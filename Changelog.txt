@@ -174,9 +174,14 @@ Versión v3.1.2
 Versión v3.1.3
     -General
         *Se corrije el formato de los números para que respeten la conveción de '.' como separador de miles y ',' como separador decimal.
-        
+        *Se cambia el flujo de advertencia y eliminación de todas las instancias. Incluso, se agregan impedimentos extra para los pedidos y los clientes.
+
     -Presupuestos
         *Se modifica el cálculo de las representaciones gráficas que impedía la correcta representación de elementos grandes. Por ejemplo: una lona de 0.8 x 1.97 m.
         
     -Pedidos
         *Se modifica el funcionamiento de los filtros de modo que persistan hasta que el usuario decida eliminarlos. Además, se puede filtrar por varias opciones del mismo grupo a la vez.
+        *Se cambian atributos del modelo para permitir que se puedan eliminar ciertas instancias sin que se borren también los pedidos vinculados a estas.
+        
+    -Clientes
+        *Se agrega la funcionalidad para eliminar clientes siempre y cuando no tengan pedidos pendientes en curso.

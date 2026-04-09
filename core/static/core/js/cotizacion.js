@@ -543,17 +543,17 @@ function descartarProducto() {
 
 
 /* Funcionalidad para evitar la eliminación de objetos listados en la cotización por un click involuntario. */
-(function () {
-    const btnEliminacion = document.querySelectorAll(".btnEliminacion");
-    btnEliminacion.forEach(btn=>{
-        btn.addEventListener("click", (e)=>{
-            const confirmacion = confirm("¿Está segur@ de que desea eliminar este elemento?");
-            if(!confirmacion){
-                e.preventDefault();
-            }    
-        });
-    });
-})();
+// (function () {
+//     const btnEliminacion = document.querySelectorAll(".btnEliminacion");
+//     btnEliminacion.forEach(btn=>{
+//         btn.addEventListener("click", (e)=>{
+//             const confirmacion = confirm("¿Está segur@ de que desea eliminar este elemento?");
+//             if(!confirmacion){
+//                 e.preventDefault();
+//             }    
+//         });
+//     });
+// })();
 
 function getCookie(name) {
   let cookieValue = null;

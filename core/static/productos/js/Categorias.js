@@ -31,17 +31,17 @@ window.addEventListener("load", async() => {
     document.getElementById("nav_item_productos").style.fontWeight = "bold";
 });
 // Lógica que evita la eliminación de categorías por un click involuntario.
-(function () {
-    const btnEliminacion = document.querySelectorAll(".btnEliminacion");
-    btnEliminacion.forEach(btn=>{
-        btn.addEventListener("click", (e)=>{
-            const confirmacion = confirm("¿Está segur@ de que desea continuar con el borrado? (Esto no se puede deshacer.)");
-            if(!confirmacion){
-                e.preventDefault();
-            }    
-        });
-    });
-})();
+// (function () {
+//     const btnEliminacion = document.querySelectorAll(".btnEliminacion");
+//     btnEliminacion.forEach(btn=>{
+//         btn.addEventListener("click", (e)=>{
+//             const confirmacion = confirm("¿Está segur@ de que desea continuar con el borrado? (Esto no se puede deshacer.)");
+//             if(!confirmacion){
+//                 e.preventDefault();
+//             }    
+//         });
+//     });
+// })();
 
 
 document.addEventListener('DOMContentLoaded', function() {

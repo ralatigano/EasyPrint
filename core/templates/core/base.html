@@ -59,6 +59,7 @@
       <div class="recuadro-semifondo">
         {% block content %}{% endblock %}
       </div>
+      {% include 'core/partials/modal_eliminar.html' %}
       {% block modal %}{% endblock  %}
       {% block footer %}
         <!--Aquí va el pie del contenido de cada plantilla-->
@@ -79,6 +80,7 @@
   <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/responsive/3.0.2/js/dataTables.responsive.min.js"></script>
   <!-- Custom Js -->
   <script src="{% static 'core/js/core.js' %}"></script> 
+  <script src="{% static 'core/js/eliminar.js' %}"></script>
   <!-- 🧼 Desaparecer mensajes -->
   <script>
     setTimeout(() => {

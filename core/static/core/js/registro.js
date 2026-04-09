@@ -31,17 +31,17 @@ window.addEventListener("load", async() => {
 });
 
 // Lógica que evita la eliminación de objetos listados en la cotización por un click involuntario.
-(function () {
-    const btnEliminacion = document.querySelectorAll(".btnEliminacion");
-    btnEliminacion.forEach(btn=>{
-        btn.addEventListener("click", (e)=>{
-            const confirmacion = confirm("¿Está segur@ de que desea continuar con el borrado? (Esto no se puede deshacer.)");
-            if(!confirmacion){
-                e.preventDefault();
-            }    
-        });
-    });
-})();
+// (function () {
+//     const btnEliminacion = document.querySelectorAll(".btnEliminacion");
+//     btnEliminacion.forEach(btn=>{
+//         btn.addEventListener("click", (e)=>{
+//             const confirmacion = confirm("¿Está segur@ de que desea continuar con el borrado? (Esto no se puede deshacer.)");
+//             if(!confirmacion){
+//                 e.preventDefault();
+//             }    
+//         });
+//     });
+// })();
 
 // Lógica que escucha el evento click sobre el botón de editar un usuario y muestra un modal con los datos del usuario correspondiente.
 const editarUsuarioModal = document.getElementById('editarUsuarioModal');

@@ -65,7 +65,13 @@
                         <td>{{i.stock_real}}</td>
                         <td>
                             <button type="button" class="btn btn-dark btn-xs" data-bs-toggle="modal" data-bs-target="#crearEditarInsumoModal" data-id="{{i.id}}" onclick=""><i class="fa-solid fa-pencil sm"></i></button>
-                            <a href="/productos/borrarInsumo/{{i.id}}" class="btn btn-dark btn-xs btnEliminacion"><i class="fa-solid fa-trash-can"></i></a>
+                            <a href="/productos/borrarInsumo/{{ i.id }}"
+                                class="btn btn-dark btn-xs btnEliminacion"
+                                data-tipo="insumo"
+                                data-fetch-url="/productos/datosInsumo/{{ i.id }}"
+                                title="Eliminar insumo">
+                                    <i class="fa-solid fa-trash-can"></i>
+                            </a>
                         </td>
                     </tr>
                 {% endfor %}

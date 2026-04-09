@@ -52,7 +52,13 @@
                             {% if autorizado %}
                                 <td>
                                     <button type="button" class="btn btn-dark btn-xs" data-bs-toggle="modal" data-bs-target="#editarUsuarioModal" data-bs-whatever="{{ u.recipient_data }}" onclick=""><i class="fa-solid fa-user-pen sm"></i></button>
-                                    <a href="/borrarUsuario/{{u.id}}" class="btn btn-dark btn-xs btnEliminacion"><i class="fa-solid fa-person-rifle"></i></a>
+                                    <a href="/borrarUsuario/{{ u.id }}"
+                                        class="btn btn-dark btn-xs btnEliminacion"
+                                        data-tipo="usuario"
+                                        data-fetch-url="/obtenerUsuario/{{ u.id }}"
+                                        title="Eliminar usuario">
+                                            <i class="fa-solid fa-person-rifle"></i>
+                                    </a>
                                 </td>
                             {% endif %}
                         </tr>

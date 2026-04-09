@@ -1,0 +1,39 @@
+<div class="modal fade" id="modalEliminar" tabindex="-1" 
+     aria-labelledby="modalEliminarLabel" 
+     data-bs-backdrop="static" 
+     aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="modalEliminarLabel">
+                    <i class="fa-solid fa-triangle-exclamation me-2 text-warning"></i>
+                    Confirmar eliminación
+                </h1>
+                <button type="button" class="btn-close" 
+                        data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <div id="modalEliminarCargando" class="text-center py-3">
+                    <div class="spinner-border spinner-border-sm text-secondary me-2" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                    <span class="text-muted small">Cargando información...</span>
+                </div>
+                <p id="modalEliminarMensaje" class="mb-0" style="display:none;"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" 
+                        class="btn btn-dark btn-fuente" 
+                        data-bs-dismiss="modal">
+                    Cancelar
+                </button>
+                <a id="modalEliminarConfirmar" 
+                   href="#" 
+                   class="btn btn-danger btn-fuente"
+                   style="display:none;">
+                    <i class="fa-solid fa-trash-can me-1"></i> Eliminar
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
