@@ -206,18 +206,6 @@ $('#confirmacionModal').on('show.bs.modal', function (event) {
     });
 });
 
-/* Funcionalidad para evitar la eliminación de objetos listados en la vista por un click involuntario. */
-// (function () {
-//     const btnEliminacion = document.querySelectorAll(".btnEliminacion");
-//     btnEliminacion.forEach(btn=>{
-//         btn.addEventListener("click", (e)=>{
-//             const confirmacion = confirm("¿Está segur@ de que desea eliminar este elemento?");
-//             if(!confirmacion){
-//                 e.preventDefault();
-//             }    
-//         });
-//     });
-// })();
 
 // Función que evita que se cancele un pedido sin confirmación.
 (function () {
@@ -241,24 +229,85 @@ $('#confirmacionModal').on('show.bs.modal', function (event) {
 })();
 
 
-//Manejo de filtros en vista de pedidos.
+// ── Filtros persistentes (integrados con DataTables) ─────────────────────────
 const FILTROS_KEY = 'pedidos_filtros';
-const IDS_FILTRO = ['filtroCliente', 'filtroProducto', 'filtroEstado'];
+
+// Estado global del filtro — DataTables lo lee en cada draw()
+let filtroActivo = { clientes: [], productos: [], estados: [] };
+
+// Registrar función de filtro custom en DataTables
+$.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
+    if (settings.nTable.id !== 'Pedidos') return true;
+
+    const { clientes, productos, estados } = filtroActivo;
+    const nodoFila = settings.aoData[dataIndex].nTr;
+    if (!nodoFila) return true;
+
+    const clienteId     = nodoFila.children[1].dataset.clienteId || '';
+    const productosTexto = nodoFila.children[2].querySelector('.contenido')?.textContent.trim().toLowerCase() || '';
+    const estadoTexto    = nodoFila.children[3].querySelector('.contenido')?.textContent.trim().toLowerCase() || '';
+
+    const okCliente  = !clientes.length  || clientes.includes(clienteId);
+    const okProducto = !productos.length || productos.some(p => productosTexto.includes(p.toLowerCase()));
+    const okEstado   = !estados.length   || estados.map(e => e.toLowerCase()).includes(estadoTexto);
+
+    return okCliente && okProducto && okEstado;
+});
+
+function getSeleccionados(id) {
+    return Array.from(document.getElementById(id).selectedOptions)
+                .map(o => o.value)
+                .filter(v => v !== '');
+}
+
+function aplicarFiltros() {
+    filtroActivo = {
+        clientes:  getSeleccionados('filtroCliente'),
+        productos: getSeleccionados('filtroProducto'),
+        estados:   getSeleccionados('filtroEstado')
+    };
+
+    sessionStorage.setItem(FILTROS_KEY, JSON.stringify(filtroActivo));
+
+    dataTable.draw(); // DataTables re-evalúa todos los registros
+}
 
 function manejarTodos(selectEl, e) {
     const opcionTodos = selectEl.querySelector('option[value=""]');
     if (!opcionTodos) return;
-
-    if (e.target === opcionTodos || opcionTodos.selected) {
-        // Si se clickeó "Todos" o quedó seleccionado, deseleccionar todo lo demás
-        if (opcionTodos.selected) {
-            Array.from(selectEl.options).forEach(o => {
-                if (o.value !== '') o.selected = false;
-            });
-        }
+    if (opcionTodos.selected) {
+        Array.from(selectEl.options).forEach(o => { if (o.value !== '') o.selected = false; });
     } else {
         opcionTodos.selected = false;
     }
+}
+
+function restaurarFiltros() {
+    const guardados = sessionStorage.getItem(FILTROS_KEY);
+    if (!guardados) return;
+
+    const { clientes, productos, estados } = JSON.parse(guardados);
+    const mapa = { filtroCliente: clientes, filtroProducto: productos, filtroEstado: estados };
+
+    Object.entries(mapa).forEach(([id, vals]) => {
+        if (!vals?.length) return;
+        Array.from(document.getElementById(id).options).forEach(o => {
+            o.selected = o.value !== '' && vals.includes(o.value);
+        });
+    });
+
+    // Actualizar estado y redibujar sin guardar de nuevo en sessionStorage
+    filtroActivo = { clientes: clientes || [], productos: productos || [], estados: estados || [] };
+    dataTable.draw();
+}
+
+function limpiarFiltros() {
+    sessionStorage.removeItem(FILTROS_KEY);
+    filtroActivo = { clientes: [], productos: [], estados: [] };
+    ['filtroCliente', 'filtroProducto', 'filtroEstado'].forEach(id => {
+        Array.from(document.getElementById(id).options).forEach(o => o.selected = false);
+    });
+    dataTable.draw();
 }
 
 ['filtroCliente', 'filtroProducto', 'filtroEstado'].forEach(id => {
@@ -268,69 +317,14 @@ function manejarTodos(selectEl, e) {
         aplicarFiltros();
     });
 });
-function getSeleccionados(id) {
-    return Array.from(document.getElementById(id).selectedOptions)
-                .map(o => o.value.toLowerCase());
-}
 
-function aplicarFiltros() {
-    const clienteFiltro   = document.getElementById('filtroCliente').value;
-    const productosFiltro = getSeleccionados('filtroProducto');
-    const estadosFiltro   = getSeleccionados('filtroEstado');
-
-    sessionStorage.setItem(FILTROS_KEY, JSON.stringify({
-        cliente:   clienteFiltro,
-        productos: productosFiltro,
-        estados:   estadosFiltro
-    }));
-
-    document.querySelectorAll('#tableBody_Pedido tr').forEach(fila => {
-        const clienteId = fila.children[1].dataset.clienteId || '';
-        const productos = fila.children[2].querySelector('.contenido').textContent.toLowerCase();
-        const estado    = fila.children[3].querySelector('.contenido').textContent.toLowerCase();
-
-        const okCliente  = !clienteFiltro        || clienteId === clienteFiltro;
-        const okProducto = !productosFiltro.length || productosFiltro.some(p => productos.includes(p));
-        const okEstado   = !estadosFiltro.length   || estadosFiltro.includes(estado);
-
-        fila.style.display = (okCliente && okProducto && okEstado) ? '' : 'none';
-    });
-}
-
-function restaurarFiltros() {
-    const guardados = sessionStorage.getItem(FILTROS_KEY);
-    if (!guardados) return;
-
-    const { cliente, productos, estados } = JSON.parse(guardados);
-
-    if (cliente) document.getElementById('filtroCliente').value = cliente;
-
-    ['filtroProducto', 'filtroEstado'].forEach((id, i) => {
-        const vals = i === 0 ? productos : estados;
-        if (!vals?.length) return;
-        Array.from(document.getElementById(id).options).forEach(o => {
-            o.selected = vals.includes(o.value.toLowerCase());
-        });
-    });
-
-    aplicarFiltros();
-}
-
-function limpiarFiltros() {
-    sessionStorage.removeItem(FILTROS_KEY);
-    document.getElementById('filtroCliente').value = '';
-    ['filtroProducto', 'filtroEstado'].forEach(id => {
-        Array.from(document.getElementById(id).options).forEach(o => o.selected = false);
-    });
-    document.querySelectorAll('#tableBody_Pedido tr').forEach(f => f.style.display = '');
-}
-
-document.getElementById('filtroCliente').addEventListener('change', aplicarFiltros);
-document.getElementById('filtroProducto').addEventListener('change', aplicarFiltros);
-document.getElementById('filtroEstado').addEventListener('change', aplicarFiltros);
 document.getElementById('limpiarFiltros').addEventListener('click', limpiarFiltros);
 
-window.addEventListener('load', restaurarFiltros);
+window.addEventListener("load", async() => {
+    await initDataTable();
+    restaurarFiltros(); // <-- agregar
+    document.getElementById("nav_item_pedidos").style.fontWeight = "bold";
+});
 
 cambiarClienteModal.addEventListener('show.bs.modal', function (event) {
     const button = event.relatedTarget;

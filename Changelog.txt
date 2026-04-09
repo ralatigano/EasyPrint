@@ -187,3 +187,9 @@ Versión v3.1.3
     -Clientes
         *Se agrega la funcionalidad para eliminar clientes siempre y cuando no tengan pedidos pendientes en curso.
         *Se agregan opciones de contacto: Ticktok y Otros.
+
+****************** #/4/2026 ******************
+Versión v3.1.4
+
+    -Pedidos
+        *Se corrige el funcionamiento de los filtros para que funcione a lo largo de todas las páginas de la tabla.
