@@ -6,6 +6,7 @@ from datetime import date
 from django.http import JsonResponse
 from pedidos.models import Pedido
 from core.decorators import solo_gerencia
+from presupuestos.models import Presupuesto
 
 # Create your views here.
 app_name = 'clientes'
@@ -98,3 +99,66 @@ def borrar_cliente(request, cliente_id):
         messages.error(
             request, f'No se ha podido eliminar el cliente. Error: {e}')
     return redirect('/clientes')
+
+
+@login_required
+def info_adicional_cliente(request, cliente_id):
+    try:
+        cliente = Cliente.objects.get(id=cliente_id)
+    except Cliente.DoesNotExist:
+        return JsonResponse({'error': 'Cliente no encontrado'}, status=404)
+
+    # Pedidos directos del cliente
+    pedidos = Pedido.objects.filter(cliente=cliente).order_by('-created')
+    pedidos_activos = pedidos.exclude(estado='Terminado y pagado')
+    pedidos_finalizados = pedidos.filter(estado='Terminado y pagado')[:3]
+
+    # Presupuestos del cliente
+    presupuestos = Presupuesto.objects.filter(cliente=cliente)
+
+    # Presupuestos que ya tienen al menos un pedido asociado
+    numeros_con_pedido = Pedido.objects.filter(
+        presupuesto__isnull=False
+    ).values_list('presupuesto', flat=True)
+
+    presupuestos_pendientes = presupuestos.exclude(
+        numero__in=numeros_con_pedido)
+
+    data = {
+        'nombre': cliente.nombre,
+        'negocio': cliente.negocio or '',
+        'telefono': cliente.telefono or '',
+        'direccion': cliente.direccion or '',
+        'email': cliente.email or '',
+        'cuit': str(cliente.cuit) if cliente.cuit else '',
+
+        'pedidos_activos': [
+            {
+                'numero': p.numero,
+                'descripcion': p.descripcion,
+                'estado': p.estado,
+                'entrega': p.fecha_entrega.strftime('%d/%m/%Y') if p.fecha_entrega else '-',
+            }
+            for p in pedidos_activos
+        ],
+
+        'pedidos_finalizados': [
+            {
+                'numero': p.numero,
+                'descripcion': p.descripcion,
+                'entrega': p.fecha_entrega.strftime('%d/%m/%Y') if p.fecha_entrega else '-',
+            }
+            for p in pedidos_finalizados
+        ],
+
+        'presupuestos_pendientes': [
+            {
+                'numero': pr.numero,
+                'total': f"${pr.total:,.2f}",
+                'fecha': pr.created.strftime('%d/%m/%Y'),
+            }
+            for pr in presupuestos_pendientes
+        ],
+    }
+
+    return JsonResponse(data)

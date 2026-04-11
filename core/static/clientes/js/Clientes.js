@@ -74,3 +74,58 @@ editarClienteModal.addEventListener('show.bs.modal', event => {
     return new bootstrap.Tooltip(tooltipTriggerEl);
   });
 });
+
+// ── Ficha cliente ──────────────────────────────────────────
+const modalFicha = new bootstrap.Modal(document.getElementById('modalFichaCliente'));
+
+function llenarTablaFicha(idTabla, items) {
+    const tbody = document.querySelector(`#${idTabla} tbody`);
+    tbody.innerHTML = '';
+    if (!items || items.length === 0) {
+        const cols = document.querySelectorAll(`#${idTabla} thead th`).length;
+        tbody.innerHTML = `<tr><td colspan="${cols}" class="text-center text-muted">Sin datos</td></tr>`;
+        return;
+    }
+    items.forEach(item => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = Object.values(item).map(v => `<td style="white-space: nowrap">${v}</td>`).join('');
+        tbody.appendChild(tr);
+    });
+}
+
+document.querySelectorAll('.btn-ficha-cliente').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const id = btn.dataset.id;
+
+        fetch(`/clientes/infoCliente/${id}`)
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('fichaClienteNombre').textContent = data.nombre;
+
+                document.getElementById('fichaTelefono').textContent = data.telefono || '-';
+                const wapp = document.getElementById('fichaWapp');
+                if (data.telefono) { wapp.href = `https://wa.me/${data.telefono}`; wapp.style.display = ''; }
+                else { wapp.style.display = 'none'; }
+
+                document.getElementById('fichaEmail').textContent = data.email || '-';
+                const mailto = document.getElementById('fichaMailto');
+                if (data.email) { mailto.href = `mailto:${data.email}`; mailto.style.display = ''; }
+                else { mailto.style.display = 'none'; }
+
+                document.getElementById('fichaNegocio').textContent = data.negocio || '-';
+                document.getElementById('fichaCuit').textContent = data.cuit || '-';
+
+                document.getElementById('fichaDireccion').textContent = data.direccion || '-';
+                const maps = document.getElementById('fichaMaps');
+                if (data.direccion) { maps.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(data.direccion)}`; maps.style.display = ''; }
+                else { maps.style.display = 'none'; }
+
+                llenarTablaFicha('tablaFichaPedidosActivos', data.pedidos_activos);
+                llenarTablaFicha('tablaFichaPedidosFinalizados', data.pedidos_finalizados);
+                llenarTablaFicha('tablaFichaPresupuestos', data.presupuestos_pendientes);
+
+                modalFicha.show();
+            })
+            .catch(() => alert('Error al obtener la información del cliente'));
+    });
+});

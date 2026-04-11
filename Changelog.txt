@@ -199,6 +199,14 @@ Versión v3.1.5
     
     -General
         *Se agregan botones para mostrar/oculatar caractéres en inputs sensibles.
-        
+
     -Usuarios
         *Se modifica y corrige la lógica de edición y creación de usuarios.
+
+****************** 11/4/2026 ******************
+Versión v3.1.6
+
+    -Clientes
+        *Se agrega un modal que resume la información de los clientes: Datos + Pedidos en curso + Últimos pedidos completados + Presupuestos sin respuesta
+
+    

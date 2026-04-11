@@ -42,3 +42,86 @@
         </div>
     </form>
 </div>
+
+<!-- Modal Ficha Cliente -->
+<div class="modal fade" id="modalFichaCliente" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <h5 class="modal-title" id="fichaClienteNombre"></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body" style="max-height: 75vh; overflow-y: auto; font-size: 0.9rem;">
+
+        <!-- Datos del cliente -->
+        <div class="mb-4">
+          <h6 class="fw-bold mb-3 border-bottom pb-1">Datos</h5>
+            <div class="row g-2">
+            <div class="col-md-6">
+                <strong>Teléfono:</strong>
+                <span id="fichaTelefono"></span>
+                <a id="fichaWapp" href="#" target="_blank" class="btn btn-dark btn-xs ms-1" title="WhatsApp" style="display:none">
+                <i class="fa-brands fa-whatsapp"></i>
+                </a>
+            </div>
+            <div class="col-md-6">
+                <strong>Email:</strong>
+                <span id="fichaEmail"></span>
+                <a id="fichaMailto" href="#" class="btn btn-dark btn-xs ms-1" title="Enviar mail" style="display:none">
+                <i class="fa-solid fa-envelope"></i>
+                </a>
+            </div>
+            <div class="col-md-6">
+                <strong>Negocio:</strong> <span id="fichaNegocio"></span>
+            </div>
+            <div class="col-md-6">
+                <strong>CUIT:</strong> <span id="fichaCuit"></span>
+            </div>
+            <div class="col-12">
+                <strong>Dirección:</strong>
+                <span id="fichaDireccion"></span>
+                <a id="fichaMaps" href="#" target="_blank" class="btn btn-dark btn-xs ms-1" title="Ver en Maps" style="display:none">
+                <i class="fa-solid fa-location-dot"></i>
+                </a>
+            </div>
+            </div>
+        </div>
+
+        <!-- Pedidos activos -->
+        <h6 class="fw-bold mb-2 mt-3">Pedidos en curso</h5>
+        <div class="table-responsive mb-4">
+          <table class="table table-sm table-hover" id="tablaFichaPedidosActivos">
+            <thead><tr><th>N°</th><th>Descripción</th><th>Estado</th><th>Entrega</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
+        <!-- Últimos pedidos finalizados -->
+        <h6 class="fw-bold mb-2 mt-3">Últimos pedidos finalizados</h5>
+        <div class="table-responsive mb-4">
+          <table class="table table-sm table-hover" id="tablaFichaPedidosFinalizados">
+            <thead><tr><th>N°</th><th>Descripción</th><th>Entrega</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
+        <!-- Presupuestos sin convertir -->
+        <h6 class="fw-bold mb-2 mt-3">Presupuestos sin convertir en pedido</h5>
+        <div class="table-responsive">
+          <table class="table table-sm table-hover" id="tablaFichaPresupuestos">
+            <thead><tr><th>N°</th><th>Total</th><th>Fecha</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-dark btn-xs btn-fuente" data-bs-dismiss="modal">Cerrar</button>
+      </div>
+
+    </div>
+  </div>
+</div>
