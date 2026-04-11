@@ -20,11 +20,24 @@
         {% csrf_token %}
         <div class="form-group">
             <label for="contrasena1">Contraseña nueva:</label>
-            <input type="text" id="contrasena1" name="contrasena1">
+            <div class="input-group">
+                <input type="password" id="contrasena1" name="contrasena1" class="form-control">
+                <button type="button" class="btn btn-outline-secondary toggle-password" data-target="contrasena1">
+                    <i class="fa-solid fa-eye"></i>
+                </button>
+            </div>
         </div>
         <div class="form-group">
-            <label for="contarsena2">Repetir contraseña nueva:</label>
-            <input type="text" id="contarsena2" name="contrasena2">
+            <label for="contrasena2">Repetir contraseña nueva:</label>
+            <div class="input-group">
+                <input type="password" id="contrasena2" name="contrasena2" class="form-control">
+                <button type="button" class="btn btn-outline-secondary toggle-password" data-target="contrasena2">
+                    <i class="fa-solid fa-eye"></i>
+                </button>
+            </div>
+            <div id="error-contrasenas" class="text-danger small mt-1" style="display:none;">
+                Las contraseñas no coinciden.
+            </div>
         </div>
         <div class="formulario-btns">
             <button type="submit" id="submit" class="btn btn-dark btn-fuente">Guardar</button>
@@ -42,4 +55,32 @@
 <!--------------------------------------------------------------------------- Block scripts --------------------------------------------------------------------------->
 {% block scripts %}
 <!-- Custom Js -->
+ <script>
+document.addEventListener('DOMContentLoaded', function () {
+    const p1 = document.getElementById('contrasena1');
+    const p2 = document.getElementById('contrasena2');
+    const error = document.getElementById('error-contrasenas');
+
+    function validar() {
+        if (!p2.value) {
+            p1.classList.remove('is-invalid');
+            p2.classList.remove('is-invalid');
+            error.style.display = 'none';
+            return;
+        }
+        if (p1.value !== p2.value) {
+            p1.classList.add('is-invalid');
+            p2.classList.add('is-invalid');
+            error.style.display = 'block';
+        } else {
+            p1.classList.remove('is-invalid');
+            p2.classList.remove('is-invalid');
+            error.style.display = 'none';
+        }
+    }
+
+    p1.addEventListener('input', validar);
+    p2.addEventListener('input', validar);
+});
+</script>
 {% endblock %}

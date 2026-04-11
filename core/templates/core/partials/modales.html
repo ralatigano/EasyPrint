@@ -1,41 +1,108 @@
-<!-- Modal Editar Producto -->
-<div class="modal fade" id="editarUsuarioModal" tabindex="-1" aria-labelledby="editarUsuarioModalLabel" data-bs-backdrop="static" aria-hidden="true">   
-    <form action="/editarUsuario" method="POST">
+<!-- Modal Crear/Editar Usuario -->
+<div class="modal fade" id="modalUsuario" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="post" action="{% url 'crear_editar_usuario' %}">
         {% csrf_token %}
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h1 class="modal-title-prod fs-5" id="editarUsuarioModalLabel">Modal title</h1>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <input type="text" id="id" name="id" hidden>
-                    
-                    <label for="username" style="font-weight: bold">Nombre de usuario:</label>
-                    <input type="text" id="username" name="username" data-bs-toggle="tooltip" title="Te recomendamos que uses la inicial del nombre + apellido para que lo recuerdes."></textarea>
+        <input type="hidden" name="user_id" id="user_id" value="0">
+        <input type="hidden" name="cambiar_password" id="cambiar_password" value="0">
 
-                    <label for="nombre" style="font-weight: bold">Nombre:</label>
-                    <input type="text" id="nombre" name="nombre">
-                    
-                    <label for="apellido" style="font-weight: bold">Apellido:</label>
-                    <input type="text" id="apellido" name="apellido">
-                    
-                    <label for="email" style="font-weight: bold">Correo electrónico:</label>
-                    <input type="email" id="email" name="email">
-                    
-                    <label for="telefono" style="font-weight: bold">Teléfono:</label>
-                    <input type="text" id="telefono" name="telefono">
-
-                    <label for="grupo" style="font-weight: bold">Grupo/s:</label>
-                    <select id="grupo" name="grupo"  multiple data-bs-toggle="tooltip" title="Haz click para cambiar el grupo.">
-                    </select>
-                
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-dark btn-fuente" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-dark btn-fuente">Guardar cambios</a></button> 
-                </div>
-            </div>
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalUsuarioTitulo">Agregar usuario</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
-    </form>
+
+        <div class="modal-body">
+          <div class="row g-3">
+
+            <!-- Nombre + Apellido -->
+            <div class="col-6">
+              <label for="first_name" class="form-label fw-bold">Nombre <span class="text-danger">*</span></label>
+              <input type="text" name="first_name" id="first_name" class="form-control">
+            </div>
+            <div class="col-6">
+              <label for="last_name" class="form-label fw-bold">Apellido <span class="text-danger">*</span></label>
+              <input type="text" name="last_name" id="last_name" class="form-control">
+            </div>
+
+            <!-- Email + Teléfono -->
+            <div class="col-7">
+              <label for="email" class="form-label fw-bold">Correo electrónico <span class="text-danger">*</span></label>
+              <input type="email" name="email" id="email" class="form-control">
+            </div>
+            <div class="col-5">
+              <label for="telefono" class="form-label fw-bold">Teléfono</label>
+              <input type="text" name="telefono" id="telefono" class="form-control">
+            </div>
+
+            <!-- Grupo -->
+            <div class="col-12">
+              <label for="grupo" class="form-label fw-bold">Grupo <span class="text-danger">*</span></label>
+              <select name="grupo" id="grupo" class="form-select">
+                <option value="">Sin grupo</option>
+                {% for g in grupos %}
+                  <option value="{{ g.id }}">{{ g.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <!-- Username -->
+            <div class="col-12">
+              <label for="username" class="form-label fw-bold">Usuario</label>
+              <input type="text" name="username" id="username" class="form-control">
+              <div class="form-text">Se sugerirá automáticamente desde nombre y apellido.</div>
+              <div id="username-error" class="text-danger small d-none">Este nombre de usuario ya existe.</div>
+              <div id="username-suggestions" class="small mt-1 d-none">
+                <span class="text-muted">Sugerencias: </span>
+                <span id="username-suggestion-list"></span>
+              </div>
+            </div>
+
+            <!-- Bloque contraseña (creación) -->
+            <div id="password-block" class="col-12">
+              <div class="row g-3">
+                <div class="col-12">
+                  <label for="password" class="form-label fw-bold">Contraseña <span class="text-danger">*</span></label>
+                  <div class="input-group">
+                    <input type="password" name="password" id="password" class="form-control" autocomplete="new-password">
+                    <button type="button" class="btn btn-outline-secondary toggle-password" data-target="password">
+                      <i class="fa-solid fa-eye"></i>
+                    </button>
+                  </div>
+                </div>
+                <div class="col-12">
+                  <label for="password2" class="form-label fw-bold">Repetir contraseña <span class="text-danger">*</span></label>
+                  <div class="input-group">
+                    <input type="password" name="password2" id="password2" class="form-control" autocomplete="new-password">
+                    <button type="button" class="btn btn-outline-secondary toggle-password" data-target="password2">
+                      <i class="fa-solid fa-eye"></i>
+                    </button>
+                  </div>
+                  <div id="password-error" class="text-danger small d-none">Las contraseñas no coinciden.</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Toggle cambiar contraseña (edición) -->
+            <div id="password-toggle-block" class="col-12 d-none">
+              <hr class="my-1">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="toggleCambiarPassword">
+                <label class="form-check-label fw-bold" for="toggleCambiarPassword">
+                  Cambiar contraseña
+                </label>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Guardar</button>
+        </div>
+
+      </form>
+    </div>
+  </div>
 </div>

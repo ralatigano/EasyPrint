@@ -11,55 +11,70 @@
 {% block header %}
 <div class="titulo">
     <h1>Usuaries registrades</h1>
-    <a href="/registrar"><button type="button" class="btn btn-dark btn-fuente"><i class="fa-solid fa-user-plus"></i> Crear nuevo usuario </button></a>
+    {% if autorizado %}
+    <button type="button" class="btn btn-dark btn-fuente" id="btn-agregar-usuario">
+        <i class="fa-solid fa-user-plus"></i> Crear nuevo usuario
+    </button>
+    {% endif %}
 </div>
 {% endblock %}
 <!--------------------------------------------------------------------------- Block content --------------------------------------------------------------------------->
 {% block content %}
 <div class="container">
     <div class="row">
-        <div class="col-sm-12 col-md-12 col-lg-12 col-xl-12">
+        <div class="col-12">
             <div class="tabla-scroll">
                 <table id="Usuarios" class="table table-hover">
                     <thead>
                         <tr>
                             <th class="centered">Nombre de usuario</th>
-                            <th class="centered">Nombre Completo</th>
+                            <th class="centered">Nombre completo</th>
                             <th class="centered">Correo</th>
                             <th class="centered">Teléfono</th>
                             <th class="centered">Grupo</th>
                             {% if autorizado %}
-                                <th class="centered">Editar/Borrar</th>
+                            <th class="centered">Acciones</th>
                             {% endif %}
                         </tr>
                     </thead>
-                    <tbody id="tableBody_Usuarios">
+                    <tbody>
                     {% for u in Usus %}
                         <tr>
-                            <td>{{u.username}}</td>
-                            <td>{{u.first_name}} {{u.last_name}}</td>
-                            <td>{{u.email}}</td>
-                            {% if u.usuario.telefono == None %}
-                                <td>Sin telefono</td>
-                            {% else %}
-                                <td><a href="https://wa.me/{{u.usuario.telefono}}" target="_blank" rel="noopener noreferrer">{{u.usuario.telefono}}</a></td>
-                            {% endif %}
+                            <td>{{ u.username }}</td>
+                            <td>{{ u.first_name }} {{ u.last_name }}</td>
+                            <td>{{ u.email }}</td>
+                            <td>
+                                {% if u.usuario.telefono %}
+                                    <a href="https://wa.me/{{ u.usuario.telefono }}" target="_blank" rel="noopener noreferrer">
+                                        {{ u.usuario.telefono }}
+                                    </a>
+                                {% else %}
+                                    Sin teléfono
+                                {% endif %}
+                            </td>
                             <td>
                                 {% for group in u.groups.all %}
                                     {{ group.name }}{% if not forloop.last %}, {% endif %}
+                                {% empty %}
+                                    -
                                 {% endfor %}
                             </td>
                             {% if autorizado %}
-                                <td>
-                                    <button type="button" class="btn btn-dark btn-xs" data-bs-toggle="modal" data-bs-target="#editarUsuarioModal" data-bs-whatever="{{ u.recipient_data }}" onclick=""><i class="fa-solid fa-user-pen sm"></i></button>
-                                    <a href="/borrarUsuario/{{ u.id }}"
-                                        class="btn btn-dark btn-xs btnEliminacion"
-                                        data-tipo="usuario"
-                                        data-fetch-url="/obtenerUsuario/{{ u.id }}"
-                                        title="Eliminar usuario">
-                                            <i class="fa-solid fa-person-rifle"></i>
-                                    </a>
-                                </td>
+                            <td class="text-center">
+                                <button type="button"
+                                        class="btn btn-dark btn-xs btn-editar-usuario"
+                                        data-id="{{ u.id }}"
+                                        title="Editar usuario">
+                                    <i class="fa-solid fa-user-pen"></i>
+                                </button>
+                                <a href="/borrarUsuario/{{ u.id }}"
+                                    class="btn btn-dark btn-xs btnEliminacion"
+                                    data-tipo="usuario"
+                                    data-fetch-url="/usuarios/info/{{ u.id }}"
+                                    title="Eliminar usuario">
+                                        <i class="fa-solid fa-person-rifle"></i>
+                                </a>
+                            </td>
                             {% endif %}
                         </tr>
                     {% endfor %}
@@ -81,5 +96,5 @@
 <!--------------------------------------------------------------------------- Block scripts --------------------------------------------------------------------------->
 {% block scripts %}
 <!-- Custom Js -->
-<script src="{% static 'core/js/registro.js' %}"></script>
+<script src="{% static 'core/js/usuarios.js' %}"></script>
 {% endblock %}

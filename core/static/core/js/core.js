@@ -341,3 +341,19 @@ function parsearNumeroLocal(str) {
     const numero = Number(limpio);
     return isNaN(numero) ? 0 : numero;
 }
+
+// ── Show/hide contraseña ──────────────────────────────────────────────────
+document.addEventListener('click', e => {
+    const btn = e.target.closest('.toggle-password');
+    if (!btn) return;
+    const input = document.getElementById(btn.getAttribute('data-target'));
+    if (!input) return;
+    const icon = btn.querySelector('i');
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.classList.replace('fa-eye', 'fa-eye-slash');
+    } else {
+        input.type = 'password';
+        icon.classList.replace('fa-eye-slash', 'fa-eye');
+    }
+});

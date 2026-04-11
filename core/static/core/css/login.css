@@ -71,3 +71,12 @@
         font-size: small;
     }
 }
+
+.input-group .toggle-password {
+    border-color: var(--bs-border-color);
+    border-radius: 0 var(--bs-border-radius) var(--bs-border-radius) 0;
+}
+
+.input-group .toggle-password:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}

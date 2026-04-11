@@ -136,14 +136,6 @@
                 if (!respuesta.ok) throw new Error(`HTTP ${respuesta.status}`);
                 const datos = await respuesta.json();
 
-                // DEBUG - borrá estas líneas una vez que funcione
-                console.log('=== modalEliminar debug ===');
-                console.log('tipo:', tipo);
-                console.log('fetchUrl:', fetchUrl);
-                console.log('datos completos:', JSON.stringify(datos, null, 2));
-                console.log('datos.pedido:', datos.pedido);
-                // FIN DEBUG
-
                 // Control especial para pedidos con estado bloqueado
                 // → Ni abrimos el modal, directo al toast
                 if (tipo === 'pedido') {

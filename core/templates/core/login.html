@@ -20,7 +20,27 @@
   <div class="recuadro-fondo-login">
     <form action="/" method="post" class="form-login">
       {% csrf_token %}
-      {{ form.as_p }}
+      <div class="form-group">
+        <label for="{{ form.username.id_for_label }}">{{ form.username.label }}:</label>
+        <input type="text"
+               name="{{ form.username.html_name }}"
+               id="{{ form.username.id_for_label }}"
+               class="form-control"
+               autofocus>
+      </div>
+      <div class="form-group">
+        <label for="{{ form.password.id_for_label }}">{{ form.password.label }}:</label>
+        <div class="input-group">
+          <input type="password"
+                 name="{{ form.password.html_name }}"
+                 id="{{ form.password.id_for_label }}"
+                 class="form-control">
+          <button type="button" class="btn btn-outline-secondary toggle-password border-start-0"
+                  data-target="id_password">
+            <i class="fa-solid fa-eye"></i>
+          </button>
+        </div>
+      </div>
       <button id="submit" type="submit" class="btn btn-light btn-fuente">Iniciar sesión</button>
       <br>
       <a href="/restablecerContrasena">Olvidé mi contraseña</a>

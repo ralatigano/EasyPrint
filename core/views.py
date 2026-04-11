@@ -4,12 +4,15 @@ from django.contrib import messages
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
 from .functions import *
 from django.contrib.auth.models import User, Group
 from .models import Usuario
 from datetime import datetime
 from .forms import RegistroUsuarioForm
 from core.decorators import solo_gerencia
+from django.views.decorators.http import require_POST, require_GET
 
 # Create your views here.
 
@@ -229,13 +232,21 @@ def obtener_usuarios(request):
 
 
 @login_required
-def info_usuario(request, usuario_id):
+def usuario_info(request, user_id):
     try:
-        usuario = User.objects.get(id=usuario_id)
-        return JsonResponse({
-            'nombre_completo': f"{usuario.first_name} {usuario.last_name}".strip()
-            or usuario.username  # fallback si no tiene nombre
-        })
+        usuario = User.objects.get(id=user_id)
+        data = {
+            'id': usuario.id,
+            'nombre_completo': usuario.usuario.nombre_completo,
+            'username': usuario.username,
+            'first_name': usuario.first_name,
+            'last_name': usuario.last_name,
+            'email': usuario.email,
+            'telefono': usuario.usuario.telefono or '',
+            'grupos': list(usuario.groups.values_list('id', flat=True)),
+            'grupos_names': list(usuario.groups.values_list('name', flat=True)),
+        }
+        return JsonResponse(data)
     except User.DoesNotExist:
         return JsonResponse({'error': 'Usuario no encontrado'}, status=404)
 
@@ -255,9 +266,11 @@ def usuarios(request):
                               for grupo in usuario.groups.all()])
         usuario.recipient_data = f"{usuario.id}|{usuario.username}|{usuario.first_name}|{usuario.last_name}|{usuario.email}|{usuario.usuario.telefono}|{grupos_ids}"
         usuarios_con_datos.append(usuario)
+    grupos = Group.objects.all()
     if autorizado:
         data = {
             'usuario': usuario_nombre,
+            'grupos': grupos,
             'img': img,
             'Usus': usuarios_con_datos,
             'autorizado': autorizado,
@@ -286,57 +299,99 @@ def info_grupos(request):
 
 @login_required
 @solo_gerencia
-def editar_usuario(request):
-    if request.method == 'POST':
-        user_id = request.POST.get('id')
-        username = request.POST.get('username')
-        nombre = request.POST.get('nombre')
-        apellido = request.POST.get('apellido')
-        email = request.POST.get('email')
-        telefono = request.POST.get('telefono')
-        # Obtener los grupos seleccionados como lista
-        grupos = request.POST.getlist('grupo')
+def crear_editar_usuario(request):
+    user_id = request.POST.get('user_id')
+    es_nuevo = (not user_id or user_id == '0')
 
-        # Cargar la instancia del usuario
-        user = get_object_or_404(User, id=user_id)
-        usuario = get_object_or_404(Usuario, user=user)
+    try:
+        if es_nuevo:
+            username = (request.POST.get('username') or '').strip()
+            if not username:
+                messages.error(request, 'El nombre de usuario es obligatorio.')
+                return redirect('usuarios')
+            if User.objects.filter(username=username).exists():
+                messages.error(request, 'El nombre de usuario ya existe.')
+                return redirect('usuarios')
 
-        # Inicializar la bandera de cambios
-        cambios = False
+            password = request.POST.get('password') or ''
+            password2 = request.POST.get('password2') or ''
+            if not password or not password2:
+                messages.error(
+                    request, 'Debés ingresar y confirmar la contraseña.')
+                return redirect('usuarios')
+            if password != password2:
+                messages.error(request, 'Las contraseñas no coinciden.')
+                return redirect('usuarios')
 
-        # Comparar y actualizar los valores si hay cambios
-        if user.username != username:
-            user.username = username
-            cambios = True
-        if user.first_name != nombre:
-            user.first_name = nombre
-            cambios = True
-        if user.last_name != apellido:
-            user.last_name = apellido
-            cambios = True
-        if user.email != email:
-            user.email = email
-            cambios = True
-        if usuario.telefono != telefono:
-            usuario.telefono = telefono
-            cambios = True
+            user = User.objects.create_user(
+                username=username,
+                email=request.POST.get('email') or '',
+                first_name=request.POST.get('first_name') or '',
+                last_name=request.POST.get('last_name') or '',
+                password=password,
+            )
+            usuario = get_object_or_404(Usuario, user=user)
+            mensaje_ok = 'Usuario creado correctamente.'
 
-        # Actualizar los grupos
-        if set(grupos) != set(user.groups.values_list('id', flat=True)):
-            user.groups.clear()  # Limpiar grupos actuales
-            for grupo_id in grupos:
-                grupo = Group.objects.get(id=grupo_id)
-                user.groups.add(grupo)
-            cambios = True
-
-        # Guardar los cambios si hay alguno
-        if cambios:
-            user.save()
-            usuario.save()
-            messages.success(request, 'Usuario actualizado correctamente.')
         else:
-            messages.info(request, 'No hubo cambios para guardar.')
-    return redirect('usuarios')  # Redirige a la vista deseada
+            user = get_object_or_404(User, id=user_id)
+            usuario = get_object_or_404(Usuario, user=user)
+
+            username = (request.POST.get('username') or '').strip()
+            if not username:
+                messages.error(request, 'El nombre de usuario es obligatorio.')
+                return redirect('usuarios')
+            if User.objects.filter(username=username).exclude(id=user.id).exists():
+                messages.error(request, 'El nombre de usuario ya existe.')
+                return redirect('usuarios')
+
+            user.username = username
+            user.first_name = request.POST.get('first_name', '')
+            user.last_name = request.POST.get('last_name', '')
+            user.email = request.POST.get('email', '')
+            user.save()
+
+            # Cambio de contraseña opcional
+            cambiar_password = request.POST.get('cambiar_password') == '1'
+            if cambiar_password:
+                password = request.POST.get('password') or ''
+                password2 = request.POST.get('password2') or ''
+                if not password or not password2:
+                    messages.error(
+                        request, 'Debés ingresar y confirmar la nueva contraseña.')
+                    return redirect('usuarios')
+                if password != password2:
+                    messages.error(request, 'Las contraseñas no coinciden.')
+                    return redirect('usuarios')
+                try:
+                    validate_password(password, user)
+                    user.set_password(password)
+                    user.save()
+                except ValidationError as e:
+                    messages.error(request, ' '.join(e.messages))
+                    return redirect('usuarios')
+
+            mensaje_ok = 'Usuario actualizado correctamente.'
+
+        # Datos del perfil
+        usuario.telefono = request.POST.get('telefono', '')
+        usuario.save()
+
+        # Grupos
+        grupo_id = request.POST.get('grupo')
+        if grupo_id:
+            grupo = Group.objects.filter(id=grupo_id).first()
+            if grupo:
+                user.groups.set([grupo])
+        else:
+            user.groups.clear()
+
+        messages.success(request, mensaje_ok)
+
+    except Exception as e:
+        messages.error(request, f'Ocurrió un error al guardar el usuario: {e}')
+
+    return redirect('usuarios')
 
 # Vista que permite eliminar un usuario de la base de datos.
 
@@ -352,3 +407,20 @@ def borrar_usuario(request, usuario_id):
         messages.error(
             request, f'No se ha podido borrar el usuario. Error({e})')
     return redirect('/usuarios')
+
+
+@require_GET
+@login_required
+def validar_username(request):
+    username = (request.GET.get('u') or '').strip()
+    # para excluir al usuario actual en edición
+    user_id = request.GET.get('user_id')
+
+    if not username:
+        return JsonResponse({'exists': False})
+
+    qs = User.objects.filter(username=username)
+    if user_id:
+        qs = qs.exclude(id=user_id)
+
+    return JsonResponse({'exists': qs.exists()})

@@ -3,8 +3,9 @@ from .views import (
     iniciar_sesion, cerrar_sesion, registrar_usuario,
     editar_perfil, cambiar_contrasena, restablecer_contrasena,
     correo_contrasena, dark_mode, get_dark_mode,
-    obtener_usuarios, editar_usuario, usuarios,
-    info_grupos, info_usuario, borrar_usuario,
+    obtener_usuarios, usuarios,
+    info_grupos, usuario_info,
+    crear_editar_usuario, validar_username, borrar_usuario,
 )
 
 urlpatterns = [
@@ -25,12 +26,14 @@ urlpatterns = [
     path('getDarkMode', get_dark_mode, name='getDarkMode'),
     # Envía una lista con los nombres de los usuarios al frontend
     path('obtenerUsuarios', obtener_usuarios, name='obtenerUsuarios'),
+    path('usuarios', usuarios, name='usuarios'),
     # Tabla usuarios
     path('usuarios', usuarios, name='usuarios'),
-    # Edición de usuario
-    path('editarUsuario', editar_usuario, name='editarUsuario'),
+    # CRUD usuario
+    path('usuarios/guardar', crear_editar_usuario, name='crear_editar_usuario'),
+    path('usuarios/info/<int:user_id>', usuario_info, name='usuario_info'),
+    path('usuarios/validar-username', validar_username, name='validar_username'),
     path('infoGrupos', info_grupos, name='infoGrupos'),
-    path('obtenerUsuario/<int:usuario_id>', info_usuario, name='infoUsuario'),
     # Eliminar usuario
     path('borrarUsuario/<int:usuario_id>',
          borrar_usuario, name='borrarUsuario'),
