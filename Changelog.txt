@@ -208,5 +208,8 @@ Versión v3.1.7
     -Clientes
         *Se agrega un modal que resume la información de los clientes: Datos + Pedidos en curso + Últimos pedidos completados + Presupuestos sin respuesta
 
-
+****************** 12/4/2026 ******************
+Versión v3.2.0
     
+    -Dashboard
+        *Se crea el dashboard para mostrar información útil para que el usuario pueda tomar decisiones.

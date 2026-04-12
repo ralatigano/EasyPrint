@@ -22,6 +22,11 @@
   <!-- Links de nav (visibles en desktop, colapsados en móvil) -->
   <div class="collapse navbar-collapse" id="navbarSupportedContent">
     <ul class="navbar-nav me-auto mb-4 mb-lg-0">
+      {% if es_gerencia %}
+      <li class="nav-item">
+        <a class="nav-link" href="/dashboard" id="nav_item_dashboard">Dashboard</a>
+      </li>
+      {% endif %}
       <li class="nav-item">
         <a class="nav-link" href="/presupuestos/inicio" id="nav_item_inicio">Nuevo Presupuesto</a>
       </li>

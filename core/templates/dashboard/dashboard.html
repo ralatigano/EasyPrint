@@ -1,0 +1,193 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container py-4">
+
+    <!-- ─────────────────────────────────────────────── -->
+    <!-- Título + Filtro de período -->
+    <!-- ─────────────────────────────────────────────── -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold">Dashboard</h2>
+
+        <form method="get" class="d-flex gap-2">
+            <select name="periodo" class="form-select" onchange="this.form.submit()">
+                <option value="semana" {% if periodo == 'semana' %}selected{% endif %}>Última semana</option>
+                <option value="mes" {% if periodo == 'mes' %}selected{% endif %}>Últimos 30 días</option>
+                <option value="trimestre" {% if periodo == 'trimestre' %}selected{% endif %}>Últimos 3 meses</option>
+            </select>
+        </form>
+    </div>
+
+    <!-- ─────────────────────────────────────────────── -->
+    <!-- Primera fila: Pedidos en curso + Completados -->
+    <!-- ─────────────────────────────────────────────── -->
+    <div class="row g-3 mb-4">
+
+        <!-- Pedidos en curso -->
+        <div class="col-md-6">
+            <div class="card shadow-sm h-100 clickable" onclick="window.location.href='/pedidos/?estado=en_curso'">
+                <div class="card-body">
+                    <h5 class="card-title">Pedidos en curso</h5>
+                    <p class="display-6 fw-bold">{{ pedidos_en_curso_count }}</p>
+                    <p class="text-muted mb-1">Saldo pendiente:</p>
+                    <p class="fw-bold text-primary fs-4">${{ total_saldo_pendiente }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pedidos completados -->
+        <div class="col-md-6">
+            <div class="card shadow-sm h-100 clickable" onclick="window.location.href='/pedidos/?estado=completado'">
+                <div class="card-body">
+                    <h5 class="card-title">Pedidos completados ({{ periodo }})</h5>
+                    <p class="display-6 fw-bold">{{ pedidos_completados_count }}</p>
+                    <p class="text-muted mb-1">Total cobrado:</p>
+                    <p class="fw-bold text-success fs-4">${{ total_cobrado }}</p>
+                    <p class="text-muted mb-1">Ticket promedio:</p>
+                    <p class="fw-bold fs-5">${{ ticket_promedio|floatformat:0 }}</p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ─────────────────────────────────────────────── -->
+    <!-- Segunda fila: Presupuestos + Producto más vendido -->
+    <!-- ─────────────────────────────────────────────── -->
+    <div class="row g-3 mb-4">
+
+        <!-- Presupuestos últimos 15 días -->
+        <div class="col-md-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Presupuestos últimos 15 días</h5>
+                    <p class="display-6 fw-bold">{{ total_presupuestos }}</p>
+
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-muted">Convertidos a pedido:</span>
+                        <span class="fw-bold fs-4 text-info">{{ tasa_conversion }}%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Producto más vendido -->
+        <div class="col-md-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Productos más vendidos ({{ periodo }})</h5>
+
+                    {% if productos_vendidos %}
+                        <ul class="list-group list-group-flush">
+                            {% for p in productos_vendidos %}
+                                <li class="list-group-item d-flex justify-content-between">
+                                    <div>
+                                        <strong>{{ p.insumo__nombre }}</strong><br>
+                                        <small class="text-muted">{{ p.total_unidades }} unidades</small>
+                                    </div>
+                                    <span class="fw-bold text-success">${{ p.total_facturado }}</span>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="text-muted">No hay ventas registradas.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ─────────────────────────────────────────────── -->
+    <!-- Tercera fila: Pedidos por estado + Top clientes -->
+    <!-- ─────────────────────────────────────────────── -->
+    <div class="row g-3 mb-4">
+
+        <!-- Pedidos por estado -->
+        <div class="col-md-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Pedidos por estado</h5>
+
+                    {% for e in pedidos_por_estado %}
+                        <div class="d-flex justify-content-between border-bottom py-1">
+                            <span>{{ e.estado }}</span>
+                            <span class="fw-bold">{{ e.cantidad }}</span>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Top clientes -->
+        <div class="col-md-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Top 5 clientes (6 meses)</h5>
+
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Cliente</th>
+                                <th>Pedidos</th>
+                                <th>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for c in top_clientes %}
+                            <tr>
+                                <td>{{ forloop.counter }}</td>
+                                <td>{{ c.cliente__nombre }}{% if c.cliente__negocio %} ({{ c.cliente__negocio }}){% endif %}</td>
+                                <td>{{ c.cantidad_pedidos }}</td>
+                                <td>${{ c.total_comprado }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ─────────────────────────────────────────────── -->
+    <!-- Cuarta fila: Próximos pedidos -->
+    <!-- ─────────────────────────────────────────────── -->
+    <div class="row g-3 mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">Próximos pedidos con fecha de entrega</h5>
+
+                    {% if proximos_pedidos %}
+                        <ul class="list-group list-group-flush">
+                            {% for p in proximos_pedidos %}
+                                <li class="list-group-item d-flex justify-content-between">
+                                    <div>
+                                        <strong>#{{ p.numero }}</strong> — {{ p.cliente }}
+                                        <br>
+                                        <small class="text-muted">{{ p.estado }}</small>
+                                    </div>
+                                    <span class="fw-bold">{{ p.fecha_entrega }}</span>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="text-muted">No hay pedidos próximos.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<style>
+    .clickable { cursor: pointer; transition: transform .1s ease; }
+    .clickable:hover { transform: scale(1.01); }
+</style>
+
+{% endblock %}
