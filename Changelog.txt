@@ -195,21 +195,18 @@ Versión v3.1.4
         *Se corrige el funcionamiento de los filtros para que funcione a lo largo de todas las páginas de la tabla.
 
 ****************** 11/4/2026 ******************
-Versión v3.1.5
+Versión v3.1.7
     
     -General
         *Se agregan botones para mostrar/oculatar caractéres en inputs sensibles.
+        *Se modifica la estructura de la barra de navegación para aprovechar mejor el espacio.
+        *Se modifica la configuración de archivos estáticos para intentar resolver el problema de archivos cacheados del lado del cliente cada vez que se hacen cambios.
 
     -Usuarios
         *Se modifica y corrige la lógica de edición y creación de usuarios.
 
-****************** 11/4/2026 ******************
-Versión v3.1.6
-
-    -General
-        *Se modifica la estructura de la barra de navegación para aprovechar mejor el espacio.
-        
     -Clientes
         *Se agrega un modal que resume la información de los clientes: Datos + Pedidos en curso + Últimos pedidos completados + Presupuestos sin respuesta
+
 
     
