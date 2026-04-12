@@ -1,0 +1,88 @@
+{# ── Modal: Nuevo objetivo ──────────────────────────────────────────────── #}
+<div class="modal fade" id="modalObjetivo" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="/dashboard/guardar-objetivo/">
+                {% csrf_token %}
+                <input type="hidden" name="objetivo_id" id="objetivoIdInput" value="">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalObjetivoTitulo">Nuevo objetivo de ventas</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Nombre</label>
+                        <input type="text" class="form-control" name="nombre" id="objNombre" required placeholder="Ej: Meta Mayo 2026">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Monto objetivo ($)</label>
+                        <input type="number" class="form-control" name="monto_objetivo" id="objMonto" required min="1">
+                    </div>
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <label class="form-label">Desde</label>
+                            <input type="date" class="form-control" name="fecha_desde" id="objDesde" required>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">Hasta</label>
+                            <input type="date" class="form-control" name="fecha_hasta" id="objHasta" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{# ── Modal: Lista de objetivos ─────────────────────────────────────────── #}
+<div class="modal fade" id="modalListaObjetivos" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Objetivos de ventas</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Nombre</th>
+                            <th class="text-end">Meta</th>
+                            <th>Desde</th>
+                            <th>Hasta</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for obj in todos_objetivos %}
+                        <tr>
+                            <td>{{ obj.nombre }}</td>
+                            <td class="text-end">${{ obj.monto_objetivo|floatformat:0 }}</td>
+                            <td>{{ obj.fecha_desde }}</td>
+                            <td>{{ obj.fecha_hasta }}</td>
+                            <td class="text-end">
+                                <button class="btn btn-xs btn-outline-secondary me-1"
+                                        onclick="editarObjetivo('{{ obj.id }}','{{ obj.nombre }}','{{ obj.monto_objetivo }}','{{ obj.fecha_desde }}','{{ obj.fecha_hasta }}')">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <a href="/dashboard/eliminar-objetivo/{{ obj.id }}/"
+                                   class="btn btn-xs btn-outline-danger"
+                                   onclick="return confirm('¿Eliminar este objetivo?')">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>

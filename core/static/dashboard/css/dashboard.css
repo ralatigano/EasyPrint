@@ -1,0 +1,50 @@
+.kpi-card {
+    cursor: default;
+    transition: transform .15s ease, box-shadow .15s ease;
+}
+.kpi-card[role="button"] { cursor: pointer; }
+.kpi-card[role="button"]:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0,0,0,.12) !important;
+}
+.kpi-numero {
+    font-size: 2.2rem;
+    font-weight: 700;
+    line-height: 1;
+}
+.progress-bar-semaforo {
+    transition: width 1s ease, background-color 1s ease;
+}
+.btn-xs {
+    padding: .15rem .4rem;
+    font-size: .78rem;
+}.kpi-card {
+    cursor: default;
+    transition: transform .15s ease, box-shadow .15s ease;
+}
+.kpi-card[role="button"] { cursor: pointer; }
+.kpi-card[role="button"]:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0,0,0,.12) !important;
+}
+.kpi-numero {
+    font-size: 2.2rem;
+    font-weight: 700;
+    line-height: 1;
+}
+.progress-bar-semaforo {
+    transition: width 1s ease, background-color 1s ease;
+}
+.btn-xs {
+    padding: .15rem .4rem;
+    font-size: .78rem;
+}
+
+.clickable { 
+    cursor: pointer; 
+    transition: transform .1s ease; 
+}
+
+.clickable:hover { 
+    transform: scale(1.01); 
+}

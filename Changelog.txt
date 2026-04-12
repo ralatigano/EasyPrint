@@ -211,5 +211,8 @@ Versión v3.1.7
 ****************** 12/4/2026 ******************
 Versión v3.2.0
     
+    -General
+        *Se corrige un problema con la persistencia de la selección del tema.
+        
     -Dashboard
         *Se crea el dashboard para mostrar información útil para que el usuario pueda tomar decisiones.

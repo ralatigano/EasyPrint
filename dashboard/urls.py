@@ -1,9 +1,12 @@
 from django.urls import path
-from .views import dashboard
+from . import views
 
 
 urlpatterns = [
     # Tabla clientes
-    path('', dashboard, name='dashboard'),
-
+    path('', views.dashboard, name='dashboard'),
+    path('guardar-objetivo/', views.guardar_objetivo, name='guardar_objetivo'),
+    path('eliminar-objetivo/<int:pk>/',
+         views.eliminar_objetivo, name='eliminar_objetivo'),
+    path('exportar/<str:tipo>/', views.exportar_excel, name='exportar_excel'),
 ]

@@ -42,7 +42,17 @@ const initDataTable=async() => {
 }
 
 window.addEventListener("load", async() => {
+    const buscarNumero = sessionStorage.getItem('pedidos_buscar');
+    if (buscarNumero) {
+        sessionStorage.removeItem('pedidos_buscar');
+        // Se aplica después de que DataTables inicialice
+        window._buscarPedido = buscarNumero;
+    }
     await initDataTable();
+    if (window._buscarPedido) {
+        dataTable.search(String(window._buscarPedido)).draw();
+        delete window._buscarPedido;
+    }
     document.getElementById("nav_item_pedidos").style.fontWeight = "bold";
 });
 

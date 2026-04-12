@@ -1,193 +1,295 @@
 {% extends "core/base.html" %}
 {% load static %}
+{% load l10n %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{% static 'dashboard/css/dashboard.css' %}">
+{% endblock %}
+
+{% block header %}
+<div class="titulo">
+    <h1>Dashboard</h1>
+</div>
+{% endblock %}
 
 {% block content %}
-<div class="container py-4">
+<div class="container-fluid py-3">
 
-    <!-- ─────────────────────────────────────────────── -->
-    <!-- Título + Filtro de período -->
-    <!-- ─────────────────────────────────────────────── -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="fw-bold">Dashboard</h2>
-
-        <form method="get" class="d-flex gap-2">
-            <select name="periodo" class="form-select" onchange="this.form.submit()">
-                <option value="semana" {% if periodo == 'semana' %}selected{% endif %}>Última semana</option>
-                <option value="mes" {% if periodo == 'mes' %}selected{% endif %}>Últimos 30 días</option>
-                <option value="trimestre" {% if periodo == 'trimestre' %}selected{% endif %}>Últimos 3 meses</option>
-            </select>
-        </form>
+    {# ── Filtro de período ──────────────────────────────────────────────── #}
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+        <div class="d-flex gap-2 flex-wrap">
+            <a href="?periodo=semana" class="btn btn-sm {% if periodo == 'semana' %}btn-primary{% else %}btn-outline-secondary{% endif %}">Última semana</a>
+            <a href="?periodo=mes"    class="btn btn-sm {% if periodo == 'mes'    %}btn-primary{% else %}btn-outline-secondary{% endif %}">Últimos 30 días</a>
+            <a href="?periodo=trimestre" class="btn btn-sm {% if periodo == 'trimestre' %}btn-primary{% else %}btn-outline-secondary{% endif %}">Últimos 3 meses</a>
+        </div>
+        <div class="d-flex gap-2 flex-wrap">
+            <a href="/dashboard/exportar/pedidos/?periodo={{ periodo }}" class="btn btn-sm btn-outline-success">
+                <i class="bi bi-file-earmark-excel me-1"></i>Exportar pedidos
+            </a>
+            <a href="/dashboard/exportar/presupuestos/?periodo={{ periodo }}" class="btn btn-sm btn-outline-success">
+                <i class="bi bi-file-earmark-excel me-1"></i>Exportar presupuestos
+            </a>
+        </div>
     </div>
 
-    <!-- ─────────────────────────────────────────────── -->
-    <!-- Primera fila: Pedidos en curso + Completados -->
-    <!-- ─────────────────────────────────────────────── -->
+    {# ── Fila 1: KPIs principales ───────────────────────────────────────── #}
     <div class="row g-3 mb-4">
 
-        <!-- Pedidos en curso -->
-        <div class="col-md-6">
-            <div class="card shadow-sm h-100 clickable" onclick="window.location.href='/pedidos/?estado=en_curso'">
+        {# Pedidos en curso #}
+        <div class="col-6 col-lg-3">
+            <div class="card h-100 shadow-sm kpi-card" role="button"
+                 onclick="irAPedidosConFiltro(['No iniciado','En proceso'])">
                 <div class="card-body">
-                    <h5 class="card-title">Pedidos en curso</h5>
-                    <p class="display-6 fw-bold">{{ pedidos_en_curso_count }}</p>
-                    <p class="text-muted mb-1">Saldo pendiente:</p>
-                    <p class="fw-bold text-primary fs-4">${{ total_saldo_pendiente }}</p>
+                    <div class="d-flex justify-content-between align-items-start">
+                        <span class="text-muted small">Pedidos en curso</span>
+                        <i class="bi bi-arrow-repeat text-primary fs-5"></i>
+                    </div>
+                    <div class="kpi-numero mt-1">{{ pedidos_en_curso_count }}</div>
+                    <div class="text-muted small mt-2">Saldo pendiente</div>
+                    <div class="fw-bold text-warning fs-5">${{ total_saldo_pendiente|floatformat:0 }}</div>
                 </div>
             </div>
         </div>
 
-        <!-- Pedidos completados -->
-        <div class="col-md-6">
-            <div class="card shadow-sm h-100 clickable" onclick="window.location.href='/pedidos/?estado=completado'">
+        {# Pedidos completados #}
+        <div class="col-6 col-lg-3">
+            <div class="card h-100 shadow-sm kpi-card" role="button"
+                 onclick="irAPedidosConFiltro(['Terminado (falta pago)','Terminado y pagado'])">
                 <div class="card-body">
-                    <h5 class="card-title">Pedidos completados ({{ periodo }})</h5>
-                    <p class="display-6 fw-bold">{{ pedidos_completados_count }}</p>
-                    <p class="text-muted mb-1">Total cobrado:</p>
-                    <p class="fw-bold text-success fs-4">${{ total_cobrado }}</p>
-                    <p class="text-muted mb-1">Ticket promedio:</p>
-                    <p class="fw-bold fs-5">${{ ticket_promedio|floatformat:0 }}</p>
+                    <div class="d-flex justify-content-between align-items-start">
+                        <span class="text-muted small">Completados ({{ periodo }})</span>
+                        <i class="bi bi-check-circle text-success fs-5"></i>
+                    </div>
+                    <div class="kpi-numero mt-1">{{ pedidos_completados_count }}</div>
+                    <div class="text-muted small mt-2">Total cobrado</div>
+                    <div class="fw-bold text-success fs-5">${{ total_cobrado|floatformat:0 }}</div>
                 </div>
             </div>
         </div>
 
-    </div>
-
-    <!-- ─────────────────────────────────────────────── -->
-    <!-- Segunda fila: Presupuestos + Producto más vendido -->
-    <!-- ─────────────────────────────────────────────── -->
-    <div class="row g-3 mb-4">
-
-        <!-- Presupuestos últimos 15 días -->
-        <div class="col-md-6">
-            <div class="card shadow-sm h-100">
+        {# Ticket promedio #}
+        <div class="col-6 col-lg-3">
+            <div class="card h-100 shadow-sm kpi-card">
                 <div class="card-body">
-                    <h5 class="card-title">Presupuestos últimos 15 días</h5>
-                    <p class="display-6 fw-bold">{{ total_presupuestos }}</p>
+                    <div class="d-flex justify-content-between align-items-start">
+                        <span class="text-muted small">Ticket promedio</span>
+                        <i class="bi bi-receipt text-info fs-5"></i>
+                    </div>
+                    <div class="kpi-numero mt-1">${{ ticket_promedio|floatformat:0 }}</div>
+                    <div class="text-muted small mt-2">En el período</div>
+                </div>
+            </div>
+        </div>
 
-                    <div class="d-flex justify-content-between align-items-center">
-                        <span class="text-muted">Convertidos a pedido:</span>
-                        <span class="fw-bold fs-4 text-info">{{ tasa_conversion }}%</span>
+        {# Presupuestos y conversión #}
+        <div class="col-6 col-lg-3">
+            <div class="card h-100 shadow-sm kpi-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <span class="text-muted small">Presupuestos (15 días)</span>
+                        <i class="bi bi-file-text text-secondary fs-5"></i>
+                    </div>
+                    <div class="kpi-numero mt-1">{{ total_presupuestos }}</div>
+                    <div class="text-muted small mt-2">Conversión a pedido</div>
+                    <div class="fw-bold fs-5 {% if tasa_conversion >= 60 %}text-success{% elif tasa_conversion >= 30 %}text-warning{% else %}text-danger{% endif %}">
+                        {{ tasa_conversion }}%
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Producto más vendido -->
-        <div class="col-md-6">
-            <div class="card shadow-sm h-100">
-                <div class="card-body">
-                    <h5 class="card-title">Productos más vendidos ({{ periodo }})</h5>
-
-                    {% if productos_vendidos %}
-                        <ul class="list-group list-group-flush">
-                            {% for p in productos_vendidos %}
-                                <li class="list-group-item d-flex justify-content-between">
-                                    <div>
-                                        <strong>{{ p.insumo__nombre }}</strong><br>
-                                        <small class="text-muted">{{ p.total_unidades }} unidades</small>
-                                    </div>
-                                    <span class="fw-bold text-success">${{ p.total_facturado }}</span>
-                                </li>
-                            {% endfor %}
-                        </ul>
-                    {% else %}
-                        <p class="text-muted">No hay ventas registradas.</p>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-
     </div>
 
-    <!-- ─────────────────────────────────────────────── -->
-    <!-- Tercera fila: Pedidos por estado + Top clientes -->
-    <!-- ─────────────────────────────────────────────── -->
-    <div class="row g-3 mb-4">
-
-        <!-- Pedidos por estado -->
-        <div class="col-md-6">
-            <div class="card shadow-sm h-100">
-                <div class="card-body">
-                    <h5 class="card-title">Pedidos por estado</h5>
-
-                    {% for e in pedidos_por_estado %}
-                        <div class="d-flex justify-content-between border-bottom py-1">
-                            <span>{{ e.estado }}</span>
-                            <span class="fw-bold">{{ e.cantidad }}</span>
-                        </div>
-                    {% endfor %}
-                </div>
-            </div>
-        </div>
-
-        <!-- Top clientes -->
-        <div class="col-md-6">
-            <div class="card shadow-sm h-100">
-                <div class="card-body">
-                    <h5 class="card-title">Top 5 clientes (6 meses)</h5>
-
-                    <table class="table table-sm">
-                        <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>Cliente</th>
-                                <th>Pedidos</th>
-                                <th>Total</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for c in top_clientes %}
-                            <tr>
-                                <td>{{ forloop.counter }}</td>
-                                <td>{{ c.cliente__nombre }}{% if c.cliente__negocio %} ({{ c.cliente__negocio }}){% endif %}</td>
-                                <td>{{ c.cantidad_pedidos }}</td>
-                                <td>${{ c.total_comprado }}</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-
-                </div>
-            </div>
-        </div>
-
-    </div>
-
-    <!-- ─────────────────────────────────────────────── -->
-    <!-- Cuarta fila: Próximos pedidos -->
-    <!-- ─────────────────────────────────────────────── -->
+    {# ── Objetivo de ventas ─────────────────────────────────────────────── #}
     <div class="row g-3 mb-4">
         <div class="col-12">
             <div class="card shadow-sm">
                 <div class="card-body">
-                    <h5 class="card-title">Próximos pedidos con fecha de entrega</h5>
+                    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-bullseye me-2"></i>Objetivo de ventas
+                            {% if objetivo_activo %}
+                                <span class="badge bg-secondary ms-2 fw-normal small">{{ objetivo_activo.nombre }}</span>
+                            {% endif %}
+                        </h5>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalObjetivo">
+                                <i class="bi bi-plus-lg me-1"></i>Nuevo objetivo
+                            </button>
+                            {% if todos_objetivos %}
+                            <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#modalListaObjetivos">
+                                <i class="bi bi-list-ul me-1"></i>Ver todos
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
 
-                    {% if proximos_pedidos %}
-                        <ul class="list-group list-group-flush">
-                            {% for p in proximos_pedidos %}
-                                <li class="list-group-item d-flex justify-content-between">
-                                    <div>
-                                        <strong>#{{ p.numero }}</strong> — {{ p.cliente }}
-                                        <br>
-                                        <small class="text-muted">{{ p.estado }}</small>
-                                    </div>
-                                    <span class="fw-bold">{{ p.fecha_entrega }}</span>
-                                </li>
-                            {% endfor %}
-                        </ul>
+                    {% if objetivo_activo %}
+                        <div class="d-flex justify-content-between small text-muted mb-1">
+                            <span>${{ cobrado_en_objetivo|floatformat:0 }} cobrados</span>
+                            <span>Meta: ${{ objetivo_activo.monto_objetivo|floatformat:0 }}</span>
+                        </div>
+                        <div class="progress" style="height: 28px; border-radius: 8px;">
+                            <div class="progress-bar progress-bar-semaforo"
+                                 id="barraObjetivo"
+                                 role="progressbar"
+                                 style="width: 0%; border-radius: 8px;"
+                                 data-progreso="{{ progreso_objetivo }}">
+                                <span class="fw-bold">{{ progreso_objetivo }}%</span>
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-between small text-muted mt-1">
+                            <span>{{ objetivo_activo.fecha_desde }}</span>
+                            <span>{{ objetivo_activo.fecha_hasta }}</span>
+                        </div>
                     {% else %}
-                        <p class="text-muted">No hay pedidos próximos.</p>
+                        <p class="text-muted mb-0">No hay ningún objetivo activo para hoy. Creá uno con el botón.</p>
                     {% endif %}
                 </div>
             </div>
         </div>
     </div>
 
+    {# ── Fila 2: Gráficos ───────────────────────────────────────────────── #}
+    <div class="row g-3 mb-4">
+
+        {# Donut: pedidos por estado #}
+        <div class="col-md-5">
+            <div class="card shadow-sm h-100">
+                <div class="card-body d-flex flex-column">
+                    <h5 class="card-title">Pedidos por estado</h5>
+                    <div class="flex-grow-1 d-flex align-items-center justify-content-center" style="min-height:220px;">
+                        <canvas id="chartEstados"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {# Barras: top clientes #}
+        <div class="col-md-7">
+            <div class="card shadow-sm h-100">
+                <div class="card-body d-flex flex-column">
+                    <h5 class="card-title">Top 5 clientes <span class="text-muted fw-normal small">(últimos 6 meses)</span></h5>
+                    <div class="flex-grow-1 d-flex align-items-center" style="min-height:220px;">
+                        <canvas id="chartClientes" style="width:100%"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    {# ── Fila 3: Productos más vendidos + Próximos pedidos ─────────────── #}
+    <div class="row g-3 mb-4">
+
+        {# Productos más vendidos #}
+        <div class="col-md-5">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Productos más vendidos <span class="text-muted fw-normal small">({{ periodo }})</span></h5>
+                    {% if productos_vendidos %}
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>#</th>
+                                    <th>Producto</th>
+                                    <th class="text-end">Veces</th>
+                                    <th class="text-end">Facturado</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for p in productos_vendidos %}
+                                <tr>
+                                    <td><span class="badge bg-secondary">{{ forloop.counter }}</span></td>
+                                    <td>{{ p.insumo__nombre }}</td>
+                                    <td class="text-end">{{ p.veces_vendido }}</td>
+                                    <td class="text-end text-success fw-bold">${{ p.total_facturado|floatformat:0 }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                        <p class="text-muted">Sin datos para el período.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        {# Próximos pedidos con fecha de entrega #}
+        <div class="col-md-7">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Próximas entregas</h5>
+                    {% if proximos_pedidos %}
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>#</th>
+                                    <th>Cliente</th>
+                                    <th>Estado</th>
+                                    <th>Entrega</th>
+                                    <th class="text-end">Saldo</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for p in proximos_pedidos %}
+                                <tr class="{% if p.fecha_entrega == hoy %}table-warning{% endif %}">
+                                    <td>
+                                        <a href="/pedidos" class="fw-bold text-decoration-none pedido-link"
+                                        data-numero="{% localize off %}{{ p.numero }}{% endlocalize %}">
+                                            #{% localize off %}{{ p.numero }}{% endlocalize %}
+                                        </a>
+                                    </td>
+                                    <td>{{ p.cliente }}</td>
+                                    <td><span class="badge bg-primary-subtle text-primary-emphasis">{{ p.estado }}</span></td>
+                                    <td>
+                                        {% if p.fecha_entrega == hoy %}
+                                            <span class="badge bg-warning text-dark"><i class="bi bi-exclamation-triangle me-1"></i>Hoy</span>
+                                        {% else %}
+                                            {{ p.fecha_entrega }}
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end {% if p.saldo %}text-danger{% else %}text-success{% endif %} fw-bold">
+                                        ${{ p.saldo|floatformat:0 }}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                        <p class="text-muted">No hay entregas próximas registradas.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+    </div>
+
 </div>
 
-<style>
-    .clickable { cursor: pointer; transition: transform .1s ease; }
-    .clickable:hover { transform: scale(1.01); }
-</style>
 
+
+<!-- <div id="dashboardData"
+     data-estados-names='{{ pedidos_por_estado|json_script:"" }}'
+     data-estados-valores='{{ pedidos_por_estado|json_script:"" }}'
+     style="display:none">
+</div> -->
+{# Datos seguros para JS — json_script escapa todo correctamente #}
+{{ pedidos_por_estado|json_script:"raw-estados" }}
+{{ top_clientes|json_script:"raw-clientes" }}
+{% endblock %}
+
+{% block modal %}
+    {% include 'dashboard/partials/modales.html' %}
+{% endblock %}
+
+{% block scripts %}
+<!-- Custom Js -->
+<script src="{% static 'dashboard/js/Dashboard.js' %}"></script>
 {% endblock %}

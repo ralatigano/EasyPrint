@@ -69,6 +69,9 @@ function setTheme(themeValue) {
 
     // Almacenar la preferencia de tema en el almacenamiento local
     localStorage.setItem('theme', themeValue);
+
+    fetch(`/valorDarkMode/${themeValue}`, { method: 'GET' })
+    .catch(() => {});
 }
 
 // Función para cambiar el tema al clickear en un botón obteniendo el valor de la clase data-bs-theme-value y llamando a la función setTheme
