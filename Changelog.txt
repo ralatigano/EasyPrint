@@ -206,6 +206,9 @@ Versión v3.1.5
 ****************** 11/4/2026 ******************
 Versión v3.1.6
 
+    -General
+        *Se modifica la estructura de la barra de navegación para aprovechar mejor el espacio.
+        
     -Clientes
         *Se agrega un modal que resume la información de los clientes: Datos + Pedidos en curso + Últimos pedidos completados + Presupuestos sin respuesta
 

@@ -172,3 +172,7 @@ table.dataTable.dtr-inline.collapsed > tbody > tr > td.dtr-control::before {
   box-sizing: border-box;
   margin-right: 0.5em;
 }
+
+#dropdownUserDesktop::after {
+    display: none;
+}
