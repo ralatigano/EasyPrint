@@ -28,6 +28,13 @@ function editarObjetivo(id, nombre, monto, desde, hasta) {
 document.addEventListener('DOMContentLoaded', function () {
     // Dar tiempo a que core.js resuelva el AJAX de getDarkMode antes de leer el tema
     setTimeout(inicializarDashboard, 150);
+    document.getElementById('modalListaObjetivos').addEventListener('shown.bs.modal', function () {
+        this.querySelectorAll('.progress-bar-semaforo').forEach(function(barra) {
+            const pct = parseInt(barra.dataset.progreso) || 0;
+            barra.style.width = pct + '%';
+            barra.style.backgroundColor = colorSemaforo(pct);
+        });
+    });
 });
 
 function inicializarDashboard() {
@@ -47,12 +54,11 @@ function inicializarDashboard() {
     };
 
     // Barra de progreso semaforizada
-    const barra = document.getElementById('barraObjetivo');
-    if (barra) {
+    document.querySelectorAll('.progress-bar-semaforo').forEach(function(barra) {
         const pct = parseInt(barra.dataset.progreso) || 0;
         barra.style.width = pct + '%';
         barra.style.backgroundColor = colorSemaforo(pct);
-    }
+    });
 
     // Tema claro/oscuro para Chart.js
     // Tema claro/oscuro para Chart.js
@@ -150,4 +156,13 @@ function inicializarDashboard() {
         });
     });
 
+}
+
+function limpiarFormObjetivo() {
+    document.getElementById('objetivoIdInput').value = '';
+    document.getElementById('objNombre').value = '';
+    document.getElementById('objMonto').value = '';
+    document.getElementById('objDesde').value = '';
+    document.getElementById('objHasta').value = '';
+    document.getElementById('modalObjetivoTitulo').textContent = 'Nuevo objetivo de ventas';
 }

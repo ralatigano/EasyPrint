@@ -115,33 +115,39 @@ def dashboard(request):
         .order_by('fecha_entrega')[:8]
     )
 
-    # ── Objetivo de ventas activo ────────────────────────────────────────────
-    objetivo_activo = ObjetivoVentas.objects.filter(
-        fecha_desde__lte=hoy,
-        fecha_hasta__gte=hoy
-    ).first()
+    # ── Objetivos de ventas ──────────────────────────────────────────────────
+    todos_objetivos = ObjetivoVentas.objects.all()
+    objetivos_con_progreso = []
 
-    progreso_objetivo = 0
-    cobrado_en_objetivo = 0
-    if objetivo_activo:
+    for obj in todos_objetivos:
         pedidos_obj = Pedido.objects.filter(
             estado__in=estados_completados,
-            created__date__gte=objetivo_activo.fecha_desde,
-            created__date__lte=objetivo_activo.fecha_hasta
+            created__date__gte=obj.fecha_desde,
+            created__date__lte=obj.fecha_hasta
         )
+        cobrado = 0
         for p in pedidos_obj:
             if not p.saldo:
-                cobrado_en_objetivo += p.precio
+                cobrado += p.precio
             elif p.senia:
-                cobrado_en_objetivo += p.senia
-        if objetivo_activo.monto_objetivo > 0:
-            progreso_objetivo = min(
-                round((cobrado_en_objetivo /
-                      float(objetivo_activo.monto_objetivo)) * 100),
-                100
-            )
+                cobrado += p.senia
 
-    todos_objetivos = ObjetivoVentas.objects.all()
+        progreso = min(round((cobrado / float(obj.monto_objetivo)) * 100), 100) \
+            if obj.monto_objetivo > 0 else 0
+        activo = obj.fecha_desde <= hoy <= obj.fecha_hasta
+
+        objetivos_con_progreso.append({
+            'id': obj.id,
+            'nombre': obj.nombre,
+            'monto_objetivo': obj.monto_objetivo,
+            'fecha_desde': obj.fecha_desde,
+            'fecha_hasta': obj.fecha_hasta,
+            'cobrado': cobrado,
+            'progreso': progreso,
+            'activo': activo,
+        })
+
+    objetivos_vigentes = [o for o in objetivos_con_progreso if o['activo']]
 
     context = {
         'autorizado': request.session.get('autorizado'),
@@ -161,10 +167,9 @@ def dashboard(request):
         'top_clientes': list(top_clientes),
         'proximos_pedidos': proximos_pedidos,
         'hoy': hoy,
-        'objetivo_activo': objetivo_activo,
-        'progreso_objetivo': progreso_objetivo,
-        'cobrado_en_objetivo': cobrado_en_objetivo,
-        'todos_objetivos': todos_objetivos,
+        'objetivos_vigentes': objetivos_vigentes,
+        'todos_objetivos': objetivos_con_progreso,
+        'hay_objetivos': len(objetivos_con_progreso) > 0,
     }
     return render(request, 'dashboard/dashboard.html', context)
 

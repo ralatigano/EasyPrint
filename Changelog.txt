@@ -216,3 +216,9 @@ Versión v3.2.0
         
     -Dashboard
         *Se crea el dashboard para mostrar información útil para que el usuario pueda tomar decisiones.
+
+****************** 12/4/2026 ******************
+Versión v3.2.1
+
+    -Dashboard
+        *Se mejora el dashboard para que se muestre mas de un objetivo de ventas a la vez.

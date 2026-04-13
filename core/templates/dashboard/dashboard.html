@@ -102,7 +102,7 @@
 
     </div>
 
-    {# ── Objetivo de ventas ─────────────────────────────────────────────── #}
+    {# ── Objetivo de ventas ─────────────────────────────────────────────────── #}
     <div class="row g-3 mb-4">
         <div class="col-12">
             <div class="card shadow-sm">
@@ -110,42 +110,52 @@
                     <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
                         <h5 class="card-title mb-0">
                             <i class="bi bi-bullseye me-2"></i>Objetivo de ventas
-                            {% if objetivo_activo %}
-                                <span class="badge bg-secondary ms-2 fw-normal small">{{ objetivo_activo.nombre }}</span>
-                            {% endif %}
                         </h5>
                         <div class="d-flex gap-2">
-                            <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalObjetivo">
+                            <button class="btn btn-sm btn-outline-primary"
+                                    data-bs-toggle="modal" data-bs-target="#modalObjetivo"
+                                    onclick="limpiarFormObjetivo()">
                                 <i class="bi bi-plus-lg me-1"></i>Nuevo objetivo
                             </button>
-                            {% if todos_objetivos %}
-                            <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#modalListaObjetivos">
+                            {% if hay_objetivos %}
+                            <button class="btn btn-sm btn-outline-secondary"
+                                    data-bs-toggle="modal" data-bs-target="#modalListaObjetivos">
                                 <i class="bi bi-list-ul me-1"></i>Ver todos
                             </button>
                             {% endif %}
                         </div>
                     </div>
 
-                    {% if objetivo_activo %}
-                        <div class="d-flex justify-content-between small text-muted mb-1">
-                            <span>${{ cobrado_en_objetivo|floatformat:0 }} cobrados</span>
-                            <span>Meta: ${{ objetivo_activo.monto_objetivo|floatformat:0 }}</span>
-                        </div>
-                        <div class="progress" style="height: 28px; border-radius: 8px;">
-                            <div class="progress-bar progress-bar-semaforo"
-                                 id="barraObjetivo"
-                                 role="progressbar"
-                                 style="width: 0%; border-radius: 8px;"
-                                 data-progreso="{{ progreso_objetivo }}">
-                                <span class="fw-bold">{{ progreso_objetivo }}%</span>
+                    {% if objetivos_vigentes %}
+                        <div class="objetivos-lista">
+                            {% for obj in objetivos_vigentes %}
+                            <div class="objetivo-item mb-3">
+                                <div class="d-flex justify-content-between align-items-center mb-1 flex-wrap gap-1">
+                                    <span class="fw-semibold">{{ obj.nombre }}</span>
+                                    <span class="text-muted small">
+                                        {{ obj.fecha_desde }} → {{ obj.fecha_hasta }}
+                                    </span>
+                                </div>
+                                <div class="d-flex justify-content-between small text-muted mb-1">
+                                    <span>${{ obj.cobrado|floatformat:0 }} cobrados</span>
+                                    <span>Meta: ${{ obj.monto_objetivo|floatformat:0 }}</span>
+                                </div>
+                                <div class="progress" style="height: 26px; border-radius: 8px;">
+                                    <div class="progress-bar progress-bar-semaforo"
+                                        role="progressbar"
+                                        style="width: 0%; border-radius: 8px;"
+                                        data-progreso="{{ obj.progreso }}">
+                                        <span class="fw-bold">{{ obj.progreso }}%</span>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                        <div class="d-flex justify-content-between small text-muted mt-1">
-                            <span>{{ objetivo_activo.fecha_desde }}</span>
-                            <span>{{ objetivo_activo.fecha_hasta }}</span>
+                            {% if not forloop.last %}
+                                <hr class="my-2 opacity-25">
+                            {% endif %}
+                            {% endfor %}
                         </div>
                     {% else %}
-                        <p class="text-muted mb-0">No hay ningún objetivo activo para hoy. Creá uno con el botón.</p>
+                        <p class="text-muted mb-0">No hay objetivos vigentes para hoy. Creá uno con el botón.</p>
                     {% endif %}
                 </div>
             </div>
