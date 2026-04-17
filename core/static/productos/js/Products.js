@@ -305,7 +305,7 @@ async function guardarProducto() {
   formData.append("productoAlto", document.getElementById("productoAlto").value || '');
   formData.append("productoMargen", document.getElementById("productoMargen").value || '');
   const precioTexto = document.getElementById("costo-total").textContent;
-  const precioLimpio = parsearNumeroLocal(precioTexto.replace(/\$/g, "").replace(/,/g, "").trim());
+  const precioLimpio = parsearNumeroLocal(precioTexto.replace(/\$/g, "").trim());
   formData.append("productoPrecio", precioLimpio);
   formData.append("tercerizado", document.getElementById("tercerizado-checkbox").checked ? "on" : "");
 
