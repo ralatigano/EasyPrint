@@ -233,8 +233,8 @@ def confirmar_pedido(request):
     np_global = request.session.get('np_global', 0)
     vendedor = request.session.get('vendedor')
     n_pedido = request.POST['n_pedido']
-    precio = float(request.POST['total_neto'].replace(',', '.'))
-    senia = float(request.POST['senia'].replace(',', '.'))
+    precio = parse_ar(request.POST['total_neto'])
+    senia = parse_ar(request.POST['senia'])
     saldo = round(precio - senia, 2)
     fecha_entrega = datetime.strptime(
         request.POST['fecha_entrega'], "%Y-%m-%d").date()
@@ -358,7 +358,6 @@ def eliminar_pedido(request, pedido_id):
     return redirect('/pedidos')
 
 
-@login_required
 def actualizar_stock_insumos(producto, cantidad, modo='descontar', request=None, pedido=None):
     advertencias = []
     componentes = ComponenteProducto.objects.filter(

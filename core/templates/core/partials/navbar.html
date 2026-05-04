@@ -24,33 +24,33 @@
     <ul class="navbar-nav me-auto mb-4 mb-lg-0">
       {% if es_gerencia %}
       <li class="nav-item">
-        <a class="nav-link" href="/dashboard" id="nav_item_dashboard">Dashboard</a>
+        <a class="nav-link {% if '/dashboard' in request.path %}nav-active{% endif %}" href="/dashboard" id="nav_item_dashboard">Dashboard</a>
       </li>
       {% endif %}
       <li class="nav-item">
-        <a class="nav-link" href="/presupuestos/inicio" id="nav_item_inicio">Nuevo Presupuesto</a>
+        <a class="nav-link {% if '/presupuestos/inicio' in request.path %}nav-active{% endif %}" href="/presupuestos/inicio" id="nav_item_inicio">Nuevo Presupuesto</a>
       </li>
       <li class="nav-item">
-        <a class="nav-link" href="/productos/insumos" id="nav_item_insumos">Stock</a>
+        <a class="nav-link {% if '/productos/insumos' in request.path %}nav-active{% endif %}" href="/productos/insumos" id="nav_item_insumos">Stock</a>
       </li>
       <li class="nav-item">
-        <a class="nav-link" href="/productos" id="nav_item_productos">Productos</a>
+        <a class="nav-link {% if request.path == '/productos/' or request.path == '/productos' %}nav-active{% endif %}" href="/productos" id="nav_item_productos">Productos</a>
       </li>
       <li class="nav-item">
-        <a class="nav-link" href="/presupuestos" id="nav_item_presupuestos">Presupuestos</a>
+        <a class="nav-link {% if request.path == '/presupuestos/' or request.path == '/presupuestos' %}nav-active{% endif %}" href="/presupuestos" id="nav_item_presupuestos">Presupuestos</a>
       </li>
       <li class="nav-item">
-        <a class="nav-link" href="/pedidos" id="nav_item_pedidos">Pedidos</a>
+        <a class="nav-link {% if request.path == '/pedidos/' or request.path == '/pedidos' %}nav-active{% endif %}" href="/pedidos" id="nav_item_pedidos">Pedidos</a>
       </li>
       <li class="nav-item">
-        <a class="nav-link" href="/pedidos/viajesCadete" id="nav_item_cadete">Viajes Cadete</a>
+        <a class="nav-link {% if '/viajesCadete' in request.path %}nav-active{% endif %}" href="/pedidos/viajesCadete" id="nav_item_cadete">Viajes Cadete</a>
       </li>
       <li class="nav-item">
-        <a class="nav-link" href="/clientes" id="nav_item_clientes">Clientes</a>
+        <a class="nav-link {% if '/clientes' in request.path %}nav-active{% endif %}" href="/clientes" id="nav_item_clientes">Clientes</a>
       </li>
       {% if es_gerencia %}
         <li class="nav-item">
-          <a class="nav-link" href="/usuarios" id="nav_item_usuarios">Usuaries</a>
+          <a class="nav-link {% if '/usuarios' in request.path %}nav-active{% endif %}" href="/usuarios" id="nav_item_usuarios">Usuaries</a>
         </li>
       {% endif %}
     </ul>

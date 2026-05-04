@@ -176,3 +176,55 @@ table.dataTable.dtr-inline.collapsed > tbody > tr > td.dtr-control::before {
 #dropdownUserDesktop::after {
     display: none;
 }
+/* ── Navbar: indicador de sección activa ─────────────────────────────────── */
+
+/* Transición suave en hover para todos los nav-links */
+.navbar .nav-link {
+  position: relative;
+  padding-bottom: 0.35rem;
+  transition: color 0.2s ease;
+}
+
+/* Línea inferior animada — base invisible en todos los links */
+.navbar .nav-link::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 2px;
+  border-radius: 2px;
+  transition: width 0.25s ease;
+}
+
+/* Hover: la línea crece desde el centro */
+.navbar .nav-link:hover::after {
+  width: 60%;
+}
+
+/* Activo: línea completa + texto más brillante */
+.navbar .nav-link.nav-active::after {
+  width: 80%;
+}
+
+/* Colores según tema */
+body[data-bs-theme="light"] .navbar .nav-link::after,
+body[data-bs-theme="light"] .navbar .nav-link.nav-active::after {
+  background-color: #B1DE43;
+}
+
+body[data-bs-theme="light"] .navbar .nav-link.nav-active {
+  color: #2a2a2a !important;
+  font-weight: 600;
+}
+
+body[data-bs-theme="dark"] .navbar .nav-link::after,
+body[data-bs-theme="dark"] .navbar .nav-link.nav-active::after {
+  background-color: #B1DE43; /* el verde lima resalta bien sobre oscuro también */
+}
+
+body[data-bs-theme="dark"] .navbar .nav-link.nav-active {
+  color: #ffffff !important;
+  font-weight: 600;
+}

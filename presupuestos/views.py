@@ -20,6 +20,8 @@ from datetime import date
 from decimal import Decimal, InvalidOperation
 import json
 from core.decorators import solo_gerencia
+from django.db.models import Max
+from django.db import models
 
 # Create your views here.
 app_name = 'presupuestos'
@@ -39,7 +41,12 @@ def Inicio(request):
     totalNeto = 0
     vendedor = request.session.get('vendedor')
     pres = Presupuesto.objects.all()
-    np = max(p.numero for p in pres) + 1 if pres else 1
+
+    BASE_NP = 3000001090
+    ultimo = Presupuesto.objects.filter(numero__gte=BASE_NP).aggregate(
+        models.Max('numero'))['numero__max']
+    np = (ultimo + 1) if ultimo else BASE_NP + 1
+
     request.session['np_global'] = np
     Prods = ProductoCotizado.objects.filter(
         presupuesto=None).filter(vendedor=vendedor)
@@ -462,7 +469,10 @@ def guardar_presupuesto(request):
     confirma = request.session.get('confirma', False)
     t = 0
     d = 0
-    n_presupuesto = 3000001090 + Presupuesto.objects.count()
+    BASE_NP = 3000001090
+    ultimo = Presupuesto.objects.filter(numero__gte=BASE_NP).aggregate(
+        models.Max('numero'))['numero__max']
+    n_presupuesto = (ultimo + 1) if ultimo else BASE_NP + 1
 
     # Obtengo la instancia del cliente "Consumidor final"
     consumidor_final = Cliente.objects.get(nombre="Consumidor final")

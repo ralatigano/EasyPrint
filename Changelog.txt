@@ -222,3 +222,18 @@ Versión v3.2.1
 
     -Dashboard
         *Se mejora el dashboard para que se muestre mas de un objetivo de ventas a la vez.
+
+****************** 4/5/2026 ******************
+Versión v3.2.2
+
+    -Barra de navegación
+        *Se mejora la diferenciación de la sección activa.
+    
+    -General
+        *Se corrige un problema que impedía setear correctamente un tema diferente al establecido.
+
+    -Presupuestos
+        *Se mejora la lógica que genera los números de presupuestos.
+
+    -Pedidos
+        *Se corrige un problema de formateo de números que impedía que se guarden pedidos.

@@ -190,17 +190,10 @@ def correo_contrasena(request):
 
 @login_required
 def dark_mode(request, tema):
-
     usuario = Usuario.objects.get(user=request.user)
-    if tema == 'light':
-        usuario.dark_mode = False
-    else:
-        usuario.dark_mode = True
+    usuario.dark_mode = (tema != 'light')
     usuario.save()
-
-    request.session['url_anterior'] = request.META.get('HTTP_REFERER')
-    # Redirigir al usuario a la misma página después del procesamiento
-    return redirect(request.session['url_anterior'])
+    return JsonResponse({'ok': True})
 
 # Vista que pasa la preferencia de tema del usuario que se loguea.
 
