@@ -237,3 +237,8 @@ Versión v3.2.2
 
     -Pedidos
         *Se corrige un problema de formateo de números que impedía que se guarden pedidos.
+
+****************** 20/5/2026 ******************
+Versión v3.2.3
+    -Dashboard
+        *Se corrige un problema que impedía la carga de la página principal del dashboard.
