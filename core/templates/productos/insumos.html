@@ -28,7 +28,9 @@
             <i class="fa-solid fa-download"></i> Exportar insumos en excel
         </a>
 
-        <a href="{% url 'borrarTodosInsumos' %}" class="btn btn-dark btnEliminacion btn-xs btn-fuente">
+        <a href="{% url 'borrarTodosInsumos' %}"
+           class="btn btn-dark btnEliminacion btn-xs btn-fuente"
+           data-tipo="todos_insumos">
             <i class="fa-solid fa-land-mine-on"></i> Borrar lista de insumos
         </a>
 
@@ -96,4 +98,23 @@
 <!-- Custom Js -->
 <script src="{% static 'productos/js/Insumos.js' %}"></script>
 
+<script>
+  const contenedor = document.getElementById("mensaje-django");
+  [
+    { key: "flashMensaje", tipoKey: "flashTipo" },
+    { key: "flashMensaje2", tipoKey: null },
+  ].forEach(({ key, tipoKey }) => {
+    const msg = sessionStorage.getItem(key);
+    if (!msg || !contenedor) return;
+    const tipo = tipoKey ? sessionStorage.getItem(tipoKey) : "error";
+    const alerta = document.createElement("div");
+    alerta.className = "alert alert-" + (tipo === "success" ? "success" : "danger");
+    alerta.role = "alert";
+    alerta.textContent = msg;
+    contenedor.appendChild(alerta);
+    sessionStorage.removeItem(key);
+    if (tipoKey) sessionStorage.removeItem(tipoKey);
+    setTimeout(() => { alerta.style.display = "none"; }, 7000);
+  });
+</script>
 {% endblock %}

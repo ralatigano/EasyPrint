@@ -26,10 +26,10 @@
             </button>
         </a> &nbsp;
     
-        <a href="{% url 'borrar_todos_productos' %}">
-            <button type="button" class="btn btn-dark btnEliminacion btn-xs btn-fuente">
-                <i class="fa-solid fa-land-mine-on"></i> Borrar Lista de productos 
-            </button>
+        <a href="{% url 'borrar_todos_productos' %}"
+           class="btn btn-dark btnEliminacion btn-xs btn-fuente"
+           data-tipo="todos_productos">
+            <i class="fa-solid fa-land-mine-on"></i> Borrar Lista de productos
         </a>
     
         <a href="/productos/categorias">
@@ -139,4 +139,3 @@
   }
 </script>
 {% endblock %}
-

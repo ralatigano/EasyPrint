@@ -60,6 +60,16 @@ const initDataTable = async () => {
     });
 
     dataTableIsInitilized = true;
+
+    // Restaurar estado previo si existe
+    const dtState = sessionStorage.getItem('dtInsumosState');
+    if (dtState) {
+        const { pagina, busqueda } = JSON.parse(dtState);
+        if (busqueda) dataTable.search(busqueda);
+        dataTable.draw();
+        if (pagina) dataTable.page(pagina).draw('page');
+        sessionStorage.removeItem('dtInsumosState');
+    }
 };
 
 window.addEventListener("load", async() => {
@@ -142,9 +152,102 @@ document.addEventListener("DOMContentLoaded", function () {
 //     });
 // })();
 
-// Escucha la carga de un archivo en el botón de carga masiva de Insumos y dispara el submit para automatizar la carga.
-document.getElementById('excelFileInput').addEventListener('change', function() {
-  if (this.files.length > 0) {
-    document.getElementById('formCargaAuto').submit();
+// Interceptar submit del form de insumos para preservar estado de tabla
+document.querySelector('form[action="/productos/guardarInsumo/"]')?.addEventListener('submit', async function (e) {
+  e.preventDefault();
+  const formData = new FormData(this);
+  const csrfToken = document.cookie.split('; ').find(r => r.startsWith('csrftoken='))?.split('=')[1] || '';
+
+  try {
+    const res = await fetch('/productos/guardarInsumo/', {
+      method: 'POST',
+      headers: { 'X-CSRFToken': csrfToken },
+      body: formData,
+    });
+    const data = await res.json();
+
+    // Cerrar modal
+    const modalEl = document.getElementById('crearEditarInsumoModal');
+    bootstrap.Modal.getInstance(modalEl)?.hide();
+
+    // Guardar estado + mensaje y recargar
+    sessionStorage.setItem('dtInsumosState', JSON.stringify({
+      pagina: dataTable ? dataTable.page() : 0,
+      busqueda: dataTable ? dataTable.search() : '',
+    }));
+    sessionStorage.setItem('flashMensaje', data.mensaje || 'Guardado.');
+    sessionStorage.setItem('flashTipo', data.ok ? 'success' : 'error');
+    if (data.info_reposicion) {
+      sessionStorage.setItem('flashMensaje2', data.info_reposicion);
+    }
+    location.reload();
+
+  } catch (err) {
+    console.error('Error al guardar insumo:', err);
+    sessionStorage.setItem('flashMensaje', 'Error al guardar. Intentá nuevamente.');
+    sessionStorage.setItem('flashTipo', 'error');
+    location.reload();
   }
+});
+
+// Importación con feedback visual
+document.getElementById('excelFileInput').addEventListener('change', async function () {
+  if (!this.files.length) return;
+
+  const form = document.getElementById('formCargaAuto');
+  const formData = new FormData(form);
+
+  // Mostrar modal de progreso
+  const modalEl = document.getElementById('modalImportando');
+  const modalImportando = new bootstrap.Modal(modalEl, { backdrop: 'static', keyboard: false });
+  modalImportando.show();
+
+  try {
+    const csrfToken = document.cookie.split('; ').find(r => r.startsWith('csrftoken='))?.split('=')[1] || '';
+    const res = await fetch(form.action, {
+      method: 'POST',
+      headers: { 'X-CSRFToken': csrfToken },
+      body: formData,
+    });
+
+    const data = await res.json();
+    modalImportando.hide();
+
+    // Mostrar mensaje en pantalla
+    const contenedor = document.getElementById('mensaje-django');
+    const alerta = document.createElement('div');
+    alerta.className = `alert ${data.ok ? 'alert-success' : 'alert-danger'}`;
+    alerta.role = 'alert';
+    alerta.textContent = data.mensaje;
+    contenedor.prepend(alerta);
+    setTimeout(() => alerta.style.display = 'none', 7000);
+
+    // Descargar log si hay errores
+    if (data.tiene_errores && data.log_contenido) {
+      const blob = new Blob([data.log_contenido], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = data.log_nombre || 'errores.txt';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    // Recargar la tabla
+    if (data.ok) {
+      setTimeout(() => location.reload(), 1200);
+    }
+
+  } catch (err) {
+    modalImportando.hide();
+    console.error('Error en importación:', err);
+    const contenedor = document.getElementById('mensaje-django');
+    const alerta = document.createElement('div');
+    alerta.className = 'alert alert-danger';
+    alerta.textContent = 'Error de conexión al importar. Intentá nuevamente.';
+    contenedor.prepend(alerta);
+  }
+
+  // Resetear el input para permitir cargar el mismo archivo nuevamente
+  this.value = '';
 });

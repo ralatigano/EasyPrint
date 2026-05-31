@@ -1,4 +1,3 @@
-
 let dataTable;
 let dataTableIsInitilized=false;
 // Lógica que inicializa la dataTable Productos.
@@ -48,6 +47,23 @@ const initDataTable = async () => {
                     $('#categoriaFilter').on('change', function () {
                         dataTable.column(4).search($(this).val()).draw();
                     });
+
+                    // Restaurar valor visual del select y filtro de categoría
+                    const dtState = sessionStorage.getItem('dtProductosState');
+                    if (dtState) {
+                        const { pagina, categoria, busqueda } = JSON.parse(dtState);
+                        if (categoria) {
+                            $('#categoriaFilter').val(categoria);
+                            dataTable.column(4).search(categoria);
+                        }
+                        if (busqueda) {
+                            $('#tableSearch').val(busqueda);
+                            dataTable.search(busqueda);
+                        }
+                        dataTable.draw();
+                        if (pagina) dataTable.page(pagina).draw('page');
+                        sessionStorage.removeItem('dtProductosState');
+                    }
                 })
                 .catch(error => console.error('Error al cargar categorías:', error));
                 // Buscador personalizado
@@ -58,6 +74,9 @@ const initDataTable = async () => {
     });
 
     dataTableIsInitilized = true;
+
+    // El estado se restaura completamente dentro del fetch de categorías (initComplete)
+    // para evitar race conditions con el select dinámico.
 };
 
 window.addEventListener("load", async() => {
@@ -293,6 +312,15 @@ document.getElementById('productoPrecioProveedor')?.addEventListener('input', ac
 document.getElementById('productoMargen')?.addEventListener('input', actualizarResumen);
 
 // Intercepta el envío del formulario para serializar los insumos si corresponde de modo que el backend pueda interpretarlos adecuadamente.
+function _guardarEstadoTabla() {
+  if (!dataTable) return;
+  sessionStorage.setItem('dtProductosState', JSON.stringify({
+    pagina: dataTable.page(),
+    categoria: $('#categoriaFilter').val() || '',
+    busqueda: dataTable.search(),
+  }));
+}
+
 async function guardarProducto() {
   const formData = new FormData();
   const tercerizado = document.getElementById('tercerizado-checkbox').checked;
@@ -335,12 +363,13 @@ try {
   if (data.ok && data.redirect_url) {
     sessionStorage.setItem("flashMensaje", data.mensaje);
     sessionStorage.setItem("flashTipo", "success");
-    limpiarModalProducto();  // según tu lógica
+    _guardarEstadoTabla();
+    limpiarModalProducto();
     window.location.href = data.redirect_url;
   } else {
     sessionStorage.setItem("flashMensaje", data.mensaje || "Error inesperado.");
     sessionStorage.setItem("flashTipo", "error");
-    window.location.href = "/productos";  // redirigimos igual para mostrar el error
+    window.location.href = "/productos";
   }
 
 } catch (err) {
@@ -358,9 +387,64 @@ function obtenerCSRFToken() {
   return cookieValue ? cookieValue.split("=")[1] : "";
 }
 
-// Escucha la carga de un archivo en el botón de carga masiva de Productos y dispara el submit para automatizar la carga.
-document.getElementById('excelFileInput').addEventListener('change', function() {
-  if (this.files.length > 0) {
-    document.getElementById('formCargaAuto').submit();
+// Importación con feedback visual
+document.getElementById('excelFileInput').addEventListener('change', async function () {
+  if (!this.files.length) return;
+
+  const form = document.getElementById('formCargaAuto');
+  const formData = new FormData(form);
+
+  // Mostrar modal de progreso
+  const modalEl = document.getElementById('modalImportando');
+  const modalImportando = new bootstrap.Modal(modalEl, { backdrop: 'static', keyboard: false });
+  modalImportando.show();
+
+  try {
+    const csrfToken = document.cookie.split('; ').find(r => r.startsWith('csrftoken='))?.split('=')[1] || '';
+    const res = await fetch(form.action, {
+      method: 'POST',
+      headers: { 'X-CSRFToken': csrfToken },
+      body: formData,
+    });
+
+    const data = await res.json();
+    modalImportando.hide();
+
+    // Mostrar mensaje en pantalla
+    const contenedor = document.getElementById('mensaje-django');
+    const alerta = document.createElement('div');
+    alerta.className = `alert ${data.ok ? 'alert-success' : 'alert-danger'}`;
+    alerta.role = 'alert';
+    alerta.textContent = data.mensaje;
+    contenedor.prepend(alerta);
+    setTimeout(() => alerta.style.display = 'none', 7000);
+
+    // Descargar log si hay errores
+    if (data.tiene_errores && data.log_contenido) {
+      const blob = new Blob([data.log_contenido], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = data.log_nombre || 'errores.txt';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    // Recargar la tabla
+    if (data.ok) {
+      setTimeout(() => location.reload(), 1200);
+    }
+
+  } catch (err) {
+    modalImportando.hide();
+    console.error('Error en importación:', err);
+    const contenedor = document.getElementById('mensaje-django');
+    const alerta = document.createElement('div');
+    alerta.className = 'alert alert-danger';
+    alerta.textContent = 'Error de conexión al importar. Intentá nuevamente.';
+    contenedor.prepend(alerta);
   }
+
+  // Resetear el input para permitir cargar el mismo archivo nuevamente
+  this.value = '';
 });

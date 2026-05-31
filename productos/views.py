@@ -305,27 +305,26 @@ def importar_productos_excel(request):
                 errores.append(f"Fila {idx}: Error inesperado → {str(e)}")
 
         if errores:
-            log_path = "fallo_carga_iproductos.txt"
-            with open(log_path, "w", encoding="utf-8") as f:
-                for linea in errores:
-                    f.write(linea + "\n")
-
-            messages.success(request, (
+            log_contenido = "\n".join(errores)
+            mensaje = (
                 f"Carga completada: {creados} nuevos, {actualizados} actualizados, "
-                f"{len(errores)} errores registrados en fallo_carga_productos.txt."
-            ))
-
-            response = FileResponse(open(log_path, "rb"), as_attachment=True)
-            response["Content-Disposition"] = "attachment; filename=fallo_carga_productos.txt"
-            return response
-
+                f"{len(errores)} errores. Revisá el archivo de log descargado."
+            )
+            return JsonResponse({
+                "ok": True,
+                "mensaje": mensaje,
+                "tiene_errores": True,
+                "log_contenido": log_contenido,
+                "log_nombre": "errores_productos.txt",
+            })
         else:
-            messages.success(
-                request, f"Carga completada: {creados} nuevos, {actualizados} actualizados, sin errores.")
-            return redirect('productos')
+            return JsonResponse({
+                "ok": True,
+                "mensaje": f"Carga completada: {creados} nuevos, {actualizados} actualizados, sin errores.",
+                "tiene_errores": False,
+            })
 
-    messages.error(request, "No se recibió ningún archivo.")
-    return redirect('productos')
+    return JsonResponse({"ok": False, "mensaje": "No se recibió ningún archivo."})
 
 
 # Vista que permite general un excel con los productos de la base de datos.
@@ -490,11 +489,14 @@ def insumos(request):
     insumos = Insumo.objects.all()
     if request.user.is_superuser or request.user.groups.filter(name='Gerencia').exists():
         autorizado = True
+        # es_gerencia = request.user.is_superuser or request.user.groups.filter(
+        #    name='Gerencia').exists()
     data = {
         'usuario': usuario_nombre,
         'img': img,
         'insumos': insumos,
         'autorizado': autorizado,
+        # 'es_gerencia': es_gerencia
     }
     return render(request, 'productos/insumos.html', data)
 
@@ -524,10 +526,10 @@ def guardar_insumo(request):
         if id_insumo and id_insumo != "0":
             mensaje_reposicion = procesar_reposicion_insumo_por_edicion(request,
                                                                         insumo, cantidad_repuesta)
-            messages.success(request, mensaje)
-            messages.error(request, mensaje_reposicion)
+            insumo.save()
+            return JsonResponse({"ok": True, "mensaje": mensaje, "info_reposicion": mensaje_reposicion})
         insumo.save()
-        return redirect("insumos")
+        return JsonResponse({"ok": True, "mensaje": mensaje})
 
 
 @login_required
@@ -630,20 +632,27 @@ def importar_insumos_excel(request):
                     log.append(f"Fila {idx}: Error inesperado ({e})")
 
             if log:
-                with open('fallo_carga_insumos.txt', 'w', encoding='utf-8') as f:
-                    f.write("\n".join(log))
+                mensaje = (
+                    f"Carga completada: {creados} nuevos, {actualizados} actualizados, "
+                    f"{errores} errores. Revisá el archivo de log descargado."
+                )
+                return JsonResponse({
+                    "ok": True,
+                    "mensaje": mensaje,
+                    "tiene_errores": True,
+                    "log_contenido": "\n".join(log),
+                    "log_nombre": "errores_insumos.txt",
+                })
+            else:
+                return JsonResponse({
+                    "ok": True,
+                    "mensaje": f"Carga completada: {creados} nuevos, {actualizados} actualizados, sin errores.",
+                    "tiene_errores": False,
+                })
 
-            messages.success(request, (
-                f"Carga completada: {creados} nuevos, {actualizados} actualizados, "
-                f"{errores} errores registrados en fallo_carga_insumos.txt."
-            ))
-
-        else:
-            messages.error(request, "No se recibió un archivo válido.")
+        return JsonResponse({"ok": False, "mensaje": "No se recibió un archivo válido."})
     except Exception as e:
-        messages.error(request, f"Error inesperado: {e}")
-
-    return redirect('insumos')
+        return JsonResponse({"ok": False, "mensaje": f"Error inesperado: {str(e)}"})
 
 
 @login_required

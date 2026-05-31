@@ -242,3 +242,9 @@ Versión v3.2.2
 Versión v3.2.3
     -Dashboard
         *Se corrige un problema que impedía la carga de la página principal del dashboard.
+
+****************** 31/5/2026 ******************
+Versión v3.3.0
+    -Productos e Insumos
+        *Se agrega un modal para proporcionar feedback durante la importación de productos/insumos de modo que el usuario sepa que debe esperar.
+        *Se modifica la lógica de edición de productos/insumos de modo que al terminar la misma no se pierda el estado de los filtros o la página actual de la tabla.

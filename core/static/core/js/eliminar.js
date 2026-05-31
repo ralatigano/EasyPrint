@@ -56,6 +56,13 @@
         usuario: (d) =>
             `¿Está seguro que desea eliminar al usuario 
             <strong>${_esc(d.nombre_completo)}</strong>?`,
+
+        todos_productos: () =>
+            `¿Está seguro que desea eliminar <strong>todos los productos</strong>? 
+            Se borrarán también todas sus composiciones de insumos.`,
+
+        todos_insumos: () =>
+            `¿Está seguro que desea eliminar <strong>todos los insumos</strong>?`,
     };
 
     // Estados de pedido en los que NO se permite eliminar
@@ -130,6 +137,22 @@
             const tipo     = btn.dataset.tipo;
             const fetchUrl = btn.dataset.fetchUrl;
             const urlFinal = btn.getAttribute('href');
+
+            // Sin fetch-url: mostrar modal directo con mensaje de plantilla
+            if (!fetchUrl) {
+                const plantilla = PLANTILLAS[tipo];
+                const mensaje = plantilla
+                    ? plantilla({})
+                    : '¿Está seguro que desea eliminar este registro?';
+                elMensaje.innerHTML = mensaje +
+                    ' <strong class="text-danger">Esta acción no se puede deshacer.</strong>';
+                elMensaje.style.display   = 'block';
+                elCargando.style.display  = 'none';
+                elConfirmar.href          = urlFinal;
+                elConfirmar.style.display = 'inline-block';
+                bsModal.show();
+                return;
+            }
 
             try {
                 const respuesta = await fetch(fetchUrl);
