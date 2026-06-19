@@ -243,6 +243,17 @@ Versión v3.2.3
     -Dashboard
         *Se corrige un problema que impedía la carga de la página principal del dashboard.
 
+****************** 19/6/2026 ******************
+Versión v3.3.1
+
+    -Pedidos
+        *Se rediseña la tabla de pedidos para mostrar la información de forma más compacta y ordenada. Ahora cada fila puede expandirse al hacer click para revelar un panel
+        de detalle con métricas clave (total, seña, saldo), observaciones completas y los botones de acción del pedido.
+        *Se agrega la posibilidad de editar múltiples pedidos a la vez. Al seleccionar más de un pedido con los checkboxes, aparecen botones en la barra de filtros
+        para cambiar el estado o el encargado de todos los seleccionados de una sola vez.
+        *Se hace clickeable el indicador de estado de cada pedido para poder cambiarlo directamente desde la tabla sin necesidad de abrir el panel de detalle primero.
+        *Se corrige la visualización del saldo en algunos pedidos donde no se mostraba el valor correcto.
+
 ****************** 31/5/2026 ******************
 Versión v3.3.0
     -Productos e Insumos

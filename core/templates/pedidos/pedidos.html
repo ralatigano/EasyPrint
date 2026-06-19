@@ -5,6 +5,24 @@
 <!--------------------------------------------------------------------------- Block head --------------------------------------------------------------------------->
 {% block head %}
 <link rel="stylesheet" href="{% static 'pedidos/css/Pedidos.css' %}">
+<style>
+    #bulkActionBar {
+        position: fixed;
+        bottom: 0; left: 0; right: 0;
+        z-index: 1055;
+        background: #212529;
+        color: #fff;
+        padding: 10px 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        box-shadow: 0 -2px 8px rgba(0,0,0,0.3);
+        transition: transform 0.2s ease;
+    }
+    #bulkActionBar.d-none { display: none !important; }
+    #bulkCount { font-weight: 600; margin-right: 6px; }
+</style>
 {% endblock %}
 <!--------------------------------------------------------------------------- Block title --------------------------------------------------------------------------->
 {% block title %}Pedidos{% endblock %}
@@ -68,6 +86,9 @@
                 <table id="Pedidos" class="table table-hover">
                     <thead>
                         <tr>
+                            <th class="centered" style="width:40px;">
+                                <input type="checkbox" id="checkAll" class="form-check-input" title="Seleccionar todos los visibles">
+                            </th>
                             <th class="centered">Número</th>
                             <th class="centered">Cliente</th>
                             <th class="centered">Productos/Servicios</th>
@@ -84,6 +105,9 @@
                     <tbody id="tableBody_Pedido">
                         {% for p in Peds %}
                             <tr>
+                                <td class="text-center align-middle">
+                                    <input type="checkbox" class="bulk-check form-check-input" data-numero="{% localize off %}{{ p.numero }}{% endlocalize %}">
+                                </td>
                                 <td>
                                     <div class="numero">
                                         <div class="contenido">{% localize off %}{{ p.numero }}{% endlocalize %}</div>
@@ -194,6 +218,19 @@
             </div>
         </div>
     </div>
+</div>
+<!-- Barra de acciones en lote -->
+<div id="bulkActionBar" class="d-none">
+    <span id="bulkCount"></span>
+    <button type="button" class="btn btn-outline-light btn-sm" id="btnDeselectAll">
+        <i class="fa-solid fa-xmark"></i> Deseleccionar todo
+    </button>
+    <button type="button" class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#bulkEstadoModal">
+        <i class="fa-solid fa-arrows-rotate"></i> Cambiar estado
+    </button>
+    <button type="button" class="btn btn-light btn-sm" id="btnBulkEncargado" data-bs-toggle="modal" data-bs-target="#bulkEncargadoModal">
+        <i class="fa-solid fa-user-pen"></i> Cambiar encargado
+    </button>
 </div>
 {% endblock %}
 <!--------------------------------------------------------------------------- Block modal --------------------------------------------------------------------------->

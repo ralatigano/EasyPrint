@@ -24,26 +24,26 @@ app_name = 'pedidos'
 # Vista con la lista de pedidos
 
 
-@login_required
-def pedidos(request):
-    autorizado = request.session.get('autorizado')
-    usuario_nombre = request.session.get('usuario_nombre')
-    img = request.session.get('img')
-    Peds = Pedido.objects.order_by('-numero').all()
-    clientes = Cliente.objects.all().order_by("nombre")
-    sugerencias = DetalleSugerido.objects.order_by('-frecuencia')
-    estados = [e[0] for e in Pedido.ESTADOS]
-    data = {
-        'Peds': Peds,
-        'Clientes': clientes,
-        'Sugerencias': sugerencias,
-        'Estados': estados,
-        'usuario': usuario_nombre,
-        'img': img,
-        'autorizado': autorizado,
+def _pedidos_context(request):
+    return {
+        'Peds': Pedido.objects.order_by('-numero').all(),
+        'Clientes': Cliente.objects.all().order_by("nombre"),
+        'Sugerencias': DetalleSugerido.objects.order_by('-frecuencia'),
+        'Estados': [e[0] for e in Pedido.ESTADOS],
+        'usuario': request.session.get('usuario_nombre'),
+        'img': request.session.get('img'),
+        'autorizado': request.session.get('autorizado'),
     }
 
-    return render(request, 'pedidos/pedidos.html', data)
+
+@login_required
+def pedidos(request):
+    return render(request, 'pedidos/pedidos.html', _pedidos_context(request))
+
+
+@login_required
+def pedidos_v2(request):
+    return render(request, 'pedidos/pedidos_v2.html', _pedidos_context(request))
 
 # Vista que setea algunos valores necesarios para poder ingresar a completar pedido desde la vista de presupuestos.
 
@@ -111,7 +111,7 @@ def cambiar_estado(request):
     n_pedido = request.POST.get('cambiarPedido_estado')
 
     if nuevo_estado == 'Elegir un estado':
-        return redirect('/pedidos')
+        return redirect('/pedidos/v2')
 
     try:
         pedido = Pedido.objects.get(numero=n_pedido)
@@ -119,7 +119,7 @@ def cambiar_estado(request):
         if pedido.estado == 'Cancelado' and getattr(pedido, 'cancelado_bloqueado', False):
             messages.error(
                 request, 'Este pedido fue cancelado y no puede modificarse. Si necesitás reactivarlo, deberás crear uno nuevo.')
-            return redirect('/pedidos')
+            return redirect('/pedidos/v2')
 
         pedido.estado = nuevo_estado
         pedido.save()
@@ -149,7 +149,98 @@ def cambiar_estado(request):
     except Exception as e:
         messages.error(request, f'Hubo un error al editar el pedido: {str(e)}')
 
-    return redirect('/pedidos')
+    return redirect('/pedidos/v2')
+
+
+@login_required
+def cambiar_estado_bulk(request):
+    if request.method != "POST":
+        return JsonResponse({"error": "Método no permitido"}, status=405)
+    try:
+        data = json.loads(request.body)
+        ids = data.get("ids", [])
+        nuevo_estado = data.get("estado", "")
+
+        if not ids or not nuevo_estado:
+            return JsonResponse({"error": "Datos incompletos"}, status=400)
+
+        actualizados = 0
+        saltados = 0
+
+        for numero in ids:
+            try:
+                pedido = Pedido.objects.get(numero=numero)
+                if pedido.estado == 'Cancelado' and getattr(pedido, 'cancelado_bloqueado', False):
+                    saltados += 1
+                    continue
+                pedido.estado = nuevo_estado
+                pedido.save()
+                productos = ProductoCotizado.objects.filter(presupuesto=pedido.presupuesto)
+                if nuevo_estado in ['Para retirar', 'Entregado']:
+                    for p in productos:
+                        if not p.producto.tercerizado:
+                            actualizar_stock_insumos(p.producto, p.cantidad, modo='resolver', pedido=pedido)
+                elif nuevo_estado == 'Cancelado':
+                    for p in productos:
+                        if not p.producto.tercerizado:
+                            actualizar_stock_insumos(p.producto, p.cantidad, modo='reponer', pedido=pedido)
+                    pedido.cancelado_bloqueado = True
+                    pedido.save()
+                actualizados += 1
+            except Pedido.DoesNotExist:
+                saltados += 1
+
+        if actualizados:
+            msg = f"{actualizados} pedido(s) actualizados al estado '{nuevo_estado}'."
+            if saltados:
+                msg += f" {saltados} no se pudieron modificar (cancelados o no encontrados)."
+            messages.success(request, msg)
+        else:
+            messages.error(request, "No se pudo actualizar ningún pedido.")
+
+        return JsonResponse({"redirect_url": reverse("pedidos_v2")})
+    except Exception as e:
+        messages.error(request, f"Error al actualizar pedidos: {str(e)}")
+        return JsonResponse({"redirect_url": reverse("pedidos_v2")})
+
+
+@login_required
+def cambiar_enc_bulk(request):
+    if request.method != "POST":
+        return JsonResponse({"error": "Método no permitido"}, status=405)
+    try:
+        data = json.loads(request.body)
+        ids = data.get("ids", [])
+        encargado_id = data.get("encargado_id")
+
+        if not ids:
+            return JsonResponse({"error": "Datos incompletos"}, status=400)
+
+        encargado = None
+        enc_nombre = "Sin asignar"
+        if encargado_id and encargado_id != "None":
+            encargado = User.objects.get(id=encargado_id)
+            enc_nombre = encargado.first_name
+
+        actualizados = 0
+        for numero in ids:
+            try:
+                pedido = Pedido.objects.get(numero=numero)
+                pedido.encargado = encargado
+                pedido.save()
+                actualizados += 1
+            except Pedido.DoesNotExist:
+                pass
+
+        if actualizados:
+            messages.success(request, f"{actualizados} pedido(s) asignados a {enc_nombre}.")
+        else:
+            messages.error(request, "No se pudo actualizar ningún pedido.")
+
+        return JsonResponse({"redirect_url": reverse("pedidos_v2")})
+    except Exception as e:
+        messages.error(request, f"Error al actualizar pedidos: {str(e)}")
+        return JsonResponse({"redirect_url": reverse("pedidos_v2")})
 
 
 # vista que permite cambiar el encargado de un pedido.
@@ -179,7 +270,7 @@ def cambiar_enc(request):
         messages.error(
             request, 'Hubo un error al editar el pedido. ' + str(e))
 
-    return redirect('/pedidos')
+    return redirect('/pedidos/v2')
 
 # vista que permite agregar una descripción al pedido.
 
@@ -198,7 +289,7 @@ def agregar_descripcion(request):
     except Exception as e:
         messages.error(
             request, 'Hubo un error al editar el pedido. ' + str(e))
-    return redirect('/pedidos')
+    return redirect('/pedidos/v2')
 
 # vista que permite agregar/modificar la seña de un pedido.
 
@@ -218,7 +309,7 @@ def agregar_senia(request):
         except Exception as e:
             messages.error(
                 request, 'Hubo un error al editar el pedido. ' + str(e))
-    return redirect('/pedidos')
+    return redirect('/pedidos/v2')
 
 # Vista que recibe el POST de la plantilla para completar el pedido desde la nueva cotización.
 
@@ -238,7 +329,7 @@ def confirmar_pedido(request):
     saldo = round(precio - senia, 2)
     fecha_entrega = datetime.strptime(
         request.POST['fecha_entrega'], "%Y-%m-%d").date()
-    url = '/pedidos' if editando_presup else '/presupuestos/guardarPresupuesto'
+    url = '/pedidos/v2' if editando_presup else '/presupuestos/guardarPresupuesto'
 
     # Obtener productos cotizados
     if editando_presup:
@@ -323,8 +414,8 @@ def get_productos_info(request):
             'fecha_pedido': pedido.created.strftime('%d/%m/%Y'),
             'fecha_entrega': pedido.fecha_entrega.strftime('%d/%m/%Y') if pedido.fecha_entrega else '',
             'precio': pedido.precio,
-            'senia': pedido.senia,
-            'saldo': pedido.saldo,
+            'senia': pedido.senia or 0,
+            'saldo': pedido.saldo_real,
             'estado': pedido.estado,
         }
     except Pedido.DoesNotExist:
@@ -355,7 +446,7 @@ def eliminar_pedido(request, pedido_id):
     except Exception as e:
         messages.error(
             request, f'No se ha podido borrar el pedido. Error({e})')
-    return redirect('/pedidos')
+    return redirect('/pedidos/v2')
 
 
 def actualizar_stock_insumos(producto, cantidad, modo='descontar', request=None, pedido=None):
@@ -629,7 +720,7 @@ def cambiar_cliente_pedido(request):
 
     if not pedido_numero or not presupuesto_numero:
         messages.error(request, "Datos incompletos para cambiar el cliente.")
-        return redirect('/pedidos')
+        return redirect('/pedidos/v2')
 
     # Nuevo sistema basado en ID
     cliente = parsear_cliente(cliente_input)
@@ -641,7 +732,7 @@ def cambiar_cliente_pedido(request):
         pedido.save()
     except Pedido.DoesNotExist:
         messages.error(request, "No se encontró el pedido.")
-        return redirect('/pedidos')
+        return redirect('/pedidos/v2')
 
     # Actualizar presupuesto asociado
     try:
@@ -655,4 +746,4 @@ def cambiar_cliente_pedido(request):
         )
 
     messages.success(request, "Cliente actualizado correctamente.")
-    return redirect('/pedidos')
+    return redirect('/pedidos/v2')

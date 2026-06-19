@@ -1,0 +1,363 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% load l10n %}
+<!--------------------------------------------------------------------------- Block head --------------------------------------------------------------------------->
+{% block head %}
+<link rel="stylesheet" href="{% static 'pedidos/css/Pedidos.css' %}">
+<style>
+/* ── Filtros ─────────────────────────────────────────────────────────────────── */
+.filter-bar-v2 {
+    display: flex;
+    align-items: flex-end;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+}
+.check-all-wrap {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding-right: 16px;
+    border-right: 1px solid rgba(128,128,128,.3);
+    margin-right: 4px;
+    padding-bottom: 4px;
+}
+.check-all-wrap label {
+    font-size: 13px;
+    color: var(--bs-secondary-color, #6c757d);
+    cursor: pointer;
+    user-select: none;
+    margin: 0;
+}
+
+/* ── Filas expandibles ───────────────────────────────────────────────────────── */
+#Pedidos tbody tr.main-row { cursor: pointer; }
+#Pedidos tbody tr.main-row.expanded > td { background: rgba(0,0,0,.03); }
+
+.chevron-icon {
+    display: inline-block;
+    transition: transform 0.2s ease;
+    font-size: 12px;
+    color: var(--bs-secondary-color, #6c757d);
+}
+.chevron-icon.open { transform: rotate(180deg); }
+
+/* ── Fila seleccionada (bulk) ────────────────────────────────────────────────── */
+#Pedidos tbody tr.row-selected > td {
+    background: rgba(13, 110, 253, 0.08) !important;
+}
+#Pedidos tbody tr.row-selected.expanded > td {
+    background: rgba(13, 110, 253, 0.12) !important;
+}
+
+/* ── Pill de estado clickeable ───────────────────────────────────────────────── */
+.estado-trigger { cursor: pointer; display: inline-block; }
+.estado-trigger:hover .badge-estado { filter: brightness(0.88); }
+
+/* ── Botones bulk en filtros ─────────────────────────────────────────────────── */
+.bulk-filter-actions {
+    display: flex;
+    align-items: flex-end;
+    gap: 6px;
+    padding-left: 14px;
+    border-left: 1px solid rgba(128,128,128,.3);
+    margin-left: 2px;
+}
+
+/* ── Panel de detalle ────────────────────────────────────────────────────────── */
+.detail-card {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    border-top: 1px solid rgba(128,128,128,.15);
+}
+.detail-section { padding: 12px 16px; }
+.detail-section + .detail-section { border-left: 1px solid rgba(128,128,128,.15); }
+
+.detail-metric { margin-bottom: 10px; }
+.detail-metric:last-child { margin-bottom: 0; }
+.detail-metric-label { font-size: 11px; color: var(--bs-secondary-color, #6c757d); display: block; margin-bottom: 2px; }
+.detail-metric-value { font-size: 15px; font-weight: 500; }
+.detail-metric-value.saldo-pendiente { color: #0d6efd; }
+
+.detail-obs-text { font-size: 13px; margin-top: 4px; }
+
+.action-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 5px;
+}
+.action-grid .btn { white-space: nowrap; font-size: 12px; text-align: left; }
+
+/* ── Badges de estado ────────────────────────────────────────────────────────── */
+.badge-estado {
+    display: inline-block;
+    padding: 3px 9px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+.badge-no-iniciado    { background: #e9ecef; color: #495057; }
+.badge-en-proceso     { background: #cfe2ff; color: #084298; }
+.badge-terminado-pago { background: #fff3cd; color: #664d03; }
+.badge-terminado-ok   { background: #d1e7dd; color: #0a3622; }
+.badge-cancelado      { background: #f8d7da; color: #58151c; }
+
+/* ── Barra de acciones bulk ──────────────────────────────────────────────────── */
+#bulkActionBar {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    z-index: 1055;
+    background: #212529;
+    color: #fff;
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    box-shadow: 0 -2px 8px rgba(0,0,0,.3);
+}
+#bulkActionBar.d-none { display: none !important; }
+#bulkCount { font-weight: 600; margin-right: 6px; }
+
+/* ── Celda número ────────────────────────────────────────────────────────────── */
+.num-mono { font-size: 12px; font-family: monospace; color: var(--bs-secondary-color, #6c757d); display: block; }
+.num-actions { display: flex; gap: 3px; margin-top: 3px; }
+
+/* ── Celda productos ─────────────────────────────────────────────────────────── */
+.prod-cell { display: flex; align-items: center; gap: 6px; }
+.prod-text { font-size: 13px; }
+</style>
+{% endblock %}
+<!--------------------------------------------------------------------------- Block title --------------------------------------------------------------------------->
+{% block title %}Pedidos{% endblock %}
+<!--------------------------------------------------------------------------- Block header --------------------------------------------------------------------------->
+{% block header %}
+<div class="titulo">
+    <h1>Pedidos</h1>
+</div>
+{% endblock %}
+<!--------------------------------------------------------------------------- Block content --------------------------------------------------------------------------->
+{% block content %}
+<div class="container">
+
+    {% comment %}Bandera de gerencia accesible desde JS{% endcomment %}
+    <span id="js_es_gerencia" data-value="{% if es_gerencia %}true{% else %}false{% endif %}" hidden></span>
+
+    <!-- Barra de filtros -->
+    <div class="filter-bar-v2">
+
+        <div class="check-all-wrap">
+            <input type="checkbox" id="checkAll" class="form-check-input" style="cursor:pointer;" title="Seleccionar todos los pedidos visibles">
+            <label for="checkAll">Seleccionar todos</label>
+        </div>
+
+        <div>
+            <label class="form-label">Cliente</label>
+            <select id="filtroCliente" class="form-select" multiple size="3">
+                <option value="">Todos</option>
+                {% for cliente in Clientes %}
+                    <option value="{{ cliente.id }}">{{ cliente.referencia }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div>
+            <label class="form-label d-flex align-items-center gap-1">
+                Producto
+                <i class="fa-solid fa-circle-question text-secondary d-none d-md-inline"
+                   style="font-size:.8rem;cursor:help;"
+                   title="Mantené Ctrl presionado para seleccionar varias opciones"></i>
+            </label>
+            <select id="filtroProducto" class="form-select" multiple size="3">
+                <option value="">Todos</option>
+                {% for sugerencia in Sugerencias %}
+                    <option value="{{ sugerencia.texto }}">{{ sugerencia.texto }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div>
+            <label class="form-label d-flex align-items-center gap-1">
+                Estado
+                <i class="fa-solid fa-circle-question text-secondary d-none d-md-inline"
+                   style="font-size:.8rem;cursor:help;"
+                   title="Mantené Ctrl presionado para seleccionar varias opciones"></i>
+            </label>
+            <select id="filtroEstado" class="form-select" multiple size="3">
+                <option value="">Todos</option>
+                {% for estado in Estados %}
+                    <option value="{{ estado }}">{{ estado }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div>
+            <button id="limpiarFiltros" class="btn btn-outline-secondary" style="height:38px;">
+                <i class="fa-solid fa-xmark"></i> Limpiar filtros
+            </button>
+        </div>
+
+        <!-- Botones de edición en lote: visibles solo cuando hay filas seleccionadas -->
+        <div id="bulkActions" class="bulk-filter-actions d-none">
+            <button type="button" class="btn btn-primary btn-sm"
+                    data-bs-toggle="modal" data-bs-target="#bulkEstadoModal">
+                <i class="fa-solid fa-arrows-rotate"></i>
+                <span id="bulkEstadoLabel">Cambiar estado</span>
+            </button>
+            <button type="button" class="btn btn-primary btn-sm"
+                    data-bs-toggle="modal" data-bs-target="#bulkEncargadoModal">
+                <i class="fa-solid fa-user-pen"></i>
+                <span id="bulkEncLabel">Cambiar encargado</span>
+            </button>
+            <button type="button" class="btn btn-outline-secondary btn-sm" id="btnDeselectAll" title="Deseleccionar todo">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Tabla -->
+    <div class="tabla-scroll">
+        <table id="Pedidos" class="table table-hover">
+            <thead>
+                <tr>
+                    <th style="width:36px;"></th>
+                    <th>Número</th>
+                    <th>Cliente</th>
+                    <th>Productos/Servicios</th>
+                    <th>Estado</th>
+                    <th>Encargado</th>
+                    <th>Observaciones</th>
+                    <th>Saldo</th>
+                    <th>Fecha de entrega</th>
+                    <th style="width:24px;"></th>
+                </tr>
+            </thead>
+            <tbody id="tableBody_Pedido">
+                {% for p in Peds %}
+                <tr class="main-row"
+                    data-numero="{% localize off %}{{ p.numero }}{% endlocalize %}"
+                    data-presupuesto="{% localize off %}{{ p.presupuesto }}{% endlocalize %}"
+                    data-total="{% localize off %}{{ p.precio|default:'0' }}{% endlocalize %}"
+                    data-senia="{% localize off %}{{ p.senia|default:'0' }}{% endlocalize %}"
+                    data-saldo="{% localize off %}{{ p.saldo_real }}{% endlocalize %}"
+                    data-cliente-id="{{ p.cliente.id }}"
+                    data-cliente-ref="{{ p.cliente.referencia }}"
+                    data-descripcion="{{ p.descripcion|default:'' }}"
+                    data-estado="{{ p.estado }}"
+                    data-es-cancelado="{% if p.cancelado_bloqueado %}true{% else %}false{% endif %}">
+
+                    <!-- Checkbox -->
+                    <td class="text-center align-middle">
+                        <input type="checkbox" class="bulk-check form-check-input"
+                               data-numero="{% localize off %}{{ p.numero }}{% endlocalize %}">
+                    </td>
+
+                    <!-- Número + botones rápidos -->
+                    <td>
+                        <span class="num-mono">{% localize off %}{{ p.numero }}{% endlocalize %}</span>
+                        <div class="num-actions">
+                            <button type="button"
+                                    class="btn btn-dark btn-xs"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#confirmacionModal"
+                                    data-info="{% localize off %}{{ p.numero }}{% endlocalize %}|{% localize off %}{{ p.presupuesto }}{% endlocalize %}"
+                                    title="Ver confirmación para enviar al cliente">
+                                <i class="fa-solid fa-circle-info"></i>
+                            </button>
+                            <a href="/presupuestos/verPresupuesto/{% localize off %}{{ p.presupuesto }}{% endlocalize %}"
+                               class="btn btn-dark btn-xs"
+                               title="Ver presupuesto N° {% localize off %}{{ p.presupuesto }}{% endlocalize %}">
+                                <i class="fa-solid fa-file-invoice"></i>
+                            </a>
+                        </div>
+                    </td>
+
+                    <!-- Cliente -->
+                    <td data-cliente-id="{{ p.cliente.id }}">{{ p.cliente }}</td>
+
+                    <!-- Productos + botón ojo -->
+                    <td>
+                        <div class="prod-cell">
+                            <span class="prod-text">{{ p.producto }}</span>
+                            <button type="button"
+                                    class="btn btn-info btn-xs"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#detallesModal"
+                                    data-info="{% localize off %}{{ p.numero }}{% endlocalize %}|{% localize off %}{{ p.presupuesto }}{% endlocalize %}"
+                                    title="Ver productos del pedido">
+                                <i class="fa-solid fa-eye"></i>
+                            </button>
+                        </div>
+                    </td>
+
+                    <!-- Estado (badge clickeable) -->
+                    <td>
+                        <span class="estado-trigger"
+                              data-bs-toggle="modal"
+                              data-bs-target="#cambiarEstadoModal"
+                              data-bs-whatever="{% localize off %}{{ p.numero }}{% endlocalize %}"
+                              title="Click para cambiar estado">
+                            {% if p.estado == 'No iniciado' %}
+                                <span class="badge-estado badge-no-iniciado">{{ p.estado }}</span>
+                            {% elif p.estado == 'En proceso' %}
+                                <span class="badge-estado badge-en-proceso">{{ p.estado }}</span>
+                            {% elif p.estado == 'Terminado (falta pago)' %}
+                                <span class="badge-estado badge-terminado-pago">{{ p.estado }}</span>
+                            {% elif p.estado == 'Terminado y pagado' %}
+                                <span class="badge-estado badge-terminado-ok">{{ p.estado }}</span>
+                            {% elif p.estado == 'Cancelado' %}
+                                <span class="badge-estado badge-cancelado">{{ p.estado }}</span>
+                            {% else %}
+                                <span class="badge-estado badge-no-iniciado">{{ p.estado }}</span>
+                            {% endif %}
+                        </span>
+                    </td>
+
+                    <!-- Encargado -->
+                    <td>{{ p.nombre_encargado }}</td>
+
+                    <!-- Observaciones (truncadas) -->
+                    <td>
+                        {% if p.descripcion %}
+                            <span style="font-size:12px;" title="{{ p.descripcion }}">
+                                {{ p.descripcion|truncatechars:45 }}
+                            </span>
+                        {% else %}
+                            <span class="text-muted" style="font-size:12px;font-style:italic;">—</span>
+                        {% endif %}
+                    </td>
+
+                    <!-- Saldo -->
+                    <td class="text-nowrap" style="text-align:right;font-weight:500;">
+                        $ {% localize off %}{{ p.saldo_real }}{% endlocalize %}
+                    </td>
+
+                    <!-- Fecha de entrega -->
+                    <td style="white-space:nowrap;font-size:13px;color:var(--bs-secondary-color,#6c757d);">
+                        {{ p.fecha_entrega|default:'—' }}
+                    </td>
+
+                    <!-- Chevron (indicador visual del estado expandido) -->
+                    <td class="text-center align-middle">
+                        <i class="fa-solid fa-chevron-down chevron-icon"></i>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+
+</div>
+{% endblock %}
+<!--------------------------------------------------------------------------- Block modal --------------------------------------------------------------------------->
+{% block modal %}
+    {% include 'pedidos/partials/modales.html' %}
+{% endblock %}
+<!--------------------------------------------------------------------------- Block footer --------------------------------------------------------------------------->
+{% block footer %}{% endblock %}
+<!--------------------------------------------------------------------------- Block scripts --------------------------------------------------------------------------->
+{% block scripts %}
+<script src="{% static 'pedidos/js/Pedidos_v2.js' %}"></script>
+{% endblock %}

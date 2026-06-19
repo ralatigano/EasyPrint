@@ -201,6 +201,55 @@
     </form>
 </div>
 
+<!-- Modal Cambiar Estado (bulk) -->
+<div class="modal fade" id="bulkEstadoModal" tabindex="-1" aria-labelledby="bulkEstadoModalLabel" data-bs-backdrop="static" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="bulkEstadoModalLabel">Cambiar estado de pedidos seleccionados</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted" id="bulkEstadoInfo"></p>
+                <label for="bulkEstadoSelect" style="font-weight: bold">Nuevo estado:</label>
+                <select id="bulkEstadoSelect" class="form-control select">
+                    <option value="">Elegir un estado</option>
+                    {% for estado in Estados %}
+                        <option value="{{ estado }}">{{ estado }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-dark btn-fuente" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-dark btn-fuente" id="btnConfirmarBulkEstado">Guardar cambios</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Cambiar Encargado (bulk) -->
+<div class="modal fade" id="bulkEncargadoModal" tabindex="-1" aria-labelledby="bulkEncargadoModalLabel" data-bs-backdrop="static" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="bulkEncargadoModalLabel">Cambiar encargado de pedidos seleccionados</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted" id="bulkEncargadoInfo"></p>
+                <label for="bulkEncargadoSelect" style="font-weight: bold">Asignar a:</label>
+                <select id="bulkEncargadoSelect" class="form-control select">
+                    <!-- Cargado dinámicamente -->
+                </select>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-dark btn-fuente" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-dark btn-fuente" id="btnConfirmarBulkEncargado">Guardar cambios</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- ------------------------------------------------------------------------------Modales viajes_cadete------------------------------------------------------------------------------ -->
 
 <div class="modal fade" id="crearViajeModal" tabindex="-1" aria-labelledby="crearViajeModalLabel" data-bs-backdrop="static" aria-hidden="true">

@@ -6,21 +6,22 @@ const initDataTable=async() => {
         dataTable.destroy();
     }
     dataTable=$("#Pedidos").DataTable({
-        order: [[0, 'desc']],
+        order: [[1, 'desc']],
         responsive: true,
         columnDefs: [
-            { responsivePriority: 1, targets: 0 }, // Número
-            { responsivePriority: 2, targets: 1 }, // Cliente
-            { responsivePriority: 3, targets: 2 }, // Productos/Servicios
-            { responsivePriority: 4, targets: 3 }, // Estado
-            { responsivePriority: 5, targets: 4 }, // Encargado
-            { responsivePriority: 6, targets: 5 }, // Observaciones
-            { responsivePriority: 7, targets: 6 }, // Total
-            { responsivePriority: 8, targets: 7 }, // Seña
-            { responsivePriority: 9, targets: 8 }, // Saldo
-            { responsivePriority: 10, targets: 9 }, // Presupuesto
-            { responsivePriority: 11, targets: 10 }, // Fecha de creación
-            { targets: [6, 7, 8], className: 'text-nowrap' },
+            { orderable: false, responsivePriority: 99, targets: 0 }, // Checkbox
+            { responsivePriority: 1, targets: 1 }, // Número
+            { responsivePriority: 2, targets: 2 }, // Cliente
+            { responsivePriority: 3, targets: 3 }, // Productos/Servicios
+            { responsivePriority: 4, targets: 4 }, // Estado
+            { responsivePriority: 5, targets: 5 }, // Encargado
+            { responsivePriority: 6, targets: 6 }, // Observaciones
+            { responsivePriority: 7, targets: 7 }, // Total
+            { responsivePriority: 8, targets: 8 }, // Seña
+            { responsivePriority: 9, targets: 9 }, // Saldo
+            { responsivePriority: 10, targets: 10 }, // Presupuesto
+            { responsivePriority: 11, targets: 11 }, // Fecha de entrega
+            { targets: [7, 8, 9], className: 'text-nowrap' },
         ],
         language: {
             lengthMenu: 'Mostrar _MENU_ pedidos por página',
@@ -253,9 +254,9 @@ $.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
     const nodoFila = settings.aoData[dataIndex].nTr;
     if (!nodoFila) return true;
 
-    const clienteId     = nodoFila.children[1].dataset.clienteId || '';
-    const productosTexto = nodoFila.children[2].querySelector('.contenido')?.textContent.trim().toLowerCase() || '';
-    const estadoTexto    = nodoFila.children[3].querySelector('.contenido')?.textContent.trim().toLowerCase() || '';
+    const clienteId     = nodoFila.children[2].dataset.clienteId || '';
+    const productosTexto = nodoFila.children[3].querySelector('.contenido')?.textContent.trim().toLowerCase() || '';
+    const estadoTexto    = nodoFila.children[4].querySelector('.contenido')?.textContent.trim().toLowerCase() || '';
 
     const okCliente  = !clientes.length  || clientes.includes(clienteId);
     const okProducto = !productos.length || productos.some(p => productosTexto.includes(p.toLowerCase()));
@@ -335,6 +336,150 @@ window.addEventListener("load", async() => {
     restaurarFiltros(); // <-- agregar
     document.getElementById("nav_item_pedidos").style.fontWeight = "bold";
 });
+
+// ── Acciones en lote (bulk) ───────────────────────────────────────────────────
+
+const selectedIds = new Set();
+
+function getCsrfToken() {
+    const value = `; ${document.cookie}`;
+    const parts = value.split('; csrftoken=');
+    if (parts.length === 2) return parts.pop().split(';').shift();
+}
+
+function updateBulkBar() {
+    const bar = document.getElementById('bulkActionBar');
+    const n = selectedIds.size;
+    if (n > 0) {
+        bar.classList.remove('d-none');
+        document.getElementById('bulkCount').textContent =
+            `${n} pedido${n > 1 ? 's' : ''} seleccionado${n > 1 ? 's' : ''}`;
+    } else {
+        bar.classList.add('d-none');
+    }
+}
+
+function syncCheckAll() {
+    const visible = document.querySelectorAll('.bulk-check');
+    const allChecked = visible.length > 0 && Array.from(visible).every(cb => cb.checked);
+    const checkAll = document.getElementById('checkAll');
+    if (checkAll) checkAll.checked = allChecked;
+}
+
+// Reaplicar estado visual de checkboxes tras cada redibujado de DataTables
+$(document).on('draw.dt', '#Pedidos', function () {
+    document.querySelectorAll('.bulk-check').forEach(cb => {
+        cb.checked = selectedIds.has(cb.dataset.numero);
+    });
+    syncCheckAll();
+});
+
+// Checkbox individual (delegación de eventos)
+$(document).on('change', '.bulk-check', function () {
+    if (this.checked) {
+        selectedIds.add(this.dataset.numero);
+    } else {
+        selectedIds.delete(this.dataset.numero);
+    }
+    updateBulkBar();
+    syncCheckAll();
+});
+
+// Checkbox "seleccionar todos los visibles"
+document.getElementById('checkAll').addEventListener('change', function () {
+    document.querySelectorAll('.bulk-check').forEach(cb => {
+        cb.checked = this.checked;
+        if (this.checked) {
+            selectedIds.add(cb.dataset.numero);
+        } else {
+            selectedIds.delete(cb.dataset.numero);
+        }
+    });
+    updateBulkBar();
+});
+
+// Deseleccionar todo
+document.getElementById('btnDeselectAll').addEventListener('click', function () {
+    selectedIds.clear();
+    document.querySelectorAll('.bulk-check').forEach(cb => cb.checked = false);
+    const checkAll = document.getElementById('checkAll');
+    if (checkAll) checkAll.checked = false;
+    updateBulkBar();
+});
+
+// Modal bulk estado — actualizar texto informativo al abrirse
+document.getElementById('bulkEstadoModal').addEventListener('show.bs.modal', function () {
+    const n = selectedIds.size;
+    document.getElementById('bulkEstadoInfo').textContent =
+        `Se aplicará el nuevo estado a ${n} pedido${n > 1 ? 's' : ''}.`;
+    document.getElementById('bulkEstadoSelect').value = '';
+});
+
+// Modal bulk encargado — cargar usuarios y actualizar texto
+document.getElementById('bulkEncargadoModal').addEventListener('show.bs.modal', function () {
+    const n = selectedIds.size;
+    document.getElementById('bulkEncargadoInfo').textContent =
+        `Se reasignarán ${n} pedido${n > 1 ? 's' : ''} al encargado seleccionado.`;
+
+    const sel = document.getElementById('bulkEncargadoSelect');
+    sel.innerHTML = '';
+    fetch('/obtenerUsuarios')
+        .then(r => r.json())
+        .then(data => {
+            const sinAsignar = document.createElement('option');
+            sinAsignar.value = 'None';
+            sinAsignar.textContent = 'Sin asignar';
+            sel.appendChild(sinAsignar);
+            data.usuarios.forEach(u => {
+                const opt = document.createElement('option');
+                opt.value = u.id;
+                opt.textContent = u.nombre_completo;
+                sel.appendChild(opt);
+            });
+        })
+        .catch(err => console.error('Error al obtener usuarios:', err));
+});
+
+async function enviarBulk(url, payload) {
+    const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCsrfToken(),
+        },
+        body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (data.redirect_url) {
+        window.location.href = data.redirect_url;
+    }
+}
+
+// Confirmar cambio de estado bulk
+document.getElementById('btnConfirmarBulkEstado').addEventListener('click', async function () {
+    const estado = document.getElementById('bulkEstadoSelect').value;
+    if (!estado) {
+        alert('Por favor seleccioná un estado.');
+        return;
+    }
+    if (estado === 'Cancelado') {
+        const ok = confirm(
+            `⚠️ Atención: estás por cancelar ${selectedIds.size} pedido(s).\n\nEsta acción es irreversible.\n\n¿Deseás continuar?`
+        );
+        if (!ok) return;
+    }
+    bootstrap.Modal.getInstance(document.getElementById('bulkEstadoModal')).hide();
+    await enviarBulk('/pedidos/cambiarEstadoBulk', { ids: [...selectedIds], estado });
+});
+
+// Confirmar cambio de encargado bulk
+document.getElementById('btnConfirmarBulkEncargado').addEventListener('click', async function () {
+    const encargado_id = document.getElementById('bulkEncargadoSelect').value;
+    bootstrap.Modal.getInstance(document.getElementById('bulkEncargadoModal')).hide();
+    await enviarBulk('/pedidos/cambiarEncargadoBulk', { ids: [...selectedIds], encargado_id });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 cambiarClienteModal.addEventListener('show.bs.modal', function (event) {
     const button = event.relatedTarget;

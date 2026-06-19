@@ -39,6 +39,12 @@ class Pedido(models.Model):
         else:
             return 'Sin asignar'
 
+    @property
+    def saldo_real(self):
+        if self.saldo is not None:
+            return self.saldo
+        return round(self.precio - (self.senia or 0), 2)
+
     def __str__(self):
         return str(self.numero)
 
