@@ -18,6 +18,9 @@ from django.template.loader import render_to_string
 from weasyprint import HTML
 from datetime import date
 from decimal import Decimal, InvalidOperation
+import re
+
+_RANGO_RE = re.compile(r'^(.*?)\s*\[(\d+)[-]([\d]+|INF)\]\s*$')
 import json
 from core.decorators import solo_gerencia
 from django.db.models import Max
@@ -151,6 +154,32 @@ def calcular_cotizacion_final(request):
 
         # Consultas a la DB
         producto = Producto.objects.get(id=producto_id)
+
+        # Auto-resolución de tier: si el producto tiene rango [N-M] y hubo un
+        # resultado de packing (hojas/metros), buscar el tier correcto en la DB.
+        # Esto protege contra el caso en que el frontend manda el ID del
+        # representante de familia (ej. [1-5]) pero la cantidad calculada cae
+        # en otro rango (ej. [6-30]).
+        if tipo_cotizacion != "D" and resultado_grafico > 0:
+            match = _RANGO_RE.match(producto.nombre)
+            if match:
+                base_nombre = match.group(1).strip()
+                cantidad_hojas = int(resultado_grafico)
+                candidatos = Producto.objects.filter(
+                    nombre__istartswith=base_nombre,
+                    categoria=producto.categoria,
+                    activo=True,
+                )
+                for cand in candidatos:
+                    m = _RANGO_RE.match(cand.nombre)
+                    if m:
+                        rango_min = int(m.group(2))
+                        rango_max_str = m.group(3)
+                        rango_max = float('inf') if rango_max_str == 'INF' else int(rango_max_str)
+                        if rango_min <= cantidad_hojas <= rango_max:
+                            producto = cand
+                            break
+
         if producto.tercerizado:
             precio_producto = producto.precio_proveedor
         else:

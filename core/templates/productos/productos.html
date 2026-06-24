@@ -116,6 +116,23 @@
 <!-- Custom Js -->
 <script src="{% static 'productos/js/Products.js' %}"></script>
 <script>
+async function recalcularPrecios() {
+  if (!confirm('¿Recalcular los precios de todos los productos desde sus insumos actuales? Esto actualizará los productos con precio $0.')) return;
+  try {
+    const res = await fetch('/productos/recalcularPrecios', {
+      method: 'POST',
+      headers: { 'X-CSRFToken': document.cookie.split('; ').find(r => r.startsWith('csrftoken='))?.split('=')[1] || '' },
+    });
+    const data = await res.json();
+    sessionStorage.setItem("flashMensaje", data.mensaje);
+    sessionStorage.setItem("flashTipo", data.ok ? "success" : "error");
+    location.reload();
+  } catch (err) {
+    alert('Error al recalcular precios. Intentá nuevamente.');
+  }
+}
+</script>
+<script>
   const msg = sessionStorage.getItem("flashMensaje");
   const tipo = sessionStorage.getItem("flashTipo");
 

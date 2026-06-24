@@ -24,8 +24,15 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 });
 
+// Regex para detectar productos con rango de cantidad en el nombre: "Nombre [1-5]", "Nombre [6-INF]"
+const RANGO_RE = /^(.*?)\s*\[(\d+)[-](\d+|INF)\]\s*$/;
+
+// Producto resuelto tras el packing (puede diferir del seleccionado en el dropdown)
+let resolvedProductoId = null;
+let resolvedProductoNombre = null;
+
 document.addEventListener("DOMContentLoaded", () => {
-    aplicarDefaultTipoCalculo(); 
+    aplicarDefaultTipoCalculo();
     cargarCategoriasDesdeBackend();
 });
 
@@ -88,6 +95,7 @@ function aplicarDefaultTipoCalculo() {
  */
 
 function actualizarVisibilidadPorTipo() {
+  resetearSiHayGrafico();
   const tipoDSeleccionado = document.getElementById("tipoD").checked;
   const tipo = tipoDSeleccionado ? "D" : "ABC";
 
@@ -188,6 +196,7 @@ function cargarCategoriasDesdeBackend() {
 }
 
 document.getElementById("selectCategoria").addEventListener("change", e => {
+  resetearSiHayGrafico();
   const categoriaId = e.target.value;
 
   // Limpiar select de productos
@@ -218,6 +227,8 @@ function cargarProductosPorCategoria(categoriaId) {
     .then(productos => {
       const select = document.getElementById("selectProducto");
 
+      // El backend ya devuelve un representante por familia, sin duplicados.
+      select.innerHTML = '<option value="">Seleccione un producto</option>';
       productos.forEach(prod => {
         const option = document.createElement("option");
         option.value = prod.id;
@@ -229,9 +240,10 @@ function cargarProductosPorCategoria(categoriaId) {
 }
 
 document.getElementById("selectProducto").addEventListener("change", e => {
+  resetearSiHayGrafico();
   const productoId = e.target.value;
 
-  // Si el tipo D está seleccionado, no hacemos nada
+  // Si el tipo D está seleccionado, no hacemos nada con dimensiones
   const tipoDSeleccionado = document.getElementById("tipoD")?.checked;
   if (!tipoDSeleccionado) {
     obtenerDimensionesProducto(productoId);
@@ -288,9 +300,10 @@ function generarGrafico() {
   const algoritmosPacking = ["Skyline", "MaxRects"];
   const algoritmoIndex = parseInt(document.getElementById("btn-regenerar")?.dataset.algoritmo || "0");
   const algoritmoNombre = algoritmosPacking[algoritmoIndex];
+  const tipoCalculo = document.querySelector('input[name="tipoProducto"]:checked').value;
 
   const formData = new FormData();
-  formData.append("tipo", document.querySelector('input[name="tipoProducto"]:checked').value);
+  formData.append("tipo", tipoCalculo);
   formData.append("anchoHoja", document.getElementById("inputAnchoHoja").value);
   formData.append("altoHoja", document.getElementById("inputAltoHoja").value);
   formData.append("anchoElemento", document.getElementById("inputAnchoElemento").value);
@@ -302,26 +315,35 @@ function generarGrafico() {
 
   fetch("/presupuestos/generarGrafico/", {
     method: "POST",
-    headers: {
-      "X-CSRFToken": csrfToken
-    },
+    headers: { "X-CSRFToken": csrfToken },
     body: formData
   })
-    .then(res => {
-      return res.json();
-    })
-    .then(data => {
-
+    .then(res => res.json())
+    .then(async data => {
       const graficoContainer = document.getElementById("graficoCotizacion");
       graficoContainer.innerHTML = `
         <img src="${data.grafico_url}" class="img-fluid mb-3">
-        <p class="mt-2 fw-semibold text-secondary">${data.mensaje}</p>
+        <p class="mt-2 fw-semibold text-secondary" id="mensajeGrafico">${data.mensaje}</p>
         <input type="hidden" id="resultadoGraficoValor" value="${data.valor_grafico}" />
       `;
-
+      document.getElementById("seccionGrafico").style.display = "block";
 
       mostrarBotonesGrafico(algoritmoIndex);
       actualizarBotonGrafico(data.tipo);
+
+      // Para tipo A: resolver el tier correcto según la cantidad de hojas necesarias
+      if (tipoCalculo === "A") {
+        const productoId = document.getElementById("selectProducto").value;
+        const cantidadHojas = Math.ceil(parseFloat(data.valor_grafico) || 0);
+        const tierData = await resolverTierProducto(productoId, cantidadHojas);
+        if (tierData && tierData.tier_encontrado) {
+          const mensajeEl = document.getElementById("mensajeGrafico");
+          if (mensajeEl) {
+            mensajeEl.innerHTML +=
+              `<br><span class="text-primary fw-semibold">→ Se cotizará con: <strong>${tierData.nombre}</strong> (rango ${tierData.rango_display})</span>`;
+          }
+        }
+      }
     })
     .catch(err => {
       console.error("❌ Error al generar gráfico:", err);
@@ -368,6 +390,10 @@ function mostrarBotonesGrafico(indexActual = 0) {
  * botón principal a "Dibujito".
  */
 function borrarGrafico() {
+  // Limpiar estado de tier resuelto
+  resolvedProductoId = null;
+  resolvedProductoNombre = null;
+
   fetch('/presupuestos/borrarImagenGenerada', {
     method: 'POST',
     headers: {
@@ -377,22 +403,43 @@ function borrarGrafico() {
   })
     .then(response => response.json())
     .then(data => {
-      console.log('🗑️ Imagen eliminada:', data.message);
-
-      // Limpiar el contenido del gráfico
       const graficoContenedor = document.getElementById("graficoCotizacion");
       graficoContenedor.innerHTML = "";
-
-      // Ocultar la sección del gráfico
-      const seccionGrafico = document.getElementById("seccionGrafico");
-      seccionGrafico.style.display = "none";
-
-      // Restaurar el botón principal a "Dibujito"
       actualizarBotonGrafico("ABC");
     })
     .catch(error => {
       console.error('❌ Error al eliminar la imagen:', error);
     });
+}
+
+function resetearSiHayGrafico() {
+  const graficoContenedor = document.getElementById("graficoCotizacion");
+  if (graficoContenedor && graficoContenedor.innerHTML.trim() !== "") {
+    borrarGrafico();
+  }
+}
+
+async function resolverTierProducto(productoId, cantidad) {
+  try {
+    const formData = new FormData();
+    formData.append('producto_id', productoId);
+    formData.append('cantidad', cantidad);
+
+    const res = await fetch('/productos/resolverTier', {
+      method: 'POST',
+      headers: { 'X-CSRFToken': getCookie('csrftoken') },
+      body: formData
+    });
+    const data = await res.json();
+
+    resolvedProductoId = data.producto_id;
+    resolvedProductoNombre = data.nombre;
+    return data;
+  } catch (err) {
+    console.error('❌ Error al resolver tier:', err);
+    resolvedProductoId = productoId;
+    return null;
+  }
 }
 
 
@@ -424,7 +471,9 @@ function descargarGrafico() {
 
 function calcularCotizacion() {
   const formData = new FormData();
-  formData.append("producto_id", document.getElementById("selectProducto").value);
+  // Usar el tier resuelto por el packing si existe; si no, el seleccionado directamente
+  const productoIdFinal = resolvedProductoId || document.getElementById("selectProducto").value;
+  formData.append("producto_id", productoIdFinal);
   formData.append("cantidadElementos", document.getElementById("cantidadElementos").value);
   formData.append("inputTiempo", document.getElementById("inputTiempo").value);
   formData.append("empaquetado", document.getElementById("checkEmpaquetado").checked);
@@ -570,6 +619,12 @@ function getCookie(name) {
   }
   return cookieValue;
 }
+
+// Resetear el gráfico si el usuario cambia parámetros que afectan el resultado
+["cantidadElementos", "inputAnchoElemento", "inputAltoElemento", "separacionElementos"].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener("input", resetearSiHayGrafico);
+});
 
 function syncClienteYEnviar(url) {
     const cliente = document.getElementById("cliente_input").value;

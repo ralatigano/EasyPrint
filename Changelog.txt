@@ -243,6 +243,13 @@ Versión v3.2.3
     -Dashboard
         *Se corrige un problema que impedía la carga de la página principal del dashboard.
 
+
+****************** 31/5/2026 ******************
+Versión v3.3.0
+    -Productos e Insumos
+        *Se agrega un modal para proporcionar feedback durante la importación de productos/insumos de modo que el usuario sepa que debe esperar.
+        *Se modifica la lógica de edición de productos/insumos de modo que al terminar la misma no se pierda el estado de los filtros o la página actual de la tabla.
+
 ****************** 19/6/2026 ******************
 Versión v3.3.1
 
@@ -254,8 +261,17 @@ Versión v3.3.1
         *Se hace clickeable el indicador de estado de cada pedido para poder cambiarlo directamente desde la tabla sin necesidad de abrir el panel de detalle primero.
         *Se corrige la visualización del saldo en algunos pedidos donde no se mostraba el valor correcto.
 
-****************** 31/5/2026 ******************
-Versión v3.3.0
-    -Productos e Insumos
-        *Se agrega un modal para proporcionar feedback durante la importación de productos/insumos de modo que el usuario sepa que debe esperar.
-        *Se modifica la lógica de edición de productos/insumos de modo que al terminar la misma no se pierda el estado de los filtros o la página actual de la tabla.
+****************** 22/6/2026 ******************
+Versión v3.3.2
+
+    -Pedidos
+        *Se corrigen los filtros para que se ordenen mejor en el espacio.
+        *Se cambia la posición del checkbox que permite seleccionar todos los pedidos que se ven en la tabla al encabezado de dicha tabla.
+
+    -Formulario inicial
+        *Se arreglan varios comportamientos indeseados que rompían el flujo de cotización:
+            -Necesidad de cambiar el producto seleccionado, cambio en las dimensiones etc, posteriores a la realización del dibujo.
+        *Se cambia la lógica que realiza el cálculo de los problemas de tipo A para mejorar la experiencia de usuario.
+
+    -Productos
+        *Se arreglan varios problemas que generaban fallas silenciosas y posteriores errores durante el guardado de productos.

@@ -4,6 +4,7 @@ from .views import (
     exportar_productos_excel, borrar_todos_productos, obtener_dimensiones_producto, obtener_productos_categoria,
     categorias, guardar_categoria, borrar_categoria, obtener_categoria, listar_categorias,
     insumos, guardar_insumo, borrar_insumo, info_insumo, importar_insumos_excel, exportar_insumos_excel, borrar_todos_insumos,
+    recalcular_precios_productos, resolver_tier_producto,
 )
 
 urlpatterns = [
@@ -17,6 +18,10 @@ urlpatterns = [
     # Borra todos los productos de la base de datos.
     path('borrarProductos', borrar_todos_productos,
          name='borrar_todos_productos'),
+    path('recalcularPrecios', recalcular_precios_productos,
+         name='recalcular_precios'),
+    path('resolverTier', resolver_tier_producto,
+         name='resolver_tier'),
     # Importar o exportar productos desde o hacia un archivo excel
     path('importarProductos/', importar_productos_excel, name='importarProcutos'),
     path('exportarProductos', exportar_productos_excel, name='exportar_productos'),

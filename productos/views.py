@@ -10,7 +10,11 @@ from django.http import HttpResponse, Http404
 from django.utils import timezone
 from core.utils import format_ar, parse_ar
 from core.decorators import solo_gerencia
-# Create your views here.
+import re
+
+# Regex compartido: detecta "Nombre [N-M]" o "Nombre [N-INF]"
+_RANGO_RE = re.compile(r'^(.*?)\s*\[(\d+)[-]([\d]+|INF)\]\s*$')
+
 app_name = 'productos'
 
 # -------------------------PRODUCTOS----------------------------------
@@ -72,9 +76,30 @@ def obtener_dimensiones_producto(request, producto_id):
 
 @login_required
 def obtener_productos_categoria(request, categoria_id):
+    """
+    Devuelve un producto representante por familia.
+    Productos con el mismo nombre base (ignorando el rango [N-M] y la capitalización)
+    se agrupan y solo se devuelve el primero encontrado.
+    """
     productos = Producto.objects.filter(
-        categoria_id=categoria_id).values("id", "nombre")
-    return JsonResponse(list(productos), safe=False)
+        categoria_id=categoria_id, activo=True
+    ).values("id", "nombre").order_by("nombre")
+
+    familias = {}   # key: base_lower → {"id": ..., "nombre": ...}
+    for prod in productos:
+        nombre = prod["nombre"].strip()
+        m = _RANGO_RE.match(nombre)
+        if m:
+            base = m.group(1).strip()
+            key = base.lower()
+            if key not in familias:
+                familias[key] = {"id": prod["id"], "nombre": base}
+        else:
+            key = nombre.lower()
+            if key not in familias:
+                familias[key] = {"id": prod["id"], "nombre": nombre}
+
+    return JsonResponse(list(familias.values()), safe=False)
 
 
 # Vista que recibe la información de los modales de editar y agregar producto para luego actualizar la base de datos.
@@ -142,6 +167,14 @@ def guardar_producto(request):
                             insumo=insumo,
                             cantidad=cantidad
                         )
+
+            # Calcular precio desde los componentes guardados (no confiar en el frontend)
+            precio_calculado = sum(
+                float(comp.insumo.precio / comp.insumo.factor_conversion) * comp.cantidad
+                for comp in ComponenteProducto.objects.filter(producto=producto)
+            )
+            producto.precio = round(precio_calculado, 2)
+            producto.save()
 
         # 4. Respuesta OK
         mensaje = f"Producto {accion} correctamente."
@@ -294,9 +327,12 @@ def importar_productos_excel(request):
                             "cantidad": cantidad
                         })
 
-                        precio_total = sum(
-                            comp["precio"] * comp["cantidad"] for comp in componentes)
-                        producto.precio = round(precio_total, 2)
+                    # Calcular precio desde los componentes guardados en DB
+                    precio_total = sum(
+                        float(comp.insumo.precio / comp.insumo.factor_conversion) * comp.cantidad
+                        for comp in ComponenteProducto.objects.filter(producto=producto).select_related('insumo')
+                    )
+                    producto.precio = round(precio_total, 2)
                 else:
                     producto.precio_proveedor = precio_excel
                 producto.save()
@@ -387,6 +423,34 @@ def exportar_productos_excel(request):
 
 
 # Vista que permite borrar todos los productos.
+
+@login_required
+@solo_gerencia
+def recalcular_precios_productos(request):
+    """Recalcula el precio de todos los productos no-tercerizados a partir de sus insumos."""
+    actualizados = 0
+    errores = []
+    productos_nt = Producto.objects.filter(tercerizado=False)
+    for producto in productos_nt:
+        try:
+            componentes = ComponenteProducto.objects.filter(producto=producto).select_related('insumo')
+            if componentes.exists():
+                precio_calculado = sum(
+                    float(comp.insumo.precio / comp.insumo.factor_conversion) * comp.cantidad
+                    for comp in componentes
+                )
+                producto.precio = round(precio_calculado, 2)
+                producto.save()
+                actualizados += 1
+        except Exception as e:
+            errores.append(f"{producto.nombre}: {e}")
+    return JsonResponse({
+        "ok": True,
+        "actualizados": actualizados,
+        "errores": errores,
+        "mensaje": f"Se recalcularon los precios de {actualizados} productos." + (f" {len(errores)} errores." if errores else ""),
+    })
+
 
 @login_required
 @solo_gerencia
@@ -502,6 +566,61 @@ def insumos(request):
 
 
 @login_required
+def resolver_tier_producto(request):
+    """Dado un producto_id y una cantidad de hojas, encuentra el tier correcto de su familia."""
+    import re
+    producto_id = request.POST.get('producto_id')
+    try:
+        cantidad = int(float(request.POST.get('cantidad', 0)))
+    except (ValueError, TypeError):
+        cantidad = 0
+
+    producto = get_object_or_404(Producto, id=producto_id)
+
+    match = _RANGO_RE.match(producto.nombre)
+
+    if not match:
+        return JsonResponse({'producto_id': producto.id, 'nombre': producto.nombre, 'tier_encontrado': False})
+
+    base_nombre = match.group(1).strip()
+
+    candidatos = Producto.objects.filter(
+        nombre__startswith=base_nombre,
+        categoria=producto.categoria,
+        activo=True
+    )
+
+    for prod in candidatos:
+        m = _RANGO_RE.match(prod.nombre)
+        if m:
+            rango_min = int(m.group(2))
+            rango_max_str = m.group(3)
+            rango_max = float('inf') if rango_max_str == 'INF' else int(rango_max_str)
+            if rango_min <= cantidad <= rango_max:
+                return JsonResponse({
+                    'producto_id': prod.id,
+                    'nombre': prod.nombre,
+                    'tier_encontrado': True,
+                    'rango_display': f"{rango_min}-{rango_max_str}",
+                })
+
+    return JsonResponse({'producto_id': producto.id, 'nombre': producto.nombre, 'tier_encontrado': False})
+
+
+def _recalcular_precios_productos_con_insumo(insumo):
+    """Recalcula el precio de todos los productos no-tercerizados que usan este insumo."""
+    componentes = ComponenteProducto.objects.filter(insumo=insumo).select_related('producto')
+    productos_afectados = set(comp.producto for comp in componentes if not comp.producto.tercerizado)
+    for producto in productos_afectados:
+        precio_calculado = sum(
+            float(comp.insumo.precio / comp.insumo.factor_conversion) * comp.cantidad
+            for comp in ComponenteProducto.objects.filter(producto=producto).select_related('insumo')
+        )
+        producto.precio = round(precio_calculado, 2)
+        producto.save()
+
+
+@login_required
 def guardar_insumo(request):
     if request.method == "POST":
         data = request.POST
@@ -527,6 +646,7 @@ def guardar_insumo(request):
             mensaje_reposicion = procesar_reposicion_insumo_por_edicion(request,
                                                                         insumo, cantidad_repuesta)
             insumo.save()
+            _recalcular_precios_productos_con_insumo(insumo)
             return JsonResponse({"ok": True, "mensaje": mensaje, "info_reposicion": mensaje_reposicion})
         insumo.save()
         return JsonResponse({"ok": True, "mensaje": mensaje})

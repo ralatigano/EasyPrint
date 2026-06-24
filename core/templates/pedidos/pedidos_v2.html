@@ -13,21 +13,15 @@
     flex-wrap: wrap;
     margin-bottom: 16px;
 }
-.check-all-wrap {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding-right: 16px;
-    border-right: 1px solid rgba(128,128,128,.3);
-    margin-right: 4px;
-    padding-bottom: 4px;
+.filter-bar-v2 > div:not(.check-all-wrap):not(.bulk-filter-actions) {
+    min-width: 140px;
+    max-width: 220px;
+    flex: 0 1 220px;
 }
-.check-all-wrap label {
-    font-size: 13px;
-    color: var(--bs-secondary-color, #6c757d);
-    cursor: pointer;
-    user-select: none;
-    margin: 0;
+.filter-bar-v2 select.form-select {
+    width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 /* ── Filas expandibles ───────────────────────────────────────────────────────── */
@@ -147,11 +141,6 @@
     <!-- Barra de filtros -->
     <div class="filter-bar-v2">
 
-        <div class="check-all-wrap">
-            <input type="checkbox" id="checkAll" class="form-check-input" style="cursor:pointer;" title="Seleccionar todos los pedidos visibles">
-            <label for="checkAll">Seleccionar todos</label>
-        </div>
-
         <div>
             <label class="form-label">Cliente</label>
             <select id="filtroCliente" class="form-select" multiple size="3">
@@ -221,7 +210,10 @@
         <table id="Pedidos" class="table table-hover">
             <thead>
                 <tr>
-                    <th style="width:36px;"></th>
+                    <th style="width:36px;" class="text-center align-middle">
+                        <input type="checkbox" id="checkAll" class="form-check-input" style="cursor:pointer;"
+                               data-bs-toggle="tooltip" data-bs-placement="right" title="Seleccionar todos">
+                    </th>
                     <th>Número</th>
                     <th>Cliente</th>
                     <th>Productos/Servicios</th>
