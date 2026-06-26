@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models.functions import Lower
 from presupuestos.models import Presupuesto
 from pedidos.models import Pedido
 from django.contrib.auth.models import User
@@ -50,6 +51,15 @@ class Insumo(models.Model):
 
     def __str__(self):
         return f"{self.nombre} ({self.stock} {self.unidad_medida})"
+
+    class Meta:
+        constraints = [
+            # Evita insumos duplicados por nombre ignorando mayúsculas/minúsculas.
+            models.UniqueConstraint(
+                Lower('nombre'),
+                name='uniq_insumo_nombre_ci',
+            ),
+        ]
 
 
 class Producto(models.Model):

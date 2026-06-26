@@ -633,21 +633,43 @@ def guardar_insumo(request):
             insumo = Insumo()
             mensaje = "Nuevo insumo creado exitosamente."
 
-        insumo.nombre = data.get("nombre")
+        nombre = (data.get("nombre") or "").strip()
+        if not nombre:
+            return JsonResponse({"ok": False, "mensaje": "El insumo debe tener un nombre."})
+
+        # Protección contra duplicados: no permitir otro insumo con el mismo nombre
+        # ignorando mayúsculas/espacios (excluyéndose a sí mismo en edición).
+        duplicado = Insumo.objects.filter(nombre__iexact=nombre)
+        if insumo.pk:
+            duplicado = duplicado.exclude(pk=insumo.pk)
+        if duplicado.exists():
+            return JsonResponse({
+                "ok": False,
+                "mensaje": f"Ya existe un insumo llamado '{duplicado.first().nombre}'. "
+                           f"Usá ese o elegí un nombre distinto.",
+            })
+
+        insumo.nombre = nombre
         insumo.unidad_medida = data.get("unidad_medida")
         insumo.unidad_composicion = data.get("unidad_composicion")
         insumo.factor_conversion = data.get("factor_conversion") or 1
         insumo.precio = parse_ar(data.get("precio_unitario")) or 0
         insumo.activo = data.get("activo") == "on"
-        cantidad_repuesta = data.get("stock") or 0
-        insumo.stock = cantidad_repuesta
+
+        # El usuario ingresa el "stock real": las unidades de uso que efectivamente
+        # cuenta (ej: hojas). El stock interno (en unidad de compra) se deriva
+        # dividiendo por el factor de conversión.
+        stock_real_ingresado = float(data.get("stock_real") or 0)
+        factor = float(insumo.factor_conversion or 1) or 1
 
         if id_insumo and id_insumo != "0":
             mensaje_reposicion = procesar_reposicion_insumo_por_edicion(request,
-                                                                        insumo, cantidad_repuesta)
+                                                                        insumo, stock_real_ingresado)
             insumo.save()
             _recalcular_precios_productos_con_insumo(insumo)
             return JsonResponse({"ok": True, "mensaje": mensaje, "info_reposicion": mensaje_reposicion})
+
+        insumo.stock = stock_real_ingresado / factor
         insumo.save()
         return JsonResponse({"ok": True, "mensaje": mensaje})
 
@@ -665,6 +687,7 @@ def info_insumo(request, insumo_id):
             "unidad_composicion": insumo.unidad_composicion,
             "factor_conversion": float(insumo.factor_conversion),
             "stock": float(insumo.stock or 0),
+            "stock_real": float(insumo.stock_real() or 0),
             "precio_unitario": float(insumo.precio or 0),
             "ultima_modificacion": insumo.ultima_modificacion.isoformat() if insumo.ultima_modificacion else None,
             "modificado_por": insumo.modificado_por.get_full_name() if insumo.modificado_por else None,
@@ -707,6 +730,7 @@ def importar_insumos_excel(request):
             total_filas = 0
             creados = 0
             actualizados = 0
+            advertencias = 0
             errores = 0
             log = []
 
@@ -718,29 +742,80 @@ def importar_insumos_excel(request):
 
                 try:
                     data = dict(zip(headers, row))
-                    nombre = str(data.get('nombre')).strip()
+
+                    def val(key):
+                        """Valor de la celda ya recortado, o None si está vacía/ausente."""
+                        v = data.get(key)
+                        if v is None:
+                            return None
+                        s = str(v).strip()
+                        return s if s != "" else None
+
+                    nombre = val('nombre')
 
                     if not nombre:
                         errores += 1
                         log.append(f"Fila {idx}: Insumo sin nombre.")
                         continue
 
-                    unidad_medida = str(data.get('unidad_medida')).strip()
-                    unidad_composicion = str(
-                        data.get('unidad_composicion')).strip()
-                    factor_conversion = int(data.get('factor_conversion') or 1)
-                    stock = float(data.get('stock') or 0)
-                    precio = float(data.get('precio') or 0)
+                    # CLAVE: reusar el insumo existente (match case-insensitive) para
+                    # NO romper el vínculo con los productos. get_or_create por nombre
+                    # exacto creaba duplicados ante diferencias de mayúsculas/acentos,
+                    # dejando al producto apuntando al insumo viejo. Si hay duplicados
+                    # previos, se toma el más antiguo (el más probablemente vinculado).
+                    insumo = Insumo.objects.filter(
+                        nombre__iexact=nombre).order_by('id').first()
+                    creado = insumo is None
+                    if creado:
+                        insumo = Insumo(nombre=nombre)
+                    elif insumo.nombre != nombre:
+                        # Falso positivo posible: el match fue por coincidencia
+                        # ignorando mayúsculas/espacios, no por nombre idéntico.
+                        # Se avisa para que el usuario verifique que es el mismo
+                        # insumo y no uno nuevo que quedó absorbido por error.
+                        advertencias += 1
+                        log.append(
+                            f"Fila {idx}: ADVERTENCIA — '{nombre}' se aplicó sobre el "
+                            f"insumo existente '{insumo.nombre}' (id {insumo.id}) por "
+                            f"coincidencia ignorando mayúsculas/espacios. Si NO es el "
+                            f"mismo insumo, corregí el nombre en la planilla y reimportá.")
 
-                    insumo, creado = Insumo.objects.get_or_create(
-                        nombre=nombre)
+                    # Valores previos para detectar si cambia el costo del insumo
+                    # (precio o factor), lo que obliga a recalcular productos.
+                    precio_anterior = float(insumo.precio or 0)
+                    factor_anterior = float(insumo.factor_conversion or 1)
 
-                    insumo.unidad_medida = unidad_medida
-                    insumo.unidad_composicion = unidad_composicion
-                    insumo.factor_conversion = factor_conversion
-                    insumo.stock = stock
-                    insumo.precio = precio
+                    # Solo se sobrescriben los campos presentes en la planilla, para que
+                    # una actualización masiva de stock no borre unidad/factor/precio.
+                    if val('unidad_medida') is not None:
+                        insumo.unidad_medida = val('unidad_medida')
+                    if val('unidad_composicion') is not None:
+                        insumo.unidad_composicion = val('unidad_composicion')
+                    if val('factor_conversion') is not None:
+                        insumo.factor_conversion = int(
+                            float(val('factor_conversion'))) or 1
+                    if val('precio') is not None:
+                        insumo.precio = float(val('precio'))
+
+                    # Stock: se prioriza 'stock_real' (unidades de uso que se cuentan,
+                    # ej: hojas) y la app deriva el stock en unidad de compra. Se
+                    # mantiene compatibilidad con planillas viejas que traían 'stock'
+                    # (ya expresado en unidad de compra).
+                    factor = float(insumo.factor_conversion or 1) or 1
+                    if val('stock_real') is not None:
+                        insumo.stock = float(val('stock_real')) / factor
+                    elif val('stock') is not None:
+                        insumo.stock = float(val('stock'))
+
                     insumo.save()
+
+                    # Si cambió el costo unitario (precio o factor), recalcular el
+                    # precio de los productos no tercerizados que usan este insumo.
+                    if not creado and (
+                        float(insumo.precio or 0) != precio_anterior
+                        or float(insumo.factor_conversion or 1) != factor_anterior
+                    ):
+                        _recalcular_precios_productos_con_insumo(insumo)
 
                     if creado:
                         creados += 1
@@ -751,22 +826,22 @@ def importar_insumos_excel(request):
                     errores += 1
                     log.append(f"Fila {idx}: Error inesperado ({e})")
 
+            resumen = (
+                f"Carga completada: {creados} nuevos, {actualizados} actualizados, "
+                f"{advertencias} advertencias, {errores} errores."
+            )
             if log:
-                mensaje = (
-                    f"Carga completada: {creados} nuevos, {actualizados} actualizados, "
-                    f"{errores} errores. Revisá el archivo de log descargado."
-                )
                 return JsonResponse({
                     "ok": True,
-                    "mensaje": mensaje,
+                    "mensaje": resumen + " Revisá el archivo descargado.",
                     "tiene_errores": True,
                     "log_contenido": "\n".join(log),
-                    "log_nombre": "errores_insumos.txt",
+                    "log_nombre": "log_insumos.txt",
                 })
             else:
                 return JsonResponse({
                     "ok": True,
-                    "mensaje": f"Carga completada: {creados} nuevos, {actualizados} actualizados, sin errores.",
+                    "mensaje": resumen + " Sin observaciones.",
                     "tiene_errores": False,
                 })
 
@@ -781,8 +856,10 @@ def exportar_insumos_excel(request):
     ws = wb.active
     ws.title = "Insumos"
 
+    # 'stock_real' = unidades de uso que se cuentan (ej: hojas). Al reimportar,
+    # la app deriva el stock en unidad de compra dividiendo por el factor.
     columnas = ["nombre", "unidad_medida", "unidad_composicion",
-                "factor_conversion", "stock", "precio"]
+                "factor_conversion", "stock_real", "precio"]
     ws.append(columnas)
 
     for insumo in Insumo.objects.all():
@@ -791,7 +868,7 @@ def exportar_insumos_excel(request):
             insumo.unidad_medida,
             insumo.unidad_composicion,
             insumo.factor_conversion,
-            insumo.stock,
+            insumo.stock_real(),
             insumo.precio,
         ])
 
@@ -817,13 +894,14 @@ def borrar_todos_insumos(request):
 
 
 @login_required
-def procesar_reposicion_insumo_por_edicion(request, insumo, nuevo_valor):
+def procesar_reposicion_insumo_por_edicion(request, insumo, nuevo_stock_real):
     """
     Reemplaza el stock del insumo por el nuevo valor ingresado por el usuario.
+    El valor recibido es el "stock real" (unidades de uso, ej: hojas).
     Compensa faltantes si corresponde. Devuelve mensaje para el usuario.
     """
-    nuevo_valor = float(nuevo_valor)
-    nuevo_stock_real = nuevo_valor * float(insumo.factor_conversion)
+    nuevo_stock_real = float(nuevo_stock_real)
+    factor = float(insumo.factor_conversion) or 1
 
     faltantes = FaltanteInsumo.objects.filter(
         insumo=insumo, resuelto=False).order_by('registrado_en')
@@ -835,11 +913,11 @@ def procesar_reposicion_insumo_por_edicion(request, insumo, nuevo_valor):
             f.resuelto = True
             f.save()
         stock_final = nuevo_stock_real - faltante_total
-        insumo.stock = stock_final / float(insumo.factor_conversion)
+        insumo.stock = stock_final / factor
         insumo.ultima_modificacion = timezone.now()
         insumo.modificado_por = request.user
         insumo.save()
-        return f"Se ha actualizado el stock de {insumo.nombre} a {nuevo_valor:.2f}. Se resolvieron todos los faltantes. Stock disponible: {stock_final:.2f} {insumo.unidad_composicion}."
+        return f"Se ha actualizado el stock de {insumo.nombre} a {nuevo_stock_real:.2f} {insumo.unidad_composicion}. Se resolvieron todos los faltantes. Stock disponible: {stock_final:.2f} {insumo.unidad_composicion}."
     else:
         # Menguar los faltantes
         restante = nuevo_stock_real
@@ -860,4 +938,4 @@ def procesar_reposicion_insumo_por_edicion(request, insumo, nuevo_valor):
         insumo.save()
         faltante_restante = sum(f.cantidad_faltante for f in FaltanteInsumo.objects.filter(
             insumo=insumo, resuelto=False))
-        return f"Se ha actualizado el stock de {insumo.nombre} a {nuevo_valor:.2f}. Aún faltan {faltante_restante:.2f} {insumo.unidad_composicion} para compensar los pedidos pendientes."
+        return f"Se ha actualizado el stock de {insumo.nombre} a {nuevo_stock_real:.2f} {insumo.unidad_composicion}. Aún faltan {faltante_restante:.2f} {insumo.unidad_composicion} para compensar los pedidos pendientes."

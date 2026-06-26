@@ -59,3 +59,29 @@ td.numero .contenido,
 td.estado .contenido {
     white-space: nowrap;
 }
+
+/* Selects de filtros (multiple): barra de scroll siempre visible y scroll con la rueda.
+   Sobrescribe el overflow:hidden heredado, que ocultaba la barra e impedía el scroll. */
+select.form-select[multiple] {
+    overflow-y: auto !important;
+    overflow-x: hidden;
+    scrollbar-width: thin;                  /* Firefox */
+    scrollbar-color: #adb5bd #f1f3f5;       /* Firefox: pulgar / pista */
+}
+
+/* Chrome / Edge / Safari: barra siempre presente (no overlay) */
+select.form-select[multiple]::-webkit-scrollbar {
+    width: 10px;
+}
+select.form-select[multiple]::-webkit-scrollbar-track {
+    background: #f1f3f5;
+    border-radius: 4px;
+}
+select.form-select[multiple]::-webkit-scrollbar-thumb {
+    background-color: #adb5bd;
+    border-radius: 4px;
+    border: 2px solid #f1f3f5;
+}
+select.form-select[multiple]::-webkit-scrollbar-thumb:hover {
+    background-color: #868e96;
+}

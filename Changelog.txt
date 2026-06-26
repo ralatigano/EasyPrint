@@ -275,3 +275,17 @@ Versión v3.3.2
 
     -Productos
         *Se arreglan varios problemas que generaban fallas silenciosas y posteriores errores durante el guardado de productos.
+
+****************** 26/6/2026 ******************
+Versión v3.3.3
+
+    -Pedidos
+        *Se corrigen los filtros para que vuelvan a mostrar la barra de desplazamiento y se puedan recorrer con la rueda del mouse cuando tienen muchas opciones.
+
+    -Productos e Insumos
+        *Al editar un insumo, ahora el stock se carga directamente con las unidades que se cuentan en el depósito. El sistema se encarga de hacer las conversiones internas, evitando tener que calcular cantidades a mano.
+        *La actualización masiva de stock por planilla de Excel ahora trabaja con esas mismas unidades, de forma coherente con la edición manual.
+        *Se mejora la importación por Excel para que reconozca los insumos ya existentes y no genere copias repetidas, evitando que se pierda la relación entre un producto y los insumos que lo componen.
+        *Cuando una planilla coincide con un insumo ya cargado bajo un nombre parecido, se genera un aviso para que se pueda revisar y confirmar que se trata del mismo insumo.
+        *Al modificar el precio de un insumo, se recalcula automáticamente el precio de los productos que lo utilizan.
+        *Se agrega una protección para evitar cargar dos insumos con el mismo nombre.

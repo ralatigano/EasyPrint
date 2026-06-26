@@ -88,6 +88,8 @@ document.addEventListener("DOMContentLoaded", function () {
   modalElement.addEventListener("show.bs.modal", function () {
     modalElement.querySelector("form").reset();
     document.getElementById("activo").checked = true;
+    const ayudaStock = document.getElementById("ayuda_stock_real");
+    if (ayudaStock) ayudaStock.textContent = "";
     infoModificacion.textContent = "Última modificación: - por -";
   });
 
@@ -112,7 +114,13 @@ document.addEventListener("DOMContentLoaded", function () {
             document.getElementById("unidad_medida").value = data.unidad_medida || "";
             document.getElementById("unidad_composicion").value = data.unidad_composicion || "";
             document.getElementById("factor_conversion").value = data.factor_conversion ?? 1;
-            document.getElementById("stock").value = data.stock ?? "";
+            document.getElementById("stock_real").value = data.stock_real ?? "";
+            const ayudaStock = document.getElementById("ayuda_stock_real");
+            if (ayudaStock) {
+              ayudaStock.textContent = data.unidad_composicion
+                ? `Cantidad en ${data.unidad_composicion} (unidad de uso).`
+                : "";
+            }
             document.getElementById("precio_unitario").value = "$ " + formatearNumeroLocal(data.precio_unitario ?? 0);
             document.getElementById("activo").checked = !!data.activo;
             modalTitle.textContent = `Editar insumo: ${data.nombre}`;

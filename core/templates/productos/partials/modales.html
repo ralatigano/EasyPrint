@@ -54,9 +54,10 @@
                     <input type="number" id="factor_conversion" name="factor_conversion" class="form-control" min="1" step="1" value="1"
                     title="Cantidad de unidades de uso por cada unidad de compra. Ej: 1 rollo = 1000 cm² → factor 1000">
                     
-                    <label for="stock" class="fw-bold">Stock actual:</label>
-                    <input type="number" id="stock" name="stock" step="0.01" class="form-control"
-                    title="Cantidad disponible del insumo en unidades de medida o de compra.">
+                    <label for="stock_real" class="fw-bold">Stock real:</label>
+                    <input type="number" id="stock_real" name="stock_real" step="0.01" min="0" class="form-control"
+                    title="Cantidad disponible contada en unidades de uso (ej: hojas, cm², ml). La app calcula internamente el stock en unidades de compra.">
+                    <small id="ayuda_stock_real" class="text-muted"></small>
                     
                     <label for="precio_unitario" class="fw-bold">Precio:</label>
                     <input type="text" id="precio_unitario" name="precio_unitario" class="form-control"
