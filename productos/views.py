@@ -687,7 +687,10 @@ def info_insumo(request, insumo_id):
             "unidad_composicion": insumo.unidad_composicion,
             "factor_conversion": float(insumo.factor_conversion),
             "stock": float(insumo.stock or 0),
-            "stock_real": float(insumo.stock_real() or 0),
+            # El stock real (unidades de uso, ej: hojas) se cuenta por unidades
+            # enteras. Redondeamos para no arrastrar decimales espurios que
+            # provienen de convertir el stock interno (unidad de compra).
+            "stock_real": round(insumo.stock_real() or 0),
             "precio_unitario": float(insumo.precio or 0),
             "ultima_modificacion": insumo.ultima_modificacion.isoformat() if insumo.ultima_modificacion else None,
             "modificado_por": insumo.modificado_por.get_full_name() if insumo.modificado_por else None,

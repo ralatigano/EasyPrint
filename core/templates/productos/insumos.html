@@ -63,8 +63,8 @@
                         <td>{{i.nombre}}</td>
                         <td>$ {{i.precio}}</td>
                         <td>{{i.unidad_medida}}</td>
-                        <td>{{i.stock}}</td>
-                        <td>{{i.stock_real}}</td>
+                        <td>{{ i.stock|floatformat:"-2" }}</td>
+                        <td>{{ i.stock_real|floatformat:"0" }}</td>
                         <td>
                             <button type="button" class="btn btn-dark btn-xs" data-bs-toggle="modal" data-bs-target="#crearEditarInsumoModal" data-id="{{i.id}}" onclick=""><i class="fa-solid fa-pencil sm"></i></button>
                             {% if es_gerencia %}

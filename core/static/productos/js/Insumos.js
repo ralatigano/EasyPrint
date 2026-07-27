@@ -121,7 +121,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 ? `Cantidad en ${data.unidad_composicion} (unidad de uso).`
                 : "";
             }
-            document.getElementById("precio_unitario").value = "$ " + formatearNumeroLocal(data.precio_unitario ?? 0);
+            document.getElementById("precio_unitario").value = formatearNumeroLocal(data.precio_unitario ?? 0);
             document.getElementById("activo").checked = !!data.activo;
             modalTitle.textContent = `Editar insumo: ${data.nombre}`;
 

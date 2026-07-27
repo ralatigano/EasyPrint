@@ -289,3 +289,11 @@ Versión v3.3.3
         *Cuando una planilla coincide con un insumo ya cargado bajo un nombre parecido, se genera un aviso para que se pueda revisar y confirmar que se trata del mismo insumo.
         *Al modificar el precio de un insumo, se recalcula automáticamente el precio de los productos que lo utilizan.
         *Se agrega una protección para evitar cargar dos insumos con el mismo nombre.
+
+****************** 27/7/2026 ******************
+Versión v3.3.4
+
+    -Productos e Insumos
+        *Se corrige un error por el cual, al editar un insumo desde la aplicación (no por Excel) y guardar, el precio se borraba y quedaba en 0. El problema estaba en la conversión del importe con formato argentino ($ 1.234,56); ahora se interpreta correctamente.
+        *El stock real (unidades de uso, ej: hojas) se muestra como número entero en la tabla y en el formulario de edición, evitando decimales sin sentido como "102,27 hojas" que se arrastraban de cargas anteriores.
+        *Se corrige la superposición entre la aclaración del campo de stock y la etiqueta "Precio" en el formulario de edición de insumo, para que quede alineada como el resto de los campos.
