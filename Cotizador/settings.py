@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     'presupuestos',
     'pedidos',
     'dashboard',
+    'facturacion',
 ]
 
 MIDDLEWARE = [
@@ -182,3 +183,37 @@ if DEBUG:
 else:
     IMG_BASE_PATH = str(env.str("IMG_BASE_PATH_PROD"))
     CSS_PATH = str(env.str("CSS_PATH_PROD"))
+
+
+# ---------------------------------------------------------------------------
+# Facturación electrónica ARCA (ex-AFIP)
+# ---------------------------------------------------------------------------
+# AFIP_ENV controla contra qué ambiente de ARCA se opera. Es INTENCIONALMENTE
+# independiente de DEBUG y de la rama git: se puede correr la rama en el server
+# real emitiendo contra homologación (CAE de prueba, sin efecto fiscal) y recién
+# pasar a 'produccion' cuando esté validado.
+AFIP_ENV = env.str("AFIP_ENV", default="homologacion")  # homologacion | produccion
+# El certificado y la clave viven en keys/<ambiente>/ (carpeta gitignoreada). El
+# path se deriva de BASE_DIR para que el código sea idéntico en dev y producción,
+# y el flag AFIP_ENV cambia URLs y certificados a la vez. Se puede override por
+# .env (AFIP_CERT_PATH / AFIP_KEY_PATH) si en algún entorno viven en otro lado.
+_afip_keys_dir = BASE_DIR / "keys" / AFIP_ENV
+AFIP = {
+    "ENV": AFIP_ENV,
+    "CUIT": env.int("AFIP_CUIT", default=0),
+    "PUNTO_VENTA": env.int("AFIP_PUNTO_VENTA", default=1),
+    "CERT_PATH": env.str("AFIP_CERT_PATH", default=str(_afip_keys_dir / "certificado.crt")),
+    "KEY_PATH": env.str("AFIP_KEY_PATH", default=str(_afip_keys_dir / "clave.key")),
+}
+
+# URLs por ambiente. Se resuelven en la capa de servicio según AFIP["ENV"].
+AFIP_URLS = {
+    "homologacion": {
+        "wsaa": "https://wsaahomo.afip.gov.ar/ws/services/LoginCms",
+        "wsfev1": "https://wswhomo.afip.gov.ar/wsfev1/service.asmx",
+    },
+    "produccion": {
+        "wsaa": "https://wsaa.afip.gov.ar/ws/services/LoginCms",
+        "wsfev1": "https://servicios1.afip.gov.ar/wsfev1/service.asmx",
+    },
+}
