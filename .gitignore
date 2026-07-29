@@ -179,3 +179,8 @@ inicio_old.html
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
+
+# Facturacion ARCA: certificados y claves privadas -- NUNCA commitear
+keys/**/*.key
+keys/**/*.crt
+keys/**/*.pem
