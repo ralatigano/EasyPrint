@@ -86,7 +86,7 @@
         <img id="profile-img" src="{{ img }}" alt="Perfil" class="rounded-circle" width="40" height="40">
       {% else %}
         <span class="rounded-circle bg-secondary d-flex align-items-center justify-content-center text-white fw-bold"
-          style="width:40px; height:40px;">{{ usuario|first|upper }}</span>
+          style="width:40px; height:40px;">{{ usuario|default_if_none:''|first|upper }}</span>
       {% endif %}
     </button>
     <ul class="dropdown-menu dropdown-menu-end">
