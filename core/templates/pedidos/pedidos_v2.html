@@ -346,10 +346,12 @@
 <!--------------------------------------------------------------------------- Block modal --------------------------------------------------------------------------->
 {% block modal %}
     {% include 'pedidos/partials/modales.html' %}
+    {% include 'facturacion/partials/modal_facturar.html' %}
 {% endblock %}
 <!--------------------------------------------------------------------------- Block footer --------------------------------------------------------------------------->
 {% block footer %}{% endblock %}
 <!--------------------------------------------------------------------------- Block scripts --------------------------------------------------------------------------->
 {% block scripts %}
 <script src="{% static 'pedidos/js/Pedidos_v2.js' %}"></script>
+<script src="{% static 'facturacion/js/Facturacion.js' %}"></script>
 {% endblock %}

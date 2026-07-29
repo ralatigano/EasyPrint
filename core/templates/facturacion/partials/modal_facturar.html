@@ -1,0 +1,112 @@
+<!-- Modal Facturar pedido -->
+<div class="modal fade" id="facturarModal" tabindex="-1" aria-labelledby="facturarModalLabel"
+     data-bs-backdrop="static" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="facturarModalLabel">Facturar pedido</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+
+      <div class="modal-body">
+        <input type="hidden" id="facturarPedidoNumero">
+
+        <!-- Aviso de ambiente (homologación = prueba, sin efecto fiscal) -->
+        <div id="facturarAmbienteAviso" class="alert py-2 px-3 mb-3" style="font-size:13px;"></div>
+
+        <!-- Comprobantes ya emitidos para este pedido -->
+        <div id="facturarPreviosWrap" class="mb-3 d-none">
+          <label class="form-label mb-1" style="font-weight:600;">Comprobantes ya emitidos</label>
+          <ul id="facturarPrevios" class="list-unstyled mb-0" style="font-size:13px;"></ul>
+        </div>
+
+        <!-- Tipo de comprobante -->
+        <div class="mb-3">
+          <label for="facturarTipo" class="form-label" style="font-weight:600;">Tipo de comprobante</label>
+          <select id="facturarTipo" class="form-select">
+            <option value="11" selected>Factura C</option>
+            <option value="13">Nota de Crédito C</option>
+            <option value="12">Nota de Débito C</option>
+          </select>
+        </div>
+
+        <!-- Comprobante asociado (sólo para NC/ND) -->
+        <div class="mb-3 d-none" id="facturarAsociadoWrap">
+          <label for="facturarAsociado" class="form-label" style="font-weight:600;">Factura asociada</label>
+          <select id="facturarAsociado" class="form-select"></select>
+          <div class="form-text">La nota referencia una factura ya autorizada de este pedido.</div>
+        </div>
+
+        <!-- Receptor -->
+        <div class="mb-3">
+          <label class="form-label" style="font-weight:600;">Receptor</label>
+          <div class="form-check">
+            <input class="form-check-input" type="radio" name="facturarReceptor"
+                   id="recConsumidorFinal" value="consumidor_final" checked>
+            <label class="form-check-label" for="recConsumidorFinal">Consumidor final</label>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="radio" name="facturarReceptor"
+                   id="recIdentificado" value="identificado">
+            <label class="form-check-label" for="recIdentificado">Cliente identificado</label>
+          </div>
+        </div>
+
+        <!-- Datos del receptor identificado -->
+        <div class="d-none" id="facturarIdentificadoWrap">
+          <div class="row g-2 mb-3">
+            <div class="col-5">
+              <label for="facturarDocTipo" class="form-label" style="font-size:13px;">Tipo doc.</label>
+              <select id="facturarDocTipo" class="form-select">
+                <option value="80">CUIT</option>
+                <option value="86">CUIL</option>
+                <option value="96">DNI</option>
+              </select>
+            </div>
+            <div class="col-7">
+              <label for="facturarDocNro" class="form-label" style="font-size:13px;">Número</label>
+              <input type="text" id="facturarDocNro" class="form-control" inputmode="numeric"
+                     placeholder="Sin guiones">
+            </div>
+          </div>
+          <div class="mb-3">
+            <label for="facturarCondIva" class="form-label" style="font-size:13px;">Condición frente al IVA</label>
+            <select id="facturarCondIva" class="form-select">
+              <option value="5">Consumidor Final</option>
+              <option value="1">IVA Responsable Inscripto</option>
+              <option value="6">Responsable Monotributo</option>
+              <option value="4">IVA Sujeto Exento</option>
+              <option value="13">Monotributista Social</option>
+              <option value="7">Sujeto No Categorizado</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Monto (precargado con el total del pedido, editable con checkbox) -->
+        <div class="mb-3">
+          <label for="facturarMonto" class="form-label" style="font-weight:600;">Monto a facturar</label>
+          <div class="input-group">
+            <span class="input-group-text">$</span>
+            <input type="text" id="facturarMonto" class="form-control" readonly>
+          </div>
+          <div class="form-check mt-2">
+            <input class="form-check-input" type="checkbox" id="facturarEditarMonto">
+            <label class="form-check-label" for="facturarEditarMonto" style="font-size:13px;">
+              Editar monto (por defecto usa el total del pedido)
+            </label>
+          </div>
+        </div>
+
+        <!-- Resultado de la emisión -->
+        <div id="facturarResultado" class="d-none"></div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-success" id="btnEmitirFactura">
+          <i class="fa-solid fa-file-invoice-dollar"></i> Emitir
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

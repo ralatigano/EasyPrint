@@ -132,6 +132,11 @@ function buildDetailHtml(tr) {
                             data-bs-whatever="${escAttr(d.clienteId)}|${escAttr(d.clienteRef)}|${escAttr(d.numero)}|${escAttr(d.presupuesto)}">
                         <i class="fa-solid fa-user"></i> Cambiar cliente
                     </button>
+                    <button type="button" class="btn btn-success btn-xs" ${dis}
+                            data-bs-toggle="modal" data-bs-target="#facturarModal"
+                            data-bs-whatever="${escAttr(d.numero)}|${escAttr(d.total)}">
+                        <i class="fa-solid fa-file-invoice-dollar"></i> Facturar
+                    </button>
                     ${deleteBtn}
                 </div>
             </div>
