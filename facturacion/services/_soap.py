@@ -1,7 +1,28 @@
 """Helpers mínimos de SOAP sobre urllib (sin dependencias externas)."""
+import ssl
 import urllib.error
 import urllib.request
 import xml.etree.ElementTree as ET
+
+
+def _arca_ssl_context():
+    """Contexto SSL tolerante para los web services de ARCA.
+
+    Los servidores de ARCA (AFIP) negocian con parámetros Diffie-Hellman chicos
+    que OpenSSL 3 (ej. Ubuntu 24.04) rechaza por defecto con
+    `DH_KEY_TOO_SMALL`. Bajamos el nivel de seguridad a SECLEVEL=1 SÓLO para
+    estas conexiones (post_soap se usa exclusivamente contra ARCA), manteniendo
+    la validación de certificado del servidor.
+    """
+    ctx = ssl.create_default_context()
+    try:
+        ctx.set_ciphers("DEFAULT@SECLEVEL=1")
+    except ssl.SSLError:
+        pass
+    return ctx
+
+
+_SSL_CONTEXT = _arca_ssl_context()
 
 
 def localname(tag):
@@ -38,7 +59,7 @@ def post_soap(url, body, soap_action=""):
         },
     )
     try:
-        with urllib.request.urlopen(req, timeout=30) as resp:
+        with urllib.request.urlopen(req, timeout=30, context=_SSL_CONTEXT) as resp:
             return ET.fromstring(resp.read())
     except urllib.error.HTTPError as e:
         return ET.fromstring(e.read())
