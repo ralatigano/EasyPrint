@@ -44,6 +44,7 @@ editarClienteModal.addEventListener('show.bs.modal', event => {
   const telefono = partes[4];
   const direccion = partes[5];
   const met_contacto = partes[6];
+  const condicion_iva = partes[7];
 
   const modalTitle = editarClienteModal.querySelector('.modal-title');
   modalTitle.textContent = `Editar Cliente: ${nombre}`;
@@ -68,6 +69,7 @@ editarClienteModal.addEventListener('show.bs.modal', event => {
   setCampo("direccion", direccion, "Sin dato");
 
   $("#met_contacto").val(met_contacto);
+  $("#condicion_iva").val(condicion_iva || "");
 
   var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
   var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {

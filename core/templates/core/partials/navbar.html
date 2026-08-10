@@ -48,6 +48,9 @@
       <li class="nav-item">
         <a class="nav-link {% if '/clientes' in request.path %}nav-active{% endif %}" href="/clientes" id="nav_item_clientes">Clientes</a>
       </li>
+      <li class="nav-item">
+        <a class="nav-link {% if '/facturacion/comprobantes' in request.path %}nav-active{% endif %}" href="/facturacion/comprobantes" id="nav_item_comprobantes">Comprobantes</a>
+      </li>
       {% if es_gerencia %}
         <li class="nav-item">
           <a class="nav-link {% if '/usuarios' in request.path %}nav-active{% endif %}" href="/usuarios" id="nav_item_usuarios">Usuaries</a>

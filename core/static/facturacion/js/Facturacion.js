@@ -48,9 +48,12 @@
         const ul = el('facturarPrevios');
         const cs = (contexto && contexto.comprobantes) || [];
         if (!cs.length) { wrap.classList.add('d-none'); return; }
-        ul.innerHTML = cs.map(c =>
-            `<li>${c.tipo_label} <strong>${c.numero}</strong> — ${c.estado_label} — $ ${c.importe}</li>`
-        ).join('');
+        ul.innerHTML = cs.map(c => {
+            const pdf = (c.estado === 'autorizado')
+                ? ` — <a href="/facturacion/comprobante/${c.id}/pdf" target="_blank" rel="noopener">PDF</a>`
+                : '';
+            return `<li>${c.tipo_label} <strong>${c.numero}</strong> — ${c.estado_label} — $ ${c.importe}${pdf}</li>`;
+        }).join('');
         wrap.classList.remove('d-none');
     }
 
@@ -76,9 +79,15 @@
     function toggleReceptor() {
         const identificado = el('recIdentificado').checked;
         el('facturarIdentificadoWrap').classList.toggle('d-none', !identificado);
-        if (identificado && contexto && contexto.cliente.cuit && !el('facturarDocNro').value) {
-            el('facturarDocTipo').value = '80';
-            el('facturarDocNro').value = contexto.cliente.cuit;
+        if (identificado && contexto && contexto.cliente) {
+            // Precarga doc y condición IVA desde los datos del cliente en la base.
+            if (contexto.cliente.cuit && !el('facturarDocNro').value) {
+                el('facturarDocTipo').value = '80';
+                el('facturarDocNro').value = contexto.cliente.cuit;
+            }
+            if (contexto.cliente.condicion_iva) {
+                el('facturarCondIva').value = contexto.cliente.condicion_iva;
+            }
         }
     }
 
@@ -97,7 +106,10 @@
             box.innerHTML =
                 `<strong>✅ Comprobante autorizado</strong><br>` +
                 `N°: <strong>${payload.numero}</strong><br>` +
-                `CAE: ${payload.cae} (vence ${payload.cae_vto})`;
+                `CAE: ${payload.cae} (vence ${payload.cae_vto})<br>` +
+                `<a class="btn btn-sm btn-outline-success mt-2" target="_blank" rel="noopener" ` +
+                `href="/facturacion/comprobante/${payload.comprobante_id}/pdf">` +
+                `<i class="fa-solid fa-file-pdf"></i> Descargar PDF</a>`;
             el('btnEmitirFactura').classList.add('d-none');
         } else {
             box.className = 'alert alert-danger';

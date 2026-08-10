@@ -1,0 +1,102 @@
+{% extends 'core/base.html' %}
+{% load static %}
+<!------------------------------------------------- head ------------------------------------------------->
+{% block title %}Comprobantes{% endblock %}
+<!------------------------------------------------- header ------------------------------------------------->
+{% block header %}
+<div class="titulo">
+    <h1>Comprobantes</h1>
+</div>
+{% endblock %}
+<!------------------------------------------------- content ------------------------------------------------->
+{% block content %}
+<div class="row">
+    <div class="container">
+
+        {% if ambiente != 'produccion' %}
+        <div class="alert alert-warning py-2 px-3" style="font-size:13px;">
+            <strong>HOMOLOGACIÓN</strong> — los comprobantes listados son de prueba, sin validez fiscal.
+        </div>
+        {% endif %}
+
+        <div class="col-sm-12 col-md-12 col-lg-12 col-xl-12">
+            <div class="tabla-scroll">
+                <table id="Comprobantes" class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th class="centered">Fecha</th>
+                            <th class="centered">Tipo</th>
+                            <th class="centered">Número</th>
+                            <th class="centered">Pedido</th>
+                            <th class="centered">Cliente</th>
+                            <th class="centered">Receptor</th>
+                            <th class="centered">Importe</th>
+                            <th class="centered">Estado</th>
+                            <th class="centered">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for c in comprobantes %}
+                        <tr>
+                            <td data-order="{{ c.fecha_emision|date:'Y-m-d'|default:'' }}">
+                                {{ c.fecha_emision|date:'d/m/Y'|default:'—' }}
+                            </td>
+                            <td>{{ c.get_tipo_cbte_display }}</td>
+                            <td>{{ c.numero_formateado }}</td>
+                            <td>{% localize off %}{{ c.pedido_id }}{% endlocalize %}</td>
+                            <td>{{ c.pedido.cliente.referencia|default:'—' }}</td>
+                            <td>{{ c.receptor_nombre|default:'Consumidor Final' }}</td>
+                            <td class="centered" data-order="{{ c.importe_total }}">
+                                $ {{ c.importe_fmt }}
+                            </td>
+                            <td class="centered">
+                                {% if c.estado == 'autorizado' %}
+                                    <span class="badge bg-success">Autorizado</span>
+                                {% elif c.estado == 'error' %}
+                                    <span class="badge bg-danger">Error</span>
+                                {% elif c.estado == 'anulado' %}
+                                    <span class="badge bg-secondary">Anulado</span>
+                                {% else %}
+                                    <span class="badge bg-warning text-dark">Borrador</span>
+                                {% endif %}
+                            </td>
+                            <td class="centered">
+                                {% if c.estado == 'autorizado' %}
+                                <a href="/facturacion/comprobante/{{ c.id }}/pdf" target="_blank"
+                                   rel="noopener" class="btn btn-dark btn-xs" title="Descargar PDF">
+                                    <i class="fa-solid fa-file-pdf"></i> PDF
+                                </a>
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+<!------------------------------------------------- scripts ------------------------------------------------->
+{% block scripts %}
+<script>
+    $(document).ready(function () {
+        $("#Comprobantes").DataTable({
+            order: [[0, 'desc']],
+            language: {
+                lengthMenu: 'Mostrar _MENU_ comprobantes por página',
+                zeroRecords: 'No hay comprobantes',
+                info: 'Mostrando de _START_ a _END_ de _TOTAL_ comprobantes',
+                infoEmpty: 'No hay comprobantes emitidos',
+                infoFiltered: '(filtrado de _MAX_ comprobantes)',
+                search: 'Buscar:',
+                paginate: { first: 'Primero', last: 'Último', next: 'Siguiente', previous: 'Anterior' }
+            }
+        });
+        const nav = document.getElementById("nav_item_comprobantes");
+        if (nav) nav.style.fontWeight = "bold";
+    });
+</script>
+{% endblock %}

@@ -26,6 +26,7 @@ def clientes(request):
         'img': img,
         'clientes': clientes,
         'Categorias': Cliente.CONTACTO,
+        'CondicionesIva': Cliente.CONDICIONES_IVA,
     }
 
     return render(request, 'clientes/clientes.html', data)
@@ -49,6 +50,9 @@ def editar_cliente(request):
                 cliente.telefono = request.POST['telefono']
             if cliente.direccion != request.POST['direccion']:
                 cliente.direccion = request.POST['direccion']
+            # Condición frente al IVA (puede venir vacío = sin especificar).
+            cond = request.POST.get('condicion_iva', '').strip()
+            cliente.condicion_iva = int(cond) if cond else None
 
             cliente.save()
             messages.success(request, 'Cliente actualizado exitosamente')

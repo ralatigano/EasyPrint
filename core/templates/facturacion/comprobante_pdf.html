@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <style>
+    @page { size: A4; margin: 1.2cm; }
+    * { box-sizing: border-box; }
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 11px;
+      color: #111;
+      margin: 0;
+    }
+    .marco { border: 1px solid #000; }
+
+    /* Encabezado con recuadro de letra al medio */
+    .cabecera { display: table; width: 100%; table-layout: fixed; }
+    .cab-col { display: table-cell; width: 46%; vertical-align: top; padding: 12px 16px; }
+    .cab-letra { display: table-cell; width: 8%; vertical-align: top; text-align: center;
+                 border-left: 1px solid #000; border-right: 1px solid #000; position: relative; }
+    .letra-box { font-size: 46px; font-weight: bold; line-height: 1; padding-top: 4px; }
+    .letra-cod { font-size: 9px; margin-top: 0; letter-spacing: .5px; }
+
+    /* Logo: isotipo (grulla) centrado ARRIBA del logotipo (palabra EASYPRINT). */
+    .logo-lockup { display: inline-block; text-align: center; margin-bottom: 14px; }
+    .logo-lockup .isotipo { height: 52px; display: block; margin: 0 auto 5px; }
+    .logo-lockup .logotipo { height: 30px; display: block; }
+    .emisor-nombre { font-size: 22px; font-weight: bold; margin-bottom: 10px; }
+
+    /* Emisor (izquierda): datos fiscales chicos para dar protagonismo al logo. */
+    .emisor .campo { font-size: 9.5px; margin: 1px 0; }
+    .emisor .campo b { min-width: 96px; }
+
+    /* Comprobante (derecha): más aireado, tipo la factura estándar. */
+    .doc-titulo { font-size: 30px; font-weight: bold; letter-spacing: 1px; margin-bottom: 10px; }
+    .comprobante .campo { font-size: 11px; margin: 4px 0; }
+    .comprobante .campo b { display: inline-block; }
+    .comprobante .campo .val { font-weight: bold; }
+    .comprobante hr { border: none; border-top: 1px solid #000; margin: 10px 0; }
+
+    .campo { margin: 2px 0; }
+    .campo b { display: inline-block; min-width: 130px; }
+
+    .sep { border-top: 1px solid #000; }
+
+    /* Datos del receptor */
+    .receptor { padding: 8px 14px; }
+
+    /* Tabla de ítems */
+    table.items { width: 100%; border-collapse: collapse; margin: 0; }
+    table.items th, table.items td { border: 1px solid #999; padding: 5px 6px; }
+    table.items th { background: #eee; font-size: 10px; text-align: left; }
+    td.num { text-align: right; white-space: nowrap; }
+
+    .totales { text-align: right; padding: 8px 14px; }
+    .totales .total-final { font-size: 15px; font-weight: bold; }
+
+    /* Pie: CAE + QR */
+    .pie { display: table; width: 100%; padding: 10px 14px; }
+    .pie-qr { display: table-cell; width: 120px; vertical-align: top; }
+    .pie-qr img { width: 110px; height: 110px; }
+    .pie-cae { display: table-cell; vertical-align: bottom; text-align: right; }
+    .pie-cae .cae-num { font-size: 15px; font-weight: bold; }
+
+    .aviso-homo {
+      background: #fff3cd; border: 1px solid #ffc107; color: #664d03;
+      padding: 6px 10px; margin-bottom: 8px; font-size: 11px; text-align: center;
+      font-weight: bold;
+    }
+    .leyenda { font-size: 9px; color: #444; padding: 0 14px 8px; }
+  </style>
+</head>
+<body>
+
+  {% if es_homologacion %}
+  <div class="aviso-homo">
+    COMPROBANTE EMITIDO EN AMBIENTE DE HOMOLOGACIÓN — SIN VALIDEZ FISCAL (PRUEBA)
+  </div>
+  {% endif %}
+
+  <div class="marco">
+
+    <!-- Cabecera -->
+    <div class="cabecera">
+      <div class="cab-col emisor">
+        {% if logo_isotipo or logo_texto %}
+        <div class="logo-lockup">
+          {% if logo_isotipo %}<img class="isotipo" src="{{ logo_isotipo }}" alt="">{% endif %}
+          {% if logo_texto %}<img class="logotipo" src="{{ logo_texto }}" alt="EasyPrint">{% endif %}
+        </div>
+        {% else %}
+        <div class="emisor-nombre">{{ emisor.NOMBRE_FANTASIA }}</div>
+        {% endif %}
+        <div class="campo"><b>Razón Social:</b> {{ emisor.RAZON_SOCIAL }}</div>
+        <div class="campo"><b>Domicilio:</b> {{ emisor.DOMICILIO }}</div>
+        <div class="campo"><b>Condición IVA:</b> {{ emisor.CONDICION_IVA }}</div>
+      </div>
+
+      <div class="cab-letra">
+        <div class="letra-box">{{ letra }}</div>
+        <div class="letra-cod">COD. {{ codigo_cbte }}</div>
+      </div>
+
+      <div class="cab-col comprobante">
+        <div class="doc-titulo">FACTURA</div>
+        <div class="campo">
+          <b>Punto de Venta:</b> <span class="val">{{ pv_fmt }}</span>
+          &nbsp;&nbsp;&nbsp;<b>Comp. Nro:</b> <span class="val">{{ nro_fmt }}</span>
+        </div>
+        <div class="campo"><b>Fecha de Emisión:</b> <span class="val">{{ c.fecha_emision|date:"d/m/Y" }}</span></div>
+        <hr>
+        <div class="campo"><b>CUIT:</b> <span class="val">{{ cuit_emisor }}</span></div>
+        <div class="campo"><b>Ingresos Brutos:</b> <span class="val">{{ emisor.INGRESOS_BRUTOS }}</span></div>
+        <div class="campo"><b>Fecha de Inicio de Actividades:</b> <span class="val">{{ emisor.INICIO_ACTIVIDADES }}</span></div>
+      </div>
+    </div>
+
+    <div class="sep"></div>
+
+    <!-- Receptor -->
+    <div class="receptor">
+      {% if es_consumidor_final %}
+        <div class="campo"><b>Receptor:</b> Consumidor Final</div>
+        <div class="campo"><b>Condición IVA:</b> Consumidor Final</div>
+      {% else %}
+        <div class="campo"><b>Receptor:</b> {{ c.receptor_nombre|default:"—" }}</div>
+        <div class="campo"><b>{{ c.get_doc_tipo_display }}:</b> {{ doc_receptor_fmt }}</div>
+        <div class="campo"><b>Condición IVA:</b> {{ cond_iva_receptor_label }}</div>
+      {% endif %}
+      <div class="campo"><b>Condición de venta:</b> Contado</div>
+    </div>
+
+    <div class="sep"></div>
+
+    <!-- Detalle -->
+    <table class="items">
+      <thead>
+        <tr>
+          <th style="width:55%;">Descripción</th>
+          <th style="width:10%;">Cant.</th>
+          <th style="width:17%;">P. Unitario</th>
+          <th style="width:18%;">Subtotal</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in items %}
+        <tr>
+          <td>{{ item.descripcion }}</td>
+          <td class="num">{{ item.cantidad }}</td>
+          <td class="num">$ {{ item.unitario_fmt }}</td>
+          <td class="num">$ {{ item.subtotal_fmt }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <!-- Totales -->
+    <div class="totales">
+      <div class="total-final">Importe Total: $ {{ importe_fmt }}</div>
+    </div>
+
+    <div class="sep"></div>
+
+    <!-- Pie: QR + CAE -->
+    <div class="pie">
+      <div class="pie-qr">
+        <img src="{{ qr }}" alt="QR AFIP">
+      </div>
+      <div class="pie-cae">
+        <div>CAE N°:</div>
+        <div class="cae-num">{{ c.cae }}</div>
+        <div>Fecha de Vto. de CAE: {{ c.cae_vencimiento|date:"d/m/Y" }}</div>
+      </div>
+    </div>
+
+    <div class="leyenda">
+      Comprobante Autorizado por ARCA (ex-AFIP).
+      {% if es_homologacion %} Ambiente de HOMOLOGACIÓN: este comprobante no tiene validez fiscal.{% endif %}
+    </div>
+
+  </div>
+</body>
+</html>

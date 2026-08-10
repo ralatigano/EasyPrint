@@ -297,3 +297,17 @@ Versión v3.3.4
         *Se corrige un error por el cual, al editar un insumo desde la aplicación (no por Excel) y guardar, el precio se borraba y quedaba en 0. El problema estaba en la conversión del importe con formato argentino ($ 1.234,56); ahora se interpreta correctamente.
         *El stock real (unidades de uso, ej: hojas) se muestra como número entero en la tabla y en el formulario de edición, evitando decimales sin sentido como "102,27 hojas" que se arrastraban de cargas anteriores.
         *Se corrige la superposición entre la aclaración del campo de stock y la etiqueta "Precio" en el formulario de edición de insumo, para que quede alineada como el resto de los campos.
+
+****************** 10/8/2026 ******************
+Versión v3.4.0
+
+    -Facturación electrónica ARCA (nuevo)
+        *Se incorpora la facturación electrónica contra ARCA (ex-AFIP). Desde cada pedido, en el panel de detalle, un botón "Facturar" permite emitir una Factura C (o Nota de Crédito/Débito) y obtener el CAE en el momento.
+        *En el modal de facturación se elige el receptor (Consumidor Final o cliente identificado), el tipo de comprobante y el monto (por defecto el total del pedido, editable). Cuando el receptor es un cliente identificado, sus datos fiscales (CUIT y condición frente al IVA) se traen automáticamente de la base.
+        *Cada comprobante autorizado se puede descargar en PDF, con el diseño estándar de una factura argentina: logo, datos del emisor, receptor, detalle de ítems, CAE y código QR de ARCA.
+        *El detalle de la factura toma los productos reales del presupuesto (cantidad y precio unitario) cuando el pedido proviene de uno y los montos coinciden; en caso contrario usa una única línea con el importe total.
+        *Se agrega una nueva sección "Comprobantes" en el menú para consultar todas las facturas emitidas, con buscador y descarga del PDF para reimpresión.
+        *La facturación opera contra un ambiente configurable (homologación para pruebas, sin validez fiscal / producción), independiente del resto de la aplicación.
+
+    -Clientes
+        *Se agrega el campo "Condición frente al IVA" a la ficha del cliente, editable desde el modal de edición, para usarlo en la facturación.

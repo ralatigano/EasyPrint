@@ -206,6 +206,19 @@ AFIP = {
     "KEY_PATH": env.str("AFIP_KEY_PATH", default=str(_afip_keys_dir / "clave.key")),
 }
 
+# Datos fiscales del EMISOR para el PDF del comprobante. No vienen de la DB (son
+# fijos del contribuyente) y son obligatorios legalmente en la factura, así que se
+# configuran por .env. Los defaults son PLACEHOLDERS: completá los reales en el
+# .env de cada entorno ANTES de emitir en producción.
+AFIP_EMISOR = {
+    "RAZON_SOCIAL": env.str("AFIP_RAZON_SOCIAL", default="Abraham Risso Fernanda Yamila"),
+    "NOMBRE_FANTASIA": env.str("AFIP_NOMBRE_FANTASIA", default="EasyPrint"),
+    "DOMICILIO": env.str("AFIP_DOMICILIO", default="(completar domicilio comercial)"),
+    "CONDICION_IVA": env.str("AFIP_CONDICION_IVA", default="Responsable Monotributo"),
+    "INGRESOS_BRUTOS": env.str("AFIP_INGRESOS_BRUTOS", default="(completar)"),
+    "INICIO_ACTIVIDADES": env.str("AFIP_INICIO_ACTIVIDADES", default="(completar)"),
+}
+
 # URLs por ambiente. Se resuelven en la capa de servicio según AFIP["ENV"].
 AFIP_URLS = {
     "homologacion": {

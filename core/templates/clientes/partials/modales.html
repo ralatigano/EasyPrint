@@ -17,6 +17,14 @@
                     <label for="cuit" style="font-weight: bold">CUIT:</label>
                     <input id="cuit" name="cuit">
 
+                    <label for="condicion_iva" style="font-weight: bold">Condición frente al IVA:</label>
+                    <select name="condicion_iva" id="condicion_iva" class="form-control select">
+                        <option value="">Sin especificar</option>
+                        {% for valor, etiqueta in CondicionesIva %}
+                            <option value="{{ valor }}">{{ etiqueta }}</option>
+                        {% endfor %}
+                    </select>
+
                     <label for="negocio" style="font-weight: bold">Negocio:</label>
                     <input type="text" id="negocio" name="negocio" required> 
                     <label for="met_contacto" style="font-weight: bold">Método de contacto:</label>

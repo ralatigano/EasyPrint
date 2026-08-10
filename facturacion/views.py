@@ -1,15 +1,15 @@
 import json
 
 from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse
-from django.shortcuts import get_object_or_404
+from django.http import HttpResponse, JsonResponse
+from django.shortcuts import get_object_or_404, render
 from django.views.decorators.http import require_POST
 
 from core.utils import parse_ar
 from pedidos.models import Pedido
 
 from .models import Comprobante
-from .services import config, emision
+from .services import config, emision, pdf
 from .services.wsaa import WSAAError
 from .services.wsfev1 import WSFEError
 
@@ -46,6 +46,7 @@ def contexto_facturacion(request, pedido_numero):
             "cliente": {
                 "nombre": cliente.referencia if cliente else "",
                 "cuit": cliente.cuit if cliente and cliente.cuit else "",
+                "condicion_iva": cliente.condicion_iva if cliente else None,
             },
             "comprobantes": comprobantes,
             "ambiente": config.ambiente_actual(),
@@ -141,3 +142,40 @@ def emitir_comprobante(request):
         },
         status=422,
     )
+
+
+@login_required
+def lista_comprobantes(request):
+    """Página global de comprobantes emitidos, con descarga de PDF."""
+    from core.utils import format_ar
+
+    comprobantes = list(
+        Comprobante.objects.select_related("pedido", "pedido__cliente").all()
+    )
+    for c in comprobantes:
+        c.importe_fmt = format_ar(c.importe_total)
+    data = {
+        "usuario": request.session.get("usuario_nombre"),
+        "autorizado": request.session.get("autorizado"),
+        "img": request.session.get("img"),
+        "comprobantes": comprobantes,
+        "ambiente": config.ambiente_actual(),
+        "Estado": Comprobante.Estado,
+    }
+    return render(request, "facturacion/comprobantes.html", data)
+
+
+@login_required
+def comprobante_pdf(request, comprobante_id):
+    """Descarga el PDF de un comprobante autorizado (con CAE y QR de ARCA)."""
+    comprobante = get_object_or_404(Comprobante, id=comprobante_id)
+    if comprobante.estado != Comprobante.Estado.AUTORIZADO or not comprobante.cae:
+        return JsonResponse(
+            {"ok": False, "error": "El comprobante no está autorizado."}, status=400
+        )
+
+    contenido = pdf.render_pdf(comprobante)
+    filename = f"comprobante_{comprobante.numero_formateado}.pdf"
+    response = HttpResponse(contenido, content_type="application/pdf")
+    response["Content-Disposition"] = f'inline; filename="{filename}"'
+    return response
