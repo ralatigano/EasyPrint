@@ -9,7 +9,7 @@ function colorSemaforo(pct) {
 function irAPedidosConFiltro(estados) {
     const filtro = { clientes: [], productos: [], estados: estados };
     sessionStorage.setItem('pedidos_filtros', JSON.stringify(filtro));
-    window.location.href = '/pedidos';
+    window.location.href = '/pedidos/v2';
 }
 
 function editarObjetivo(id, nombre, monto, desde, hasta) {
@@ -152,7 +152,7 @@ function inicializarDashboard() {
             e.preventDefault();
             sessionStorage.removeItem('pedidos_filtros');
             sessionStorage.setItem('pedidos_buscar', this.dataset.numero);
-            window.location.href = '/pedidos';
+            window.location.href = '/pedidos/v2';
         });
     });
 

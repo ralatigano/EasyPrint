@@ -10,7 +10,10 @@ from .views import (
 
 urlpatterns = [
     # Tabla pedidos
-    path('', pedidos, name='pedidos'),
+    # La tabla vieja (path '') quedó deshabilitada: la v2 ya está probada y en uso.
+    # Se comenta la ruta para evitar confusiones. La vista `pedidos` y su template
+    # `pedidos/pedidos.html` siguen existiendo por si hiciera falta reactivarla.
+    # path('', pedidos, name='pedidos'),
     path('v2', pedidos_v2, name='pedidos_v2'),
     # Vista para completar el pedido en función de un presupuesto.
     path('completarPedido', completar_pedido, name='completarPedido'),

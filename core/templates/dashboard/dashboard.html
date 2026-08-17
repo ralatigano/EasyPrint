@@ -250,7 +250,7 @@
                                 {% for p in proximos_pedidos %}
                                 <tr class="{% if p.fecha_entrega == hoy %}table-warning{% endif %}">
                                     <td>
-                                        <a href="/pedidos" class="fw-bold text-decoration-none pedido-link"
+                                        <a href="/pedidos/v2" class="fw-bold text-decoration-none pedido-link"
                                         data-numero="{% localize off %}{{ p.numero }}{% endlocalize %}">
                                             #{% localize off %}{{ p.numero }}{% endlocalize %}
                                         </a>

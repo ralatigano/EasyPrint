@@ -559,7 +559,7 @@ def guardar_presupuesto(request):
                 request, f'No se ha podido guardar el presupuesto. Error({e})')
             return redirect('/presupuestos/inicio')
     if confirma:
-        return redirect('/pedidos')
+        return redirect('/pedidos/v2')
 
     return redirect('/presupuestos')
 
