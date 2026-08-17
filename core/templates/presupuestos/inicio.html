@@ -3,6 +3,24 @@
 {% load l10n %}
 <!--------------------------------------------------------------------------- Block head --------------------------------------------------------------------------->
 {% block head %}
+<!-- Select2 (búsqueda en los selects de categoría/producto) -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
+<style>
+  /* Alinear el look de Select2 con los .form-select de Bootstrap */
+  .select2-container { width: 100% !important; }
+  .select2-container--default .select2-selection--single {
+    height: 38px;
+    display: flex;
+    align-items: center;
+    border-color: var(--bs-border-color);
+    border-radius: var(--bs-border-radius);
+  }
+  .select2-container--default .select2-selection--single .select2-selection__arrow { height: 36px; }
+  .select2-container--default .select2-selection--single .select2-selection__rendered {
+    line-height: normal;
+    padding-left: 12px;
+  }
+</style>
 {% endblock %}
 <!--------------------------------------------------------------------------- Block title --------------------------------------------------------------------------->
 {% block title %}Cotizador{% endblock %}
@@ -311,6 +329,8 @@
 {% endblock %}
 <!--------------------------------------------------------------------------- Block scripts --------------------------------------------------------------------------->
 {% block scripts %}
+<!-- Select2 debe cargarse antes de cotizacion.js (que lo inicializa) -->
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script src="{% static 'core/js/cotizacion.js' %}"></script>
 <script src="{% static 'core/js/editar_producto_cotizado.js' %}"></script>
 {% endblock %}

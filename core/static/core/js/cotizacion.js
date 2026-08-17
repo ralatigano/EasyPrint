@@ -33,8 +33,34 @@ let resolvedProductoNombre = null;
 
 document.addEventListener("DOMContentLoaded", () => {
     aplicarDefaultTipoCalculo();
+    inicializarSelect2();
     cargarCategoriasDesdeBackend();
 });
+
+/**
+ * Inicializa Select2 sobre los selects de categoría y producto para tener
+ * búsqueda dentro del input. Es defensivo: si Select2/jQuery no cargaron, los
+ * selects siguen funcionando como <select> normales.
+ *
+ * OJO con el encadenado: Select2 dispara el evento `change` vía jQuery, que NO
+ * alcanza a los listeners `addEventListener` nativos. Por eso los handlers de
+ * categoría/producto se registran con `$(...).on('change', ...)` (ver más abajo),
+ * y al repoblar opciones se refresca la UI con `.trigger('change.select2')`
+ * (namespaced, para NO re-disparar la lógica de esos handlers).
+ */
+function inicializarSelect2() {
+    if (!window.jQuery || !$.fn.select2) return;
+    $('#selectCategoria').select2({
+        width: '100%',
+        placeholder: 'Seleccione una categoría',
+        language: { noResults: () => 'Sin resultados' },
+    });
+    $('#selectProducto').select2({
+        width: '100%',
+        placeholder: 'Seleccione un producto',
+        language: { noResults: () => 'Sin resultados' },
+    });
+}
 
 /**
  * Guarda en localStorage el valor como "tipoCalculoDefault" para que
@@ -188,6 +214,9 @@ function cargarCategoriasDesdeBackend() {
           option.textContent = cat.nombre;
           select.appendChild(option);
         });
+
+      // Refrescar Select2 tras repoblar (sin re-disparar el handler de cambio).
+      if (window.jQuery && $.fn.select2) $('#selectCategoria').trigger('change.select2');
     })
     .catch(error => {
       console.error("Error en la carga de categorías:", error);
@@ -195,9 +224,11 @@ function cargarCategoriasDesdeBackend() {
 
 }
 
-document.getElementById("selectCategoria").addEventListener("change", e => {
+// Se usa $(...).on('change') (no addEventListener) para que el handler también
+// se dispare cuando la selección la hace Select2 (que emite el change vía jQuery).
+$("#selectCategoria").on("change", function () {
   resetearSiHayGrafico();
-  const categoriaId = e.target.value;
+  const categoriaId = this.value;
 
   // Limpiar select de productos
   const selectProducto = document.getElementById("selectProducto");
@@ -208,6 +239,7 @@ document.getElementById("selectCategoria").addEventListener("change", e => {
   placeholder.disabled = true;
   placeholder.selected = true;
   selectProducto.appendChild(placeholder);
+  if (window.jQuery && $.fn.select2) $('#selectProducto').trigger('change.select2');
 
   // Limpiar inputs de dimensiones
   document.getElementById("inputAnchoHoja").value = "";
@@ -235,13 +267,16 @@ function cargarProductosPorCategoria(categoriaId) {
         option.textContent = prod.nombre;
         select.appendChild(option);
       });
+
+      // Refrescar Select2 tras repoblar (sin re-disparar el handler de cambio).
+      if (window.jQuery && $.fn.select2) $('#selectProducto').trigger('change.select2');
     })
     .catch(err => console.error("Error al cargar productos:", err));
 }
 
-document.getElementById("selectProducto").addEventListener("change", e => {
+$("#selectProducto").on("change", function () {
   resetearSiHayGrafico();
-  const productoId = e.target.value;
+  const productoId = this.value;
 
   // Si el tipo D está seleccionado, no hacemos nada con dimensiones
   const tipoDSeleccionado = document.getElementById("tipoD")?.checked;
