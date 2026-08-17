@@ -113,7 +113,7 @@ function buildDetailHtml(tr) {
                 <div class="action-grid">
                     <button type="button" class="btn btn-dark btn-xs" ${dis}
                             data-bs-toggle="modal" data-bs-target="#cambiarEstadoModal"
-                            data-bs-whatever="${escAttr(d.numero)}">
+                            data-bs-whatever="${escAttr(d.numero)}|${escAttr(d.estado)}">
                         <i class="fa-solid fa-arrows-rotate"></i> Cambiar estado
                     </button>
                     <button type="button" class="btn btn-dark btn-xs" ${dis}
@@ -174,9 +174,30 @@ $(document).on('click', '#Pedidos tbody tr.main-row', function (e) {
 const cambiarEstadoModal = document.getElementById('cambiarEstadoModal');
 cambiarEstadoModal.addEventListener('show.bs.modal', event => {
     const button = event.relatedTarget;
-    const recipient = button.getAttribute('data-bs-whatever');
-    cambiarEstadoModal.querySelector('.modal-title-estado').textContent = `Nuevo estado para el pedido: ${recipient}`;
-    cambiarEstadoModal.querySelector('.modal-body input').value = recipient;
+    // data-bs-whatever = "numero|estadoActual" (el estado puede venir vacío).
+    const partes = (button.getAttribute('data-bs-whatever') || '').split('|');
+    const numero = partes[0];
+    const estadoActual = partes[1] || '';
+    cambiarEstadoModal.querySelector('.modal-title-estado').textContent = `Nuevo estado para el pedido: ${numero}`;
+    document.getElementById('cambiarPedido_estado').value = numero;
+
+    // Pre-seleccionar el pill del estado actual (y sincronizar el input oculto).
+    const hidden = document.getElementById('estado');
+    hidden.value = '';
+    cambiarEstadoModal.querySelectorAll('.estado-option').forEach(pill => {
+        const activo = pill.dataset.estado === estadoActual;
+        pill.classList.toggle('selected', activo);
+        if (activo) hidden.value = estadoActual;
+    });
+});
+
+// Selección de estado por pill.
+cambiarEstadoModal.querySelectorAll('.estado-option').forEach(pill => {
+    pill.addEventListener('click', function () {
+        document.getElementById('estado').value = this.dataset.estado;
+        cambiarEstadoModal.querySelectorAll('.estado-option')
+            .forEach(p => p.classList.toggle('selected', p === this));
+    });
 });
 
 const cambiarEncargadoModal = document.getElementById('cambiarEncargadoModal');
@@ -230,6 +251,11 @@ agregarSeniaModal.addEventListener('show.bs.modal', event => {
     const selectEstado = document.querySelector('#estado');
     if (formularioEstado && selectEstado) {
         formularioEstado.addEventListener('submit', function (e) {
+            if (!selectEstado.value) {
+                e.preventDefault();
+                alert('Elegí un estado para el pedido.');
+                return;
+            }
             if (selectEstado.value === 'Cancelado') {
                 const ok = confirm(
                     "⚠️ Atención: estás por cancelar este pedido.\n\nEsta acción es irreversible.\nSi luego necesitás reactivarlo, deberás crear uno nuevo.\n\n¿Deseás continuar?"
@@ -369,7 +395,9 @@ function restaurarFiltros() {
         clientes: clientes || [], productos: productos || [], estados: estados || [],
         soloConSaldo: !!soloConSaldo,
     };
-    dataTable.draw();
+    // draw(false): NO resetear la paginación, para conservar la página que
+    // restauró stateSave (importante al volver de editar un pedido).
+    dataTable.draw(false);
 }
 
 function limpiarFiltros() {

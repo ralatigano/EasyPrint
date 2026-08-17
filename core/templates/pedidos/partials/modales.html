@@ -108,13 +108,20 @@
                 </div>
                 <div class="modal-body">
                     <input type="text" id="cambiarPedido_estado" name="cambiarPedido_estado" readonly="true" hidden>
-                    <label for="estado" style="font-weight: bold">Seleccionar el nuevo estado:</label>
-                    <select name="estado" id="estado" class="form-control select">
-                        <option value="">Elegir un estado</option>
+                    <input type="hidden" name="estado" id="estado" value="">
+                    <label class="d-block mb-2" style="font-weight: bold">Seleccionar el nuevo estado:</label>
+                    <div class="estado-pills">
                         {% for estado in Estados %}
-                            <option value="{{ estado }}">{{ estado }}</option>
+                            <button type="button" data-estado="{{ estado }}"
+                                class="badge-estado estado-option
+                                {% if estado == 'No iniciado' %}badge-no-iniciado
+                                {% elif estado == 'En proceso' %}badge-en-proceso
+                                {% elif estado == 'Terminado (falta pago)' %}badge-terminado-pago
+                                {% elif estado == 'Terminado y pagado' %}badge-terminado-ok
+                                {% elif estado == 'Cancelado' %}badge-cancelado
+                                {% else %}badge-no-iniciado{% endif %}">{{ estado }}</button>
                         {% endfor %}
-                    </select>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-dark btn-fuente" data-bs-dismiss="modal">Cancelar</button>

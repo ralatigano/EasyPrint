@@ -8,11 +8,14 @@
 /* ── Filtros ─────────────────────────────────────────────────────────────────── */
 .filter-bar-v2 {
     display: flex;
-    align-items: flex-end;
+    align-items: flex-start;
     gap: 12px;
     flex-wrap: wrap;
     margin-bottom: 16px;
 }
+/* Reserva la altura de un label para que los controles cortos (checkbox de saldo,
+   botón limpiar) queden alineados con los selects, y su label con los demás. */
+.filter-bar-v2 .label-spacer { visibility: hidden; }
 .filter-bar-v2 > div:not(.check-all-wrap):not(.bulk-filter-actions) {
     min-width: 140px;
     max-width: 220px;
@@ -96,6 +99,24 @@
 .badge-terminado-pago { background: #fff3cd; color: #664d03; }
 .badge-terminado-ok   { background: #d1e7dd; color: #0a3622; }
 .badge-cancelado      { background: #f8d7da; color: #58151c; }
+
+/* ── Pills del modal de cambio de estado ─────────────────────────────────────── */
+.estado-pills { display: flex; flex-wrap: wrap; gap: 10px; }
+.estado-option {
+    border: 2px solid transparent;
+    padding: 7px 16px;
+    font-size: 13px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: filter .15s ease, box-shadow .15s ease, transform .05s ease;
+}
+.estado-option:hover { filter: brightness(0.92); }
+.estado-option:active { transform: scale(0.97); }
+.estado-option.selected {
+    border-color: currentColor;
+    box-shadow: 0 0 0 3px rgba(0,0,0,.10);
+    font-weight: 700;
+}
 
 /* ── Barra de acciones bulk ──────────────────────────────────────────────────── */
 #bulkActionBar {
@@ -190,7 +211,8 @@
         </div>
 
         <div>
-            <button id="limpiarFiltros" class="btn btn-outline-secondary" style="height:38px;">
+            <label class="form-label label-spacer">&nbsp;</label>
+            <button id="limpiarFiltros" class="btn btn-outline-secondary d-block" style="height:38px;">
                 <i class="fa-solid fa-xmark"></i> Limpiar filtros
             </button>
         </div>
@@ -296,7 +318,7 @@
                         <span class="estado-trigger"
                               data-bs-toggle="modal"
                               data-bs-target="#cambiarEstadoModal"
-                              data-bs-whatever="{% localize off %}{{ p.numero }}{% endlocalize %}"
+                              data-bs-whatever="{% localize off %}{{ p.numero }}{% endlocalize %}|{{ p.estado }}"
                               title="Click para cambiar estado">
                             {% if p.estado == 'No iniciado' %}
                                 <span class="badge-estado badge-no-iniciado">{{ p.estado }}</span>
