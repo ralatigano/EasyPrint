@@ -184,3 +184,6 @@ inicio_old.html
 keys/**/*.key
 keys/**/*.crt
 keys/**/*.pem
+
+# Instrucciones de conexión a la VM (contiene IP/infra) -- local, no commitear
+CONEXION_VM.txt

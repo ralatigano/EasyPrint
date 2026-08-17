@@ -161,9 +161,10 @@ Se lee con django-environ (`environ.Env.read_env()`). Claves relevantes:
 
 - **`main`** — producción. **`staging`** — pruebas. **`feature/facturacion`** —
   desarrollo de la facturación ARCA (rama activa al momento de escribir esto).
-- Despliegue de **respaldo** en VM Oracle (`easyprint1.duckdns.org`, 157.151.9.45),
-  temporal mientras el hosting principal (PythonAnywhere) está caído. Ver
-  [`../DEPLOY_ORACLE.md`](../DEPLOY_ORACLE.md).
+- Existe un despliegue de **respaldo** en una VM (temporal, mientras el hosting
+  principal está caído). Los datos de infraestructura (host, credenciales, pasos
+  de deploy) viven **fuera del repo**, en `DEPLOY_ORACLE.md` y `CONEXION_VM.txt`
+  (ambos no versionados).
 
 ---
 
