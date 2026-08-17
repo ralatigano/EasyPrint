@@ -8,6 +8,7 @@ urlpatterns = [
         views.contexto_facturacion,
         name="contexto_facturacion",
     ),
+    path("padron/<int:cuit>", views.consultar_padron, name="consultar_padron"),
     path("emitir", views.emitir_comprobante, name="emitir_comprobante"),
     path("comprobantes", views.lista_comprobantes, name="lista_comprobantes"),
     path(

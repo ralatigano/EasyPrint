@@ -24,6 +24,16 @@
             {% endfor %}
         </datalist>
     </div>
+    <div class="form-group cliente_cuit">
+        <label for="cliente_cuit" style="font-weight: bold">CUIT del cliente:</label>
+        <input type="text" id="cliente_cuit" name="cliente_cuit" class="form-control" placeholder="Sin guiones (ej: 20123456789)" value="{% localize off %}{{ cliente_cuit }}{% endlocalize %}" inputmode="numeric" maxlength="13">
+        <small class="text-muted">Opcional. Se guarda en el perfil del cliente y se usa para facturar.</small>
+    </div>
+    <div class="form-group cliente_telefono">
+        <label for="cliente_telefono" style="font-weight: bold">Teléfono del cliente:</label>
+        <input type="text" id="cliente_telefono" name="cliente_telefono" class="form-control" placeholder="Teléfono" value="{{ cliente_telefono }}" maxlength="13">
+        <small class="text-muted">Opcional. Actualiza el perfil del cliente.</small>
+    </div>
     <div class="form-group n_pedido">
         <label for="n_pedido" style="font-weight: bold">N° Pedido</label>
         <input type="text" id="n_pedido" name="n_pedido" class="form-control" value="{% localize off %}{{n_ped}} {% endlocalize %}" readonly>

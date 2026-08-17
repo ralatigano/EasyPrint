@@ -154,3 +154,77 @@ class ContextoFacturacionTests(TestCase):
         data = resp.json()
         self.assertEqual(data["cliente"]["condicion_iva"], 6)
         self.assertEqual(data["cliente"]["cuit"], 20111111112)
+
+    def test_contexto_devuelve_identidad_desglosada(self):
+        c = _comprobante_autorizado()
+        cliente = c.pedido.cliente
+        cliente.negocio = "Kiosco El Sol"
+        cliente.razon_social = "PEREZ JUAN"
+        cliente.save()
+
+        resp = self.client.get(
+            reverse("contexto_facturacion", args=[c.pedido.numero])
+        )
+        data = resp.json()["cliente"]
+        self.assertEqual(data["nombre"], "Cliente Test")
+        self.assertEqual(data["negocio"], "Kiosco El Sol")
+        self.assertEqual(data["razon_social"], "PEREZ JUAN")
+
+
+class RazonSocialTests(TestCase):
+    def test_nombre_facturacion_prefiere_razon_social(self):
+        cli = Cliente.objects.create(nombre="Juan", negocio="Kiosco")
+        self.assertEqual(cli.nombre_facturacion, "Juan | Kiosco")
+        cli.razon_social = "PEREZ JUAN CARLOS"
+        self.assertEqual(cli.nombre_facturacion, "PEREZ JUAN CARLOS")
+
+    def test_actualizar_cliente_desde_factura(self):
+        from .views import _actualizar_cliente_desde_factura
+
+        cli = Cliente.objects.create(nombre="Juan")
+        data = {"razon_social": "PEREZ JUAN", "negocio": "Kiosco", "nombre": ""}
+        _actualizar_cliente_desde_factura(cli, data, Comprobante.DocTipo.CUIT, 20111111112)
+        cli.refresh_from_db()
+        self.assertEqual(cli.razon_social, "PEREZ JUAN")
+        self.assertEqual(cli.negocio, "Kiosco")
+        self.assertEqual(cli.cuit, 20111111112)
+        self.assertEqual(cli.nombre, "Juan")  # vacío no pisa
+
+    def test_no_toca_consumidor_final(self):
+        from .views import _actualizar_cliente_desde_factura
+
+        cli = Cliente.objects.create(nombre="Consumidor final")
+        _actualizar_cliente_desde_factura(
+            cli, {"razon_social": "X"}, Comprobante.DocTipo.CUIT, 20111111112
+        )
+        cli.refresh_from_db()
+        self.assertEqual(cli.razon_social, "")
+        self.assertIsNone(cli.cuit)
+
+    def test_dni_no_guarda_cuit(self):
+        from .views import _actualizar_cliente_desde_factura
+
+        cli = Cliente.objects.create(nombre="Juan")
+        _actualizar_cliente_desde_factura(
+            cli, {}, Comprobante.DocTipo.DNI, 30111222
+        )
+        cli.refresh_from_db()
+        self.assertIsNone(cli.cuit)
+
+
+class PadronDefensivoTests(TestCase):
+    def test_consultar_cuit_invalido_ok_false_sin_red(self):
+        from .services import padron
+
+        r = padron.consultar("123")
+        self.assertFalse(r["ok"])
+        self.assertFalse(padron.consultar("")["ok"])
+
+    def test_endpoint_padron_cuit_corto_ok_false(self):
+        from django.contrib.auth.models import User
+
+        User.objects.create_user("tester", password="x")
+        self.client.login(username="tester", password="x")
+        resp = self.client.get(reverse("consultar_padron", args=[123]))
+        self.assertEqual(resp.status_code, 200)
+        self.assertFalse(resp.json()["ok"])

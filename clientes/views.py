@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from .models import Cliente
+from .functions import normalizar_cuit
 from django.contrib import messages
 from datetime import date
 from django.http import JsonResponse
@@ -40,8 +41,9 @@ def editar_cliente(request):
             cliente = Cliente.objects.get(id=request.POST['id'])
             if cliente.nombre != request.POST['nombre']:
                 cliente.nombre = request.POST['nombre']
-            if cliente.cuit != request.POST['cuit']:
-                cliente.cuit = request.POST['cuit']
+            cuit_norm = normalizar_cuit(request.POST.get('cuit'))
+            if cliente.cuit != cuit_norm:
+                cliente.cuit = cuit_norm
             if cliente.negocio != request.POST['negocio']:
                 cliente.negocio = request.POST['negocio']
             if cliente.metodo_contacto != int(request.POST['met_contacto']):

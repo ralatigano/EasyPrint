@@ -54,7 +54,7 @@
 
         <!-- Datos del receptor identificado -->
         <div class="d-none" id="facturarIdentificadoWrap">
-          <div class="row g-2 mb-3">
+          <div class="row g-2 mb-2">
             <div class="col-5">
               <label for="facturarDocTipo" class="form-label" style="font-size:13px;">Tipo doc.</label>
               <select id="facturarDocTipo" class="form-select">
@@ -65,8 +65,30 @@
             </div>
             <div class="col-7">
               <label for="facturarDocNro" class="form-label" style="font-size:13px;">Número</label>
-              <input type="text" id="facturarDocNro" class="form-control" inputmode="numeric"
-                     placeholder="Sin guiones">
+              <div class="input-group">
+                <input type="text" id="facturarDocNro" class="form-control" inputmode="numeric"
+                       placeholder="Sin guiones">
+                <button type="button" class="btn btn-outline-secondary btn-padron" id="btnTraerPadron"
+                        title="Traer razón social desde ARCA">
+                  <i class="fa-solid fa-cloud-arrow-down"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="mb-2" id="facturarPadronMsg" style="font-size:12px;"></div>
+          <div class="mb-2">
+            <label for="facturarRazonSocial" class="form-label" style="font-size:13px;">Razón social</label>
+            <input type="text" id="facturarRazonSocial" class="form-control"
+                   placeholder="Se autocompleta desde ARCA con el CUIT">
+          </div>
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label for="facturarNombre" class="form-label" style="font-size:13px;">Nombre</label>
+              <input type="text" id="facturarNombre" class="form-control">
+            </div>
+            <div class="col-6">
+              <label for="facturarNegocio" class="form-label" style="font-size:13px;">Negocio</label>
+              <input type="text" id="facturarNegocio" class="form-control">
             </div>
           </div>
           <div class="mb-3">

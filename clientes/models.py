@@ -19,7 +19,12 @@ class Cliente(models.Model):
     ]
     nombre = models.CharField(max_length=100)
     negocio = models.CharField(max_length=100, blank=True, null=True)
-    cuit = models.IntegerField(null=True, blank=True, default=None)
+    # Razón social oficial (según ARCA). Campo propio porque puede ser una persona
+    # física o jurídica; se prefiere como nombre del receptor al facturar.
+    razon_social = models.CharField(max_length=200, blank=True)
+    # BigIntegerField (no IntegerField): un CUIT de 11 dígitos supera int32 y
+    # desbordaría en Postgres. Se guarda como entero (11 dígitos, sin guiones).
+    cuit = models.BigIntegerField(null=True, blank=True, default=None)
     condicion_iva = models.IntegerField(
         choices=CONDICIONES_IVA, null=True, blank=True, default=None)
     telefono = models.CharField(max_length=13, blank=True)
@@ -37,6 +42,12 @@ class Cliente(models.Model):
         if self.negocio:
             return f"{self.nombre} | {self.negocio}"
         return self.nombre
+
+    @property
+    def nombre_facturacion(self):
+        """Nombre del receptor para el comprobante: razón social si existe,
+        si no la referencia (nombre | negocio)."""
+        return self.razon_social or self.referencia
 
     def __str__(self):
         return self.nombre

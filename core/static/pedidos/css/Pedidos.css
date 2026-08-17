@@ -85,3 +85,10 @@ select.form-select[multiple]::-webkit-scrollbar-thumb {
 select.form-select[multiple]::-webkit-scrollbar-thumb:hover {
     background-color: #868e96;
 }
+
+/* Botón "Traer de ARCA" del modal de facturación: mismo borde y radio que los
+   campos del form (btn-outline-secondary trae un borde gris más oscuro). */
+.input-group .btn-padron {
+    border-color: var(--bs-border-color);
+    border-radius: 0 var(--bs-border-radius) var(--bs-border-radius) 0;
+}

@@ -9,7 +9,7 @@ from clientes.models import Cliente
 from django.contrib.auth.models import User
 from django.contrib import messages
 from .functions import *
-from clientes.functions import parsear_cliente
+from clientes.functions import parsear_cliente, normalizar_cuit
 from django.http import JsonResponse, Http404, HttpResponse
 from datetime import datetime
 from django.utils import timezone
@@ -92,6 +92,8 @@ def completar_pedido(request):
         'np': np_global,
         'n_ped': n_ped,
         'cliente': cli,
+        'cliente_cuit': cliente_obj.cuit or '',
+        'cliente_telefono': cliente_obj.telefono or '',
         'prods': lista,
         'total': t,
         'descuento': d,
@@ -345,6 +347,22 @@ def confirmar_pedido(request):
     # Procesar cliente
     client_input = request.POST.get('cliente', '').strip()
     client_obj = parsear_cliente(client_input)
+
+    # Actualizar el perfil del cliente con los datos del form (sólo si vinieron
+    # cargados: un campo vacío no debe pisar un dato existente). No se toca el
+    # cliente genérico "Consumidor final", que es un registro compartido.
+    if client_obj.nombre != 'Consumidor final':
+        cuit_form = normalizar_cuit(request.POST.get('cliente_cuit'))
+        telefono_form = request.POST.get('cliente_telefono', '').strip()
+        campos_cliente = []
+        if cuit_form is not None and cuit_form != client_obj.cuit:
+            client_obj.cuit = cuit_form
+            campos_cliente.append('cuit')
+        if telefono_form and telefono_form != client_obj.telefono:
+            client_obj.telefono = telefono_form
+            campos_cliente.append('telefono')
+        if campos_cliente:
+            client_obj.save(update_fields=campos_cliente)
 
     try:
         # Crear el pedido

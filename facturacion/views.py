@@ -5,16 +5,46 @@ from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, render
 from django.views.decorators.http import require_POST
 
+from clientes.functions import normalizar_cuit
 from core.utils import parse_ar
 from pedidos.models import Pedido
 
 from .models import Comprobante
-from .services import config, emision, pdf
+from .services import config, emision, padron, pdf
 from .services.wsaa import WSAAError
 from .services.wsfev1 import WSFEError
 
 # Condición frente al IVA por defecto para consumidor final (código ARCA).
 COND_IVA_CONSUMIDOR_FINAL = 5
+
+
+def _actualizar_cliente_desde_factura(cliente, data, doc_tipo, doc_nro):
+    """Actualiza el perfil del cliente con los datos editados en el modal de
+    facturación. No pisa datos con vacíos ni toca el cliente "Consumidor final".
+    """
+    if not cliente or cliente.nombre == "Consumidor final":
+        return
+    campos = []
+    razon_social = (data.get("razon_social") or "").strip()
+    if razon_social and razon_social != cliente.razon_social:
+        cliente.razon_social = razon_social
+        campos.append("razon_social")
+    nombre = (data.get("nombre") or "").strip()
+    if nombre and nombre != cliente.nombre:
+        cliente.nombre = nombre
+        campos.append("nombre")
+    negocio = (data.get("negocio") or "").strip()
+    if negocio and negocio != (cliente.negocio or ""):
+        cliente.negocio = negocio
+        campos.append("negocio")
+    # Sólo se guarda el documento como CUIT del cliente si es de tipo CUIT (80).
+    if doc_tipo == Comprobante.DocTipo.CUIT:
+        cuit = normalizar_cuit(doc_nro)
+        if cuit is not None and cuit != cliente.cuit:
+            cliente.cuit = cuit
+            campos.append("cuit")
+    if campos:
+        cliente.save(update_fields=campos)
 
 
 @login_required
@@ -44,7 +74,11 @@ def contexto_facturacion(request, pedido_numero):
             "pedido": pedido_numero,
             "total": str(pedido.precio or 0),
             "cliente": {
-                "nombre": cliente.referencia if cliente else "",
+                "id": cliente.id if cliente else None,
+                "nombre": cliente.nombre if cliente else "",
+                "negocio": cliente.negocio if cliente and cliente.negocio else "",
+                "razon_social": cliente.razon_social if cliente else "",
+                "referencia": cliente.referencia if cliente else "",
                 "cuit": cliente.cuit if cliente and cliente.cuit else "",
                 "condicion_iva": cliente.condicion_iva if cliente else None,
             },
@@ -53,6 +87,16 @@ def contexto_facturacion(request, pedido_numero):
             "punto_venta": config.punto_venta(),
         }
     )
+
+
+@login_required
+def consultar_padron(request, cuit):
+    """Consulta la razón social de un CUIT en el padrón de ARCA (GET, JSON).
+
+    Devuelve {ok, razon_social, condicion_iva} o {ok:False, error}. Es best-effort:
+    ante cualquier fallo devuelve ok=False con el motivo, sin romper.
+    """
+    return JsonResponse(padron.consultar(cuit))
 
 
 @login_required
@@ -78,7 +122,15 @@ def emitir_comprobante(request):
                 {"ok": False, "error": "Faltan datos del receptor identificado."},
                 status=400,
             )
-        receptor_nombre = pedido.cliente.referencia if pedido.cliente else ""
+        # Persistir en el perfil del cliente los datos editados en el modal
+        # (razón social, nombre, negocio y CUIT), sin pisar el registro genérico
+        # "Consumidor final" ni sobrescribir con vacíos.
+        _actualizar_cliente_desde_factura(pedido.cliente, data, doc_tipo, doc_nro)
+        # Nombre del receptor: razón social si la hay, si no la referencia.
+        receptor_nombre = (
+            (data.get("razon_social") or "").strip()
+            or (pedido.cliente.nombre_facturacion if pedido.cliente else "")
+        )
     else:
         doc_tipo = Comprobante.DocTipo.CONSUMIDOR_FINAL
         doc_nro = 0

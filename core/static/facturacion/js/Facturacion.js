@@ -26,6 +26,10 @@
         el('facturarIdentificadoWrap').classList.add('d-none');
         el('facturarDocNro').value = '';
         el('facturarDocTipo').value = '80';
+        el('facturarRazonSocial').value = '';
+        el('facturarNombre').value = '';
+        el('facturarNegocio').value = '';
+        el('facturarPadronMsg').innerHTML = '';
         el('facturarCondIva').value = '5';
         el('facturarEditarMonto').checked = false;
         el('facturarMonto').readOnly = true;
@@ -80,14 +84,55 @@
         const identificado = el('recIdentificado').checked;
         el('facturarIdentificadoWrap').classList.toggle('d-none', !identificado);
         if (identificado && contexto && contexto.cliente) {
+            const c = contexto.cliente;
             // Precarga doc y condición IVA desde los datos del cliente en la base.
-            if (contexto.cliente.cuit && !el('facturarDocNro').value) {
+            if (c.cuit && !el('facturarDocNro').value) {
                 el('facturarDocTipo').value = '80';
-                el('facturarDocNro').value = contexto.cliente.cuit;
+                el('facturarDocNro').value = c.cuit;
             }
-            if (contexto.cliente.condicion_iva) {
-                el('facturarCondIva').value = contexto.cliente.condicion_iva;
+            if (c.condicion_iva) {
+                el('facturarCondIva').value = c.condicion_iva;
             }
+            // Precarga los datos de identidad si están vacíos (no pisa lo editado).
+            if (!el('facturarRazonSocial').value) el('facturarRazonSocial').value = c.razon_social || '';
+            if (!el('facturarNombre').value) el('facturarNombre').value = c.nombre || '';
+            if (!el('facturarNegocio').value) el('facturarNegocio').value = c.negocio || '';
+        }
+    }
+
+    // Trae la razón social desde el padrón de ARCA a partir del CUIT ingresado.
+    async function traerPadron() {
+        const msg = el('facturarPadronMsg');
+        const cuit = (el('facturarDocNro').value || '').replace(/\D/g, '');
+        if (cuit.length !== 11) {
+            msg.className = 'text-danger';
+            msg.textContent = 'Ingresá un CUIT de 11 dígitos para consultar ARCA.';
+            return;
+        }
+        const btn = el('btnTraerPadron');
+        const original = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+        msg.className = 'text-muted';
+        msg.textContent = 'Consultando ARCA…';
+        try {
+            const res = await fetch(`/facturacion/padron/${cuit}`);
+            const data = await res.json();
+            if (data.ok && data.razon_social) {
+                el('facturarRazonSocial').value = data.razon_social;
+                if (data.condicion_iva) el('facturarCondIva').value = data.condicion_iva;
+                msg.className = 'text-success';
+                msg.textContent = `Razón social: ${data.razon_social}`;
+            } else {
+                msg.className = 'text-warning';
+                msg.textContent = data.error || 'ARCA no devolvió datos para ese CUIT.';
+            }
+        } catch (err) {
+            msg.className = 'text-danger';
+            msg.textContent = 'No se pudo consultar el padrón de ARCA.';
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = original;
         }
     }
 
@@ -153,6 +198,7 @@
         el('facturarMonto').readOnly = !this.checked;
         if (this.checked) el('facturarMonto').focus();
     });
+    el('btnTraerPadron').addEventListener('click', traerPadron);
 
     // ── Emisión ───────────────────────────────────────────────────────────────
     el('btnEmitirFactura').addEventListener('click', async function () {
@@ -168,6 +214,9 @@
             payload.doc_tipo = parseInt(el('facturarDocTipo').value, 10);
             payload.doc_nro = (el('facturarDocNro').value || '').replace(/\D/g, '');
             payload.cond_iva_receptor = parseInt(el('facturarCondIva').value, 10);
+            payload.razon_social = el('facturarRazonSocial').value.trim();
+            payload.nombre = el('facturarNombre').value.trim();
+            payload.negocio = el('facturarNegocio').value.trim();
             if (!payload.doc_nro) {
                 mostrarResultado(false, 'Ingresá el número de documento del receptor.');
                 return;

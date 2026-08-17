@@ -1,4 +1,20 @@
+import re
+
 from .models import Cliente
+
+
+def normalizar_cuit(valor):
+    """Normaliza un CUIT a entero de 11 dígitos (sin guiones ni espacios).
+
+    Devuelve `None` si el valor está vacío o no contiene dígitos, de modo que
+    un campo en blanco no rompa el guardado ni pise un CUIT existente con 0.
+    """
+    if valor is None:
+        return None
+    digitos = re.sub(r"\D", "", str(valor))
+    if not digitos:
+        return None
+    return int(digitos)
 
 
 def parsear_cliente(cliente_input):
