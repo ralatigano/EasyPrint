@@ -7,6 +7,10 @@ const initDataTable = async () => {
     dataTable = $("#Pedidos").DataTable({
         order: [[1, 'desc']],
         responsive: false,
+        // Conserva página/orden/búsqueda entre recargas (p. ej. al volver de editar
+        // un pedido, que redirige a /pedidos/v2). stateDuration -1 = sessionStorage.
+        stateSave: true,
+        stateDuration: -1,
         columnDefs: [
             { orderable: false, responsivePriority: 99, targets: 0 }, // checkbox
             { responsivePriority: 1,  targets: 1 }, // Número
@@ -301,24 +305,26 @@ cambiarClienteModal.addEventListener('show.bs.modal', function (event) {
 
 // ── Filtros ───────────────────────────────────────────────────────────────────
 const FILTROS_KEY = 'pedidos_filtros';
-let filtroActivo = { clientes: [], productos: [], estados: [] };
+let filtroActivo = { clientes: [], productos: [], estados: [], soloConSaldo: false };
 
 $.fn.dataTable.ext.search.push(function (settings, data, dataIndex) {
     if (settings.nTable.id !== 'Pedidos') return true;
 
-    const { clientes, productos, estados } = filtroActivo;
+    const { clientes, productos, estados, soloConSaldo } = filtroActivo;
     const nodoFila = settings.aoData[dataIndex].nTr;
     if (!nodoFila) return true;
 
     const clienteId      = nodoFila.children[2]?.dataset.clienteId || '';
     const productosTexto = nodoFila.children[3]?.querySelector('.prod-text')?.textContent.trim().toLowerCase() || '';
     const estadoTexto    = nodoFila.children[4]?.textContent.trim().toLowerCase() || '';
+    const saldo          = parseFloat(nodoFila.dataset.saldo) || 0;
 
     const okCliente  = !clientes.length  || clientes.includes(clienteId);
     const okProducto = !productos.length || productos.some(p => productosTexto.includes(p.toLowerCase()));
     const okEstado   = !estados.length   || estados.map(e => e.toLowerCase()).includes(estadoTexto);
+    const okSaldo    = !soloConSaldo     || saldo > 0;
 
-    return okCliente && okProducto && okEstado;
+    return okCliente && okProducto && okEstado && okSaldo;
 });
 
 function getSeleccionados(id) {
@@ -331,6 +337,7 @@ function aplicarFiltros() {
         clientes:  getSeleccionados('filtroCliente'),
         productos: getSeleccionados('filtroProducto'),
         estados:   getSeleccionados('filtroEstado'),
+        soloConSaldo: document.getElementById('filtroSaldo').checked,
     };
     sessionStorage.setItem(FILTROS_KEY, JSON.stringify(filtroActivo));
     dataTable.draw();
@@ -349,7 +356,7 @@ function manejarTodos(selectEl) {
 function restaurarFiltros() {
     const guardados = sessionStorage.getItem(FILTROS_KEY);
     if (!guardados) return;
-    const { clientes, productos, estados } = JSON.parse(guardados);
+    const { clientes, productos, estados, soloConSaldo } = JSON.parse(guardados);
     const mapa = { filtroCliente: clientes, filtroProducto: productos, filtroEstado: estados };
     Object.entries(mapa).forEach(([id, vals]) => {
         if (!vals?.length) return;
@@ -357,16 +364,21 @@ function restaurarFiltros() {
             o.selected = o.value !== '' && vals.includes(o.value);
         });
     });
-    filtroActivo = { clientes: clientes || [], productos: productos || [], estados: estados || [] };
+    document.getElementById('filtroSaldo').checked = !!soloConSaldo;
+    filtroActivo = {
+        clientes: clientes || [], productos: productos || [], estados: estados || [],
+        soloConSaldo: !!soloConSaldo,
+    };
     dataTable.draw();
 }
 
 function limpiarFiltros() {
     sessionStorage.removeItem(FILTROS_KEY);
-    filtroActivo = { clientes: [], productos: [], estados: [] };
+    filtroActivo = { clientes: [], productos: [], estados: [], soloConSaldo: false };
     ['filtroCliente', 'filtroProducto', 'filtroEstado'].forEach(id => {
         Array.from(document.getElementById(id).options).forEach(o => o.selected = false);
     });
+    document.getElementById('filtroSaldo').checked = false;
     dataTable.draw();
 }
 
@@ -374,6 +386,8 @@ function limpiarFiltros() {
     const el = document.getElementById(id);
     el.addEventListener('change', () => { manejarTodos(el); aplicarFiltros(); });
 });
+
+document.getElementById('filtroSaldo').addEventListener('change', aplicarFiltros);
 
 document.getElementById('limpiarFiltros').addEventListener('click', limpiarFiltros);
 
