@@ -8,7 +8,7 @@ from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from .functions import *
 from django.contrib.auth.models import User, Group
-from .models import Usuario, AliasPago
+from .models import Usuario, AliasPago, ConfiguracionPresupuesto
 from datetime import datetime
 from .forms import RegistroUsuarioForm
 from core.decorators import solo_gerencia
@@ -443,8 +443,21 @@ def configuracion_pagos(request):
         'img': request.session.get('img'),
         'autorizado': request.session.get('autorizado'),
         'alias_pago': AliasPago.objects.all(),
+        'config_presupuesto': ConfiguracionPresupuesto.load(),
     }
     return render(request, 'core/configuracion_pagos.html', data)
+
+
+@login_required
+@solo_gerencia
+@require_POST
+def guardar_disclaimer(request):
+    """Guarda el texto del disclaimer/nota que se imprime en el PDF."""
+    config = ConfiguracionPresupuesto.load()
+    config.disclaimer = request.POST.get('disclaimer', '').strip()
+    config.save(update_fields=['disclaimer', 'updated'])
+    messages.success(request, 'Texto del presupuesto actualizado.')
+    return redirect('configuracion_pagos')
 
 
 @login_required

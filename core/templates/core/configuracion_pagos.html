@@ -1,17 +1,18 @@
 {% extends 'core/base.html' %}
 {% load static %}
 
-{% block title %}Configuración de pagos{% endblock %}
+{% block title %}Configuración{% endblock %}
 
 {% block header %}
 <div class="titulo">
-    <h1>Configuración de pagos</h1>
+    <h1>Configuración</h1>
 </div>
 {% endblock %}
 
 {% block content %}
 <div class="container" style="max-width: 820px;">
 
+    <h5 class="fw-semibold mb-2">Medios de pago</h5>
     <p class="text-secondary">
         Cargá uno o varios <strong>alias / datos de transferencia</strong>. El que marques
         como <strong>activo</strong> es el que aparece en el PDF de los presupuestos.
@@ -92,6 +93,24 @@
         Todavía no cargaste ningún alias. Agregá el primero arriba.
     </div>
     {% endif %}
+
+    <hr class="my-4">
+
+    <h5 class="fw-semibold mb-2">Texto del presupuesto (nota / disclaimer)</h5>
+    <p class="text-secondary">
+        Este texto se imprime al final del PDF de cada presupuesto. Editalo con las
+        condiciones que quieras mostrar (una por línea).
+    </p>
+    <form method="POST" action="{% url 'guardar_disclaimer' %}">
+        {% csrf_token %}
+        <textarea name="disclaimer" class="form-control" rows="12"
+                  style="font-size: 13px;">{{ config_presupuesto.disclaimer }}</textarea>
+        <div class="d-flex justify-content-end mt-2">
+            <button type="submit" class="btn btn-dark">
+                <i class="fa-solid fa-floppy-disk"></i> Guardar texto
+            </button>
+        </div>
+    </form>
 
 </div>
 {% endblock %}

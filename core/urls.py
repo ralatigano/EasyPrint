@@ -7,6 +7,7 @@ from .views import (
     info_grupos, usuario_info,
     crear_editar_usuario, validar_username, borrar_usuario,
     configuracion_pagos, activar_alias_pago, borrar_alias_pago,
+    guardar_disclaimer,
 )
 
 urlpatterns = [
@@ -44,4 +45,5 @@ urlpatterns = [
          activar_alias_pago, name='activar_alias_pago'),
     path('configuracion/pagos/borrar/<int:alias_id>',
          borrar_alias_pago, name='borrar_alias_pago'),
+    path('configuracion/disclaimer', guardar_disclaimer, name='guardar_disclaimer'),
 ]

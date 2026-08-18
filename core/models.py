@@ -126,3 +126,30 @@ class AliasPago(models.Model):
 
     def __str__(self):
         return f"{self.alias}{' (activo)' if self.activo else ''}"
+
+
+DISCLAIMER_PRESUPUESTO_DEFAULT = """-El presente presupuesto puede variar sin previo aviso ya que todos nuestros insumos estan dolarizados.
+-El pedido se considera efectivo y por lo tanto se comenzará a trabajar en el mismo, una vez recibida la seña del 50% del valor pactado. Se factura finalizado y pagado todo el trabajo. El siguiente presupuesto es SIN IVA. Contamos con Factura C solamente.
+- Aún en trabajos señados si la demora del mismo es generada por el cliente (no responde mensajes, no aprueba diseños, no manda correcciones, no retira en un lapso de 2 dias despues de informado que su pedido esta listo) se puede actualizar el valor del pedido.
+-Salvo casos en donde se aclare lo contrario el trabajo será entregado/estará disponible para ser retirado en 15 dias hábiles desde recibida la seña. En caso de querer retirarlo se recomienda y se agradece la previa coordinación por alguno de nuestros canales de comunicación. En pedidos mayoristas pactar fecha de entrega con el vendedor.
+-Los trabajos con caracter de urgente se reciben a discreción de EasyPrint quien dispondrá de la opción de incrementar hasta un 30% el valor del pedido y el mismo será entregado en menos de 24hs hábiles. De no poder cumplir esto último el cliente tendrá la opción de cancelar el pedido y reclamar la devolución de la seña.
+- Una vez entregado el trabajo tiene Garantia de 24hs para chequeo y posibles reclamos, luego de ese tiempo se considera como SATISFACTORIO y no tiene derecho a réplica."""
+
+
+class ConfiguracionPresupuesto(models.Model):
+    """Configuración (singleton) del presupuesto: texto editable del disclaimer/nota
+    que se imprime en el PDF. Se administra desde Configuración (solo Gerencia)."""
+    disclaimer = models.TextField(default=DISCLAIMER_PRESUPUESTO_DEFAULT, blank=True)
+    updated = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Configuración de presupuesto"
+        verbose_name_plural = "Configuración de presupuesto"
+
+    def __str__(self):
+        return "Configuración de presupuesto"
+
+    @classmethod
+    def load(cls):
+        obj, _ = cls.objects.get_or_create(pk=1)
+        return obj

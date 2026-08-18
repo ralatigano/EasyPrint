@@ -35,9 +35,15 @@
             display: block;
         }
 
-        /* ENCABEZADO */
+        /* ENCABEZADO: contenedor que redondea y suaviza la imagen del header */
+        .encabezado {
+            border-radius: 14px;
+            overflow: hidden;
+        }
         .encabezado img {
             width: 100%;
+            display: block;
+            opacity: 0.9; /* un poco de transparencia para estar más a tono */
         }
 
         /* POSICIONES ABSOLUTAS (como tu versión original) */
@@ -68,16 +74,25 @@
             left: 670px;
         }
 
-        .cliente-img img {
-            width: 100%;
-            margin-top: 30px; /* Ajustable */
+        /* BLOQUE DE CLIENTE (reescrito como elemento, sin imagen) */
+        .cliente-box {
+            margin-top: 26px;
+            border: 1px solid #dfe3e8;
+            border-radius: 8px;
+            padding: 12px 16px;
         }
-
-        #cliente {
-            top: 375px;
-            left: 130px;
-            width: 1000px;
-            font-size: 20px;
+        .cliente-label {
+            font-size: 10px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: #26417a;
+            font-weight: bold;
+            margin-right: 12px;
+        }
+        .cliente-nombre {
+            font-size: 16px;
+            font-weight: bold;
+            color: #152536;
         }
 
         /* TABLA (mismo estilo limpio que los recuadros de pago) */
@@ -159,6 +174,28 @@
         .pago-note { margin-top: 8px; font-size: 10px; color: #152536; line-height: 1.45; }
         .metodo-name { display: table-cell; text-align: left; font-weight: bold; color: #152536; }
         .metodo-detail { display: table-cell; text-align: right; color: #152536; }
+
+        /* DISCLAIMER / NOTA (texto editable, sin imagen) */
+        .disclaimer-box {
+            margin-top: 18px;
+            border: 1px solid #dfe3e8;
+            border-radius: 8px;
+            padding: 14px 18px;
+            page-break-inside: avoid; /* que no se corte entre páginas */
+        }
+        .disclaimer-title {
+            font-size: 10px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: #26417a;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        .disclaimer-text {
+            font-size: 10.5px;
+            line-height: 1.5;
+            color: #152536;
+        }
     </style>
     </head>
 
@@ -177,10 +214,11 @@
         <div id="mes" class="texto-superpuesto">{{ mes }}</div>
         <div id="anio" class="texto-superpuesto">{{ anio }}</div>
 
-        <div class="cliente-img">
-            <img src="{{ img_base }}clientenew.png">
+        <!-- CLIENTE (elemento, no imagen) -->
+        <div class="cliente-box">
+            <span class="cliente-label">Sr / Sra</span>
+            <span class="cliente-nombre">{{ cliente }}</span>
         </div>
-        <div id="cliente" class="texto-superpuesto">{{ cliente }}</div>
 
         <!-- TABLA COMPLETA -->
         <table>
@@ -258,11 +296,17 @@
             </div>
         </div>
 
-        <!-- DISCLAIMER -->
+        <!-- REDES -->
         <br>
         <img class="redes" src="{{ img_base }}footernew.png" alt="redes">
-        <img class="disclaimer" src="{{ img_base }}disclaimernew.png" alt="Img_disclaimer">
-        <br>
+
+        <!-- DISCLAIMER / NOTA (texto editable desde Configuración) -->
+        {% if disclaimer %}
+        <div class="disclaimer-box">
+            <div class="disclaimer-title">Nota</div>
+            <div class="disclaimer-text">{{ disclaimer|linebreaksbr }}</div>
+        </div>
+        {% endif %}
         <br>
         <img class="redes" src="{{ img_base }}footernew.png" alt="redes">
     </div>
