@@ -311,3 +311,31 @@ Versión v3.4.0
 
     -Clientes
         *Se agrega el campo "Condición frente al IVA" a la ficha del cliente, editable desde el modal de edición, para usarlo en la facturación.
+****************** 17/8/2026 ******************
+Versión v3.5.0
+
+    -Facturación electrónica ARCA
+        *Al facturar a un cliente identificado, el modal permite ver y editar su Razón social, Nombre y Negocio, y trae la razón social oficial desde ARCA a partir del CUIT con el botón "Traer de ARCA".
+        *Los datos que se cargan o editan al facturar (razón social, nombre, negocio y CUIT) actualizan automáticamente la ficha del cliente, sin pisar datos ya cargados con campos vacíos.
+
+    -Pedidos (creación)
+        *El formulario de confirmación de pedido incorpora los campos CUIT y Teléfono del cliente, que actualizan su ficha al confirmar. Entre otras cosas, dejan los datos listos para el momento de facturar.
+
+    -Pedidos (tabla)
+        *Se retira la tabla vieja de pedidos: queda únicamente la versión v2, ya probada y en uso, para evitar confusiones.
+        *Se agrega un filtro "Con saldo pendiente" que muestra solo los pedidos con saldo mayor a cero.
+        *Al editar un pedido (estado, encargado, seña, etc.) la tabla ahora conserva la página y los filtros en los que estabas, en lugar de volver al inicio.
+        *El modal para cambiar el estado de un pedido usa "pastillas" de colores (los mismos de la tabla) en lugar de una lista desplegable, y resalta el estado actual.
+
+    -Cotización (formulario inicial)
+        *Los selectores de Categoría y Producto ahora tienen buscador interno: se puede escribir para filtrar las opciones, manteniendo toda la lógica de dimensiones y de rangos por cantidad.
+
+    -Presupuestos (PDF)
+        *Se rediseña el PDF del presupuesto con un estilo más limpio y unificado, con textos más grandes y legibles.
+        *Se agrega un recuadro "Forma de pago" que detalla la seña del 50% necesaria para dar de alta el pedido (con los montos de seña y saldo calculados) y una nota aclaratoria.
+        *Se agrega un recuadro "Cómo pagar" con los medios de pago: efectivo en el local y transferencia al alias configurado.
+        *El bloque de cliente y la nota/disclaimer pasan a ser texto (ya no imágenes), se suaviza el encabezado y se agrega la numeración de páginas al pie.
+
+    -Configuración (nuevo)
+        *Se agrega una sección de "Configuración" (accesible desde el menú de perfil, solo para Gerencia) donde se pueden cargar varios alias de pago y elegir cuál se muestra en los presupuestos.
+        *Desde la misma sección se puede editar el texto de la nota/disclaimer que aparece al final de cada presupuesto.
