@@ -9,7 +9,16 @@
     <style>
         @page {
             size: A4;
-            margin: 0;
+            /* Margen superior/inferior para no pegar el contenido al borde de la
+               página (incluidas las páginas de continuación) y dejar lugar al
+               número de página. */
+            margin: 8mm 0 14mm 0;
+            @bottom-center {
+                content: counter(page) " / " counter(pages);
+                font-family: Arial, sans-serif;
+                font-size: 9px;
+                color: #26417a;
+            }
         }
 
         body {
@@ -21,7 +30,6 @@
         /* CONTENEDOR A4 */
         #a4-container {
             width: 21cm;
-            height: 29.7cm;
             margin: auto;
             padding: 10mm;
             box-sizing: border-box;
@@ -35,15 +43,21 @@
             display: block;
         }
 
-        /* ENCABEZADO: contenedor que redondea y suaviza la imagen del header */
+        /* ENCABEZADO: contenedor con borde propio que SOLAPA el borde de la imagen,
+           para que el redondeo no recorte de forma visible el marco del PNG.
+           La imagen se agranda unos px y se mete bajo el borde con margen negativo. */
         .encabezado {
+            border: 2px solid #dfe3e8; /* mismo color que los recuadros/tabla */
             border-radius: 14px;
             overflow: hidden;
+            line-height: 0;
         }
         .encabezado img {
-            width: 100%;
             display: block;
-            opacity: 0.9; /* un poco de transparencia para estar más a tono */
+            width: calc(100% + 6px);
+            max-width: none; /* anula el max-width:100% general */
+            margin: -3px;    /* se mete 3px bajo el borde en todos los lados */
+            opacity: 0.9;    /* un poco de transparencia para estar más a tono */
         }
 
         /* POSICIONES ABSOLUTAS (como tu versión original) */
@@ -90,7 +104,7 @@
             margin-right: 12px;
         }
         .cliente-nombre {
-            font-size: 16px;
+            font-size: 17px;
             font-weight: bold;
             color: #152536;
         }
@@ -100,7 +114,7 @@
             width: 100%;
             border-collapse: collapse;
             margin-top: 30px; /* debajo del encabezado */
-            font-size: 12px;
+            font-size: 13.5px;
             color: #152536; /* texto fuerte */
         }
 
@@ -110,7 +124,7 @@
 
         thead th {
             text-transform: uppercase;
-            font-size: 10px;
+            font-size: 11px;
             letter-spacing: .8px;
             color: #26417a; /* acento fuerte */
             text-align: left;
@@ -151,7 +165,7 @@
         }
 
         /* ── BLOQUE DE PAGO (seña + medios de pago) ── */
-        .pago-wrap { margin-top: 22px; font-size: 12px; color: #152536; }
+        .pago-wrap { margin-top: 22px; font-size: 13px; color: #152536; }
         .pago-box {
             border: 1px solid #dfe3e8;
             border-radius: 8px;
@@ -170,8 +184,8 @@
         .pago-row.sep { border-top: 1px solid #e3e7ec; }
         .pago-label { display: table-cell; text-align: left; color: #152536; }
         .pago-label .pct { color: #26417a; font-size: 10px; margin-left: 4px; font-weight: bold; }
-        .pago-value { display: table-cell; text-align: right; font-weight: bold; font-size: 13px; color: #152536; white-space: nowrap; }
-        .pago-note { margin-top: 8px; font-size: 10px; color: #152536; line-height: 1.45; }
+        .pago-value { display: table-cell; text-align: right; font-weight: bold; font-size: 14px; color: #152536; white-space: nowrap; }
+        .pago-note { margin-top: 8px; font-size: 11px; color: #152536; line-height: 1.45; text-align: justify; }
         .metodo-name { display: table-cell; text-align: left; font-weight: bold; color: #152536; }
         .metodo-detail { display: table-cell; text-align: right; color: #152536; }
 
@@ -192,9 +206,10 @@
             margin-bottom: 8px;
         }
         .disclaimer-text {
-            font-size: 10.5px;
-            line-height: 1.5;
+            font-size: 12px;
+            line-height: 1.55;
             color: #152536;
+            text-align: justify;
         }
     </style>
     </head>
