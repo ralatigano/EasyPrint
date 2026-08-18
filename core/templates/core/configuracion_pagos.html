@@ -1,0 +1,97 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Configuración de pagos{% endblock %}
+
+{% block header %}
+<div class="titulo">
+    <h1>Configuración de pagos</h1>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 820px;">
+
+    <p class="text-secondary">
+        Cargá uno o varios <strong>alias / datos de transferencia</strong>. El que marques
+        como <strong>activo</strong> es el que aparece en el PDF de los presupuestos.
+    </p>
+
+    <!-- Alta de alias -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="POST" action="{% url 'configuracion_pagos' %}" class="row g-2 align-items-end">
+                {% csrf_token %}
+                <div class="col-12 col-md-5">
+                    <label for="alias" class="form-label fw-semibold">Alias o link de pago</label>
+                    <input type="text" id="alias" name="alias" class="form-control"
+                           placeholder="ej: easyfer" required>
+                </div>
+                <div class="col-12 col-md-5">
+                    <label for="titular" class="form-label fw-semibold">Titular / entidad <span class="text-muted">(opcional)</span></label>
+                    <input type="text" id="titular" name="titular" class="form-control"
+                           placeholder="ej: Fernanda Abraham">
+                </div>
+                <div class="col-12 col-md-2 d-grid">
+                    <button type="submit" class="btn btn-dark">
+                        <i class="fa-solid fa-plus"></i> Agregar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Listado de alias -->
+    {% if alias_pago %}
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead>
+                <tr>
+                    <th>Alias</th>
+                    <th>Titular</th>
+                    <th class="text-center">Estado</th>
+                    <th class="text-end">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for a in alias_pago %}
+                <tr>
+                    <td class="fw-semibold">{{ a.alias }}</td>
+                    <td class="text-secondary">{{ a.titular|default:"—" }}</td>
+                    <td class="text-center">
+                        {% if a.activo %}
+                            <span class="badge bg-success"><i class="fa-solid fa-check"></i> Activo</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Inactivo</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-end">
+                        {% if not a.activo %}
+                        <form method="POST" action="{% url 'activar_alias_pago' a.id %}" class="d-inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-outline-success" title="Usar en presupuestos">
+                                <i class="fa-solid fa-circle-check"></i> Activar
+                            </button>
+                        </form>
+                        {% endif %}
+                        <form method="POST" action="{% url 'borrar_alias_pago' a.id %}" class="d-inline"
+                              onsubmit="return confirm('¿Eliminar el alias &quot;{{ a.alias|escapejs }}&quot;?');">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="alert alert-light border text-center text-secondary">
+        Todavía no cargaste ningún alias. Agregá el primero arriba.
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

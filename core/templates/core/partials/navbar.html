@@ -63,6 +63,13 @@
       <li class="nav-item">
         <a class="nav-link" href="/perfil">¡Bienvenide {{ usuario }}!</a>
       </li>
+      {% if es_gerencia %}
+      <li class="nav-item">
+        <a class="nav-link" href="/configuracion/pagos">
+          <i class="fa-solid fa-money-check-dollar me-2"></i> Configuración de pagos
+        </a>
+      </li>
+      {% endif %}
       <li class="nav-item">
         <a class="nav-link" href="#" onclick="setTheme('light'); return false;">
           <i class="bi bi-sun me-2"></i> Tema claro
@@ -96,6 +103,14 @@
       <li>
         <a class="dropdown-item" href="/perfil">¡Bienvenide {{ usuario }}!</a>
       </li>
+      {% if es_gerencia %}
+      <li><hr class="dropdown-divider"></li>
+      <li>
+        <a class="dropdown-item" href="/configuracion/pagos">
+          <i class="fa-solid fa-money-check-dollar me-2"></i> Configuración de pagos
+        </a>
+      </li>
+      {% endif %}
       <li><hr class="dropdown-divider"></li>
       <li>
         <a class="dropdown-item d-flex justify-content-between align-items-center"

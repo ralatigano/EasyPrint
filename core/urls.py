@@ -6,6 +6,7 @@ from .views import (
     obtener_usuarios, usuarios,
     info_grupos, usuario_info,
     crear_editar_usuario, validar_username, borrar_usuario,
+    configuracion_pagos, activar_alias_pago, borrar_alias_pago,
 )
 
 urlpatterns = [
@@ -37,4 +38,10 @@ urlpatterns = [
     # Eliminar usuario
     path('borrarUsuario/<int:usuario_id>',
          borrar_usuario, name='borrarUsuario'),
+    # Configuración de medios de pago (alias) — solo Gerencia
+    path('configuracion/pagos', configuracion_pagos, name='configuracion_pagos'),
+    path('configuracion/pagos/activar/<int:alias_id>',
+         activar_alias_pago, name='activar_alias_pago'),
+    path('configuracion/pagos/borrar/<int:alias_id>',
+         borrar_alias_pago, name='borrar_alias_pago'),
 ]

@@ -23,6 +23,7 @@ import re
 _RANGO_RE = re.compile(r'^(.*?)\s*\[(\d+)[-]([\d]+|INF)\]\s*$')
 import json
 from core.decorators import solo_gerencia
+from core.models import AliasPago
 from django.db.models import Max
 from django.db import models
 
@@ -621,6 +622,13 @@ def generar_presupuesto_pdf(request, np):
     pres = Presupuesto.objects.get(numero=np)
     cli = pres.cliente
 
+    # Seña del 50% para dar de alta el pedido (y saldo restante a la entrega).
+    senia = round(total_neto / 2, 2)
+    saldo = round(total_neto - senia, 2)
+
+    # Alias de pago activo (configurable desde Configuración de pagos).
+    alias_pago = AliasPago.objects.filter(activo=True).first()
+
     # Construir la URL base
     img_base = settings.IMG_BASE_PATH
     css_path = settings.CSS_PATH
@@ -634,6 +642,10 @@ def generar_presupuesto_pdf(request, np):
         'total': total,
         'descuento': descuento,
         'total_neto': total_neto,
+        'senia': senia,
+        'saldo': saldo,
+        'porcentaje_senia': 50,
+        'alias_pago': alias_pago,
         'img_base': img_base,
         'css_path': css_path
     }

@@ -106,3 +106,23 @@ def create_usuario(sender, instance, created, **kwargs):
         random_image.save(full_image_path)
         usuario.image = image_path
         usuario.save()
+
+
+class AliasPago(models.Model):
+    """Alias / dato de transferencia configurable que se muestra en el PDF de
+    presupuesto. Puede haber varios cargados; el marcado como `activo` es el que
+    se imprime. Se administra desde Configuración de pagos (solo Gerencia)."""
+    alias = models.CharField(max_length=120)
+    titular = models.CharField(
+        max_length=120, blank=True,
+        help_text="Titular o entidad (opcional), ej: 'Fernanda Abraham' o 'EasyPrint'.")
+    activo = models.BooleanField(default=False)
+    created = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Alias de pago"
+        verbose_name_plural = "Alias de pago"
+        ordering = ("-activo", "alias")
+
+    def __str__(self):
+        return f"{self.alias}{' (activo)' if self.activo else ''}"

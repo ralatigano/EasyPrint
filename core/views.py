@@ -8,7 +8,7 @@ from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from .functions import *
 from django.contrib.auth.models import User, Group
-from .models import Usuario
+from .models import Usuario, AliasPago
 from datetime import datetime
 from .forms import RegistroUsuarioForm
 from core.decorators import solo_gerencia
@@ -417,3 +417,61 @@ def validar_username(request):
         qs = qs.exclude(id=user_id)
 
     return JsonResponse({'exists': qs.exists()})
+
+
+# ── Configuración de medios de pago (alias) — solo Gerencia ──────────────────
+@login_required
+@solo_gerencia
+def configuracion_pagos(request):
+    """Página de administración de alias de pago. POST agrega un alias nuevo."""
+    if request.method == 'POST':
+        alias = request.POST.get('alias', '').strip()
+        titular = request.POST.get('titular', '').strip()
+        if not alias:
+            messages.error(request, 'El alias no puede estar vacío.')
+        else:
+            nuevo = AliasPago.objects.create(alias=alias, titular=titular)
+            # Si es el primero, queda activo por defecto.
+            if AliasPago.objects.count() == 1:
+                nuevo.activo = True
+                nuevo.save(update_fields=['activo'])
+            messages.success(request, f'Alias "{alias}" agregado.')
+        return redirect('configuracion_pagos')
+
+    data = {
+        'usuario': request.session.get('usuario_nombre'),
+        'img': request.session.get('img'),
+        'autorizado': request.session.get('autorizado'),
+        'alias_pago': AliasPago.objects.all(),
+    }
+    return render(request, 'core/configuracion_pagos.html', data)
+
+
+@login_required
+@solo_gerencia
+@require_POST
+def activar_alias_pago(request, alias_id):
+    """Marca un alias como activo (el que se imprime) y desactiva los demás."""
+    alias = get_object_or_404(AliasPago, id=alias_id)
+    AliasPago.objects.exclude(id=alias.id).update(activo=False)
+    alias.activo = True
+    alias.save(update_fields=['activo'])
+    messages.success(request, f'Alias "{alias.alias}" marcado como activo.')
+    return redirect('configuracion_pagos')
+
+
+@login_required
+@solo_gerencia
+@require_POST
+def borrar_alias_pago(request, alias_id):
+    """Elimina un alias. Si era el activo, activa otro si queda alguno."""
+    alias = get_object_or_404(AliasPago, id=alias_id)
+    era_activo = alias.activo
+    alias.delete()
+    if era_activo:
+        otro = AliasPago.objects.first()
+        if otro:
+            otro.activo = True
+            otro.save(update_fields=['activo'])
+    messages.success(request, 'Alias eliminado.')
+    return redirect('configuracion_pagos')
