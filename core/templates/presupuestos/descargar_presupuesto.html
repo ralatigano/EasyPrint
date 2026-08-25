@@ -4,7 +4,7 @@
 <html lang="es">
     <head>
     <meta charset="UTF-8">
-    <title>Presupuesto {{ np }}</title>
+    <title>Presupuesto {{ np|unlocalize }}</title>
 
     <style>
         @page {
@@ -43,50 +43,62 @@
             display: block;
         }
 
-        /* ENCABEZADO: contenedor con borde propio que SOLAPA el borde de la imagen,
-           para que el redondeo no recorte de forma visible el marco del PNG.
-           La imagen se agranda unos px y se mete bajo el borde con margen negativo. */
+        /* ENCABEZADO: contenedor con borde propio que enmascara el marco del PNG.
+           overflow:hidden + border-radius recortan las esquinas de forma limpia. */
         .encabezado {
             border: 2px solid #dfe3e8; /* mismo color que los recuadros/tabla */
             border-radius: 14px;
             overflow: hidden;
             line-height: 0;
+            position: relative;
         }
-        .encabezado img {
+        /* Caja interna que contiene la imagen Y los textos superpuestos. Se agranda
+           y se mete ~10px bajo la máscara con margen negativo, de modo que el marco
+           propio del PNG (unos 5px al borde, con esquinas redondeadas) quede
+           recortado y sólo se vea el borde redondeado del contenedor.
+           Como los textos son hijos de esta caja y se posicionan en % de ella
+           (que coincide con la imagen), el ajuste queda ligado a la ilustración y
+           es INDEPENDIENTE de la escala del render. */
+        .hdr-inner {
+            position: relative;
+            width: calc(100% + 20px);
+            margin: -10px;
+        }
+        .hdr-inner img {
             display: block;
-            width: calc(100% + 6px);
+            width: 100%;
             max-width: none; /* anula el max-width:100% general */
-            margin: -3px;    /* se mete 3px bajo el borde en todos los lados */
             opacity: 0.9;    /* un poco de transparencia para estar más a tono */
         }
 
-        /* POSICIONES ABSOLUTAS (como tu versión original) */
+        /* TEXTOS SUPERPUESTOS: posicionados en % de la imagen (via .hdr-inner) */
         .texto-superpuesto {
             position: absolute;
             font-size: 20px;
             font-weight: bold;
+            line-height: 1;
+            color: #152536;
             background: transparent;
+            white-space: nowrap;
         }
 
+        /* Número de presupuesto: a la derecha de la etiqueta "Presupuesto:",
+           centrado verticalmente sobre ella. */
         #n_presupuesto {
-            top: 135px;
-            left: 600px;
+            left: 78.5%;
+            top: 37.3%;
+            transform: translateY(-50%);
         }
 
-        #dia {
-            top: 245px;
-            left: 600px;
+        /* Números de la fecha: centrados dentro de cada recuadro blanco. */
+        #dia, #mes, #anio {
+            top: 75.7%;
+            transform: translate(-50%, -50%);
+            text-align: center;
         }
-
-        #mes {
-            top: 245px;
-            left: 640px;
-        }
-
-        #anio {
-            top: 245px;
-            left: 670px;
-        }
+        #dia  { left: 79.34%; }
+        #mes  { left: 84.49%; }
+        #anio { left: 89.62%; }
 
         /* BLOQUE DE CLIENTE (reescrito como elemento, sin imagen) */
         .cliente-box {
@@ -218,16 +230,17 @@
 
     <div id="a4-container">
 
-        <!-- ENCABEZADO -->
+        <!-- ENCABEZADO: imagen + textos superpuestos dentro de la máscara -->
         <div class="encabezado">
-            <img src="{{ img_base }}presupuesto.png">
+            <div class="hdr-inner">
+                <img src="{{ img_base }}presupuesto.png">
+                <!-- unlocalize: el N° de presupuesto no lleva separador de miles -->
+                <div id="n_presupuesto" class="texto-superpuesto">{{ np|unlocalize }}</div>
+                <div id="dia" class="texto-superpuesto">{{ dia }}</div>
+                <div id="mes" class="texto-superpuesto">{{ mes }}</div>
+                <div id="anio" class="texto-superpuesto">{{ anio }}</div>
+            </div>
         </div>
-
-        <!-- TEXTOS SUPERPUESTOS -->
-        <div id="n_presupuesto" class="texto-superpuesto">{{ np }}</div>
-        <div id="dia" class="texto-superpuesto">{{ dia }}</div>
-        <div id="mes" class="texto-superpuesto">{{ mes }}</div>
-        <div id="anio" class="texto-superpuesto">{{ anio }}</div>
 
         <!-- CLIENTE (elemento, no imagen) -->
         <div class="cliente-box">

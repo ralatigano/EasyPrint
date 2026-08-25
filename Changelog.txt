@@ -339,3 +339,11 @@ Versión v3.5.0
     -Configuración (nuevo)
         *Se agrega una sección de "Configuración" (accesible desde el menú de perfil, solo para Gerencia) donde se pueden cargar varios alias de pago y elegir cuál se muestra en los presupuestos.
         *Desde la misma sección se puede editar el texto de la nota/disclaimer que aparece al final de cada presupuesto.
+
+****************** 25/8/2026 ******************
+Versión v3.5.1
+
+    -Presupuestos (PDF)
+        *Se corrige el número de presupuesto, que aparecía con separador de miles (ej: "3.000.001.388"); ahora se muestra sin puntos.
+        *Se corrige la posición de los datos de la fecha, que quedaban fuera de los recuadros, y el borde de la imagen de fondo que se llegaba a ver dentro del encabezado. Los textos superpuestos ahora se posicionan de forma relativa a la imagen (independiente de la escala del render), así el ajuste no vuelve a "correrse".
+        *El PDF ahora usa la fecha de CREACIÓN del presupuesto en lugar de la fecha actual. Así, al reenviar un presupuesto emitido tiempo atrás, conserva la fecha en que fue cotizado (importante porque los presupuestos tienen vigencia y los precios pueden cambiar).

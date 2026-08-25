@@ -17,6 +17,7 @@ from urllib.parse import unquote
 from django.template.loader import render_to_string
 from weasyprint import HTML
 from datetime import date
+from django.utils import timezone
 from decimal import Decimal, InvalidOperation
 import re
 
@@ -613,7 +614,6 @@ def generar_presupuesto_pdf(request, np):
     total = 0
     descuento = 0
     total_neto = 0
-    fecha = date.today()
     Prods = ProductoCotizado.objects.filter(presupuesto=np)
     for p in Prods:
         total += p.precio_bruto
@@ -621,6 +621,13 @@ def generar_presupuesto_pdf(request, np):
         total_neto = total-descuento
     pres = Presupuesto.objects.get(numero=np)
     cli = pres.cliente
+
+    # Fecha de CREACIÓN del presupuesto (no la fecha actual): un presupuesto tiene
+    # vigencia y sus precios pueden cambiar con el tiempo, así que al reenviarlo
+    # debe conservar la fecha en que fue cotizado. `created` se guarda en UTC
+    # (USE_TZ=True), por eso se convierte a hora local para que coincida con la
+    # fecha de creación que muestra el listado.
+    fecha = timezone.localtime(pres.created)
 
     # Seña del 50% para dar de alta el pedido (y saldo restante a la entrega).
     senia = round(total_neto / 2, 2)
