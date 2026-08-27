@@ -13,7 +13,7 @@ class Presupuesto(models.Model):
     cliente = models.ForeignKey(
         on_delete=models.SET_NULL, to='clientes.Cliente', default=None, blank=True, null=True)
     created = models.DateTimeField(auto_now_add=True)
-    updated = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return str(self.numero)

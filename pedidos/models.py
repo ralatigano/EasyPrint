@@ -30,7 +30,7 @@ class Pedido(models.Model):
         on_delete=models.SET_NULL, to=User, default=None, blank=True, null=True)
     fecha_entrega = models.DateField(null=True, blank=True)
     created = models.DateTimeField(auto_now_add=True)
-    updated = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
 
     @property
     def nombre_encargado(self):

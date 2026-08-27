@@ -10,7 +10,7 @@ class Categoria(models.Model):
     id = models.AutoField(primary_key=True)  # Agregar un campo id
     nombre = models.CharField(max_length=50, blank=True, default=None)
     created = models.DateTimeField(auto_now_add=True)
-    updated = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.nombre
@@ -118,8 +118,9 @@ class ProductoCotizado(models.Model):
         max_digits=8, decimal_places=2, default=0)  # Descuento fijo en pesos
     desc_porcentaje = models.DecimalField(
         max_digits=5, decimal_places=2, default=0)  # Descuento porcentual
-    # Tiempo estimado de producción en minutos
-    t_produccion = models.IntegerField(default=0)
+    # Tiempo estimado de producción, en HORAS
+    t_produccion = models.DecimalField(
+        max_digits=8, decimal_places=2, default=0)
     empaquetado = models.BooleanField(default=False)
     vendedor = models.ForeignKey(
         User, on_delete=models.SET_NULL, null=True, blank=True

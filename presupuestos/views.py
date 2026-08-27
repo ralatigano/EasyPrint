@@ -376,83 +376,6 @@ def presupuestos(request):
     return render(request, 'presupuestos/presupuestos.html', data)
 
 
-# Vista que permite editar un producto de la cotización actual.
-
-
-@login_required
-def edit_producto_cotizado(request):
-    editando_presup = request.session.get('editando_presup', False)
-    np_global = request.session.get('np_global', 0)
-    try:
-        cambios_precio = False
-        cambios = False
-        prod = ProductoCotizado.objects.get(
-            codigo=int(request.POST['cod_edit']))
-        cantidad_edit = int(request.POST['cant_edit'])
-        cantidad_area_edit = float(
-            request.POST['cant_area_edit'].replace(',', '.'))
-        desc_edit = int(request.POST['desc_edit'])
-        precio_edit = float(request.POST['precio_edit'].replace(',', '.'))
-        t_produccion_edit = float(
-            request.POST['t_prod_edit'].replace(',', '.'))
-        if prod.cantidad != cantidad_edit:
-            prod.cantidad = cantidad_edit
-            cambios_precio = True
-        if prod.cant_area != cantidad_area_edit:
-            prod.cant_area = cantidad_area_edit
-            cambios_precio = True
-        if prod.desc_porcentaje != desc_edit:
-            prod.desc_porcentaje = desc_edit
-            cambios_precio = True
-        if prod.precio != precio_edit:
-            cambios_precio = True
-        if request.POST.get('empaq_edit'):
-
-            empaquetado_precio = float(Producto.objects.get(codigo=123).precio)
-            prod.empaquetado = True
-            cambios_precio = True
-        else:
-            empaquetado_precio = 0
-            prod.empaquetado = False
-        if prod.t_produccion != t_produccion_edit:
-            prod.t_produccion = t_produccion_edit
-            costo_produccion = float(Producto.objects.get(
-                codigo=125).precio) * t_produccion_edit
-            cambios_precio = True
-        if cambios_precio:
-            if prod.precio != request.POST['precio_edit'].replace(',', '.'):
-                prod.precio = float(
-                    request.POST['precio_edit'].replace(',', '.'))
-                prod.desc_plata = float(
-                    prod.precio * prod.desc_porcentaje / 100)
-                prod.resultado = round(prod.precio - prod.desc_plata, 2)
-            else:
-                p_precio = float(Producto.objects.filter(
-                    nombre=prod.nombre).filter(resultado=0).values_list('precio', flat=True).first())
-                p_factor = float(Producto.objects.filter(
-                    nombre=prod.nombre).filter(resultado=0).values_list('factor', flat=True).first())
-                prod.precio = round(p_precio * prod.cant_area * p_factor +
-                                    costo_produccion + empaquetado_precio, 2)
-                prod.desc_plata = float(
-                    prod.precio * prod.desc_porcentaje / 100)
-                prod.resultado = round(prod.precio - prod.desc_plata, 2)
-        if prod.info_adic != request.POST['detalle_edit']:
-            prod.info_adic = request.POST['detalle_edit']
-            cambios = True
-        if cambios or cambios_precio:
-            prod.save()
-        if editando_presup:
-            url = f'/presupuestos/verPresupuesto/{np_global}'
-        else:
-            url = '/presupuestos/inicio'
-        messages.success(
-            request, 'Los datos del producto se han actualizado correctamente.')
-        return redirect(url)
-    except Exception as e:
-        messages.error(
-            request, f'No se ha podido actualizar los datos del producto. Error({e})')
-        print(messages)
-        return redirect('/presupuestos/inicio')
 # Borra un ítem particular del presupuesto que se esta armando.
 
 
@@ -772,7 +695,8 @@ def editar_producto_cotizado(request):
                 producto.resultado = precio
                 producto.desc_plata = 0
                 producto.desc_porcentaje = 0
-                producto.t_produccion = 0
+                # El tiempo de producción se conserva: precio y tiempo son
+                # independientes (un ítem con precio manual ocupó el taller igual).
                 messages.success(
                     request, f'Producto editado con precio arbitrario: ${precio:.2f}')
             else:
