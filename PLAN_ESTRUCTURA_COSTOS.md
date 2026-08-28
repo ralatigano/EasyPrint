@@ -462,6 +462,34 @@ Reglas:
 - Recordar: la Fase 0.4 ya sacó el borrado de `t_produccion` en precio arbitrario. El
   tiempo se conserva siempre.
 
+### 4.1 Margen de descuento y aporte por unidad
+
+Complemento del semáforo (misma pantalla, misma data de la Fase 3: no hay cálculo
+nuevo de backend, es todo resta sobre los snapshots ya guardados). Mientras el vendedor
+edita el precio/descuento de un ítem, mostrar cuánto puede bajar y cuánto sigue
+aportando:
+
+```
+descuento aplicado   → precio resultante
+aporte por unidad    = (precio - piso_absoluto) / cantidad     ← "cada unidad aporta $Y"
+margen hasta absorción = precio - piso_absorcion  (en $ y en %)
+margen hasta no perder = precio - piso_absoluto    (en $ y en %)
+```
+
+Reglas de diseño (importan tanto como el cálculo):
+
+- **Es capacidad a pedido, no una sugerencia proactiva de descontar.** La info de
+  headroom aparece **atada al descuento que el vendedor ya está ingresando** (o detrás
+  de un "¿hasta cuánto puedo bajar?"), nunca como un empujón del sistema a descontar.
+  El objetivo de toda la tasa es un precio defendible; si el sistema ofrece bajar hasta
+  el piso, el piso se vuelve el precio. Mismo poder informativo, sin el sesgo a erosionar
+  margen.
+- **"Por unidad" es la unidad que compra el cliente** (`cantidad`, los elementos: 500
+  stickers), no `cantidad_producto` (hojas/m²). Así "cada sticker aporta $Y" le habla al
+  vendedor y al cliente.
+- Es especialmente útil en cotizaciones grandes (donde hay más margen para negociar),
+  pero la info sirve para cualquier tamaño; no hace falta gatearla por cantidad.
+
 ---
 
 ## FASE 5 — Panel de horas en el dashboard
