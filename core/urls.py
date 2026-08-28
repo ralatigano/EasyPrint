@@ -8,6 +8,8 @@ from .views import (
     crear_editar_usuario, validar_username, borrar_usuario,
     configuracion_pagos, activar_alias_pago, borrar_alias_pago,
     guardar_disclaimer,
+    configuracion_costos, guardar_costo_fijo, borrar_costo_fijo,
+    guardar_parametros_produccion,
 )
 
 urlpatterns = [
@@ -46,4 +48,12 @@ urlpatterns = [
     path('configuracion/pagos/borrar/<int:alias_id>',
          borrar_alias_pago, name='borrar_alias_pago'),
     path('configuracion/disclaimer', guardar_disclaimer, name='guardar_disclaimer'),
+    # Configuración de estructura de costos — solo Gerencia
+    path('configuracion/costos', configuracion_costos, name='configuracion_costos'),
+    path('configuracion/costos/guardar/<int:costo_id>',
+         guardar_costo_fijo, name='guardar_costo_fijo'),
+    path('configuracion/costos/borrar/<int:costo_id>',
+         borrar_costo_fijo, name='borrar_costo_fijo'),
+    path('configuracion/costos/parametros',
+         guardar_parametros_produccion, name='guardar_parametros_produccion'),
 ]

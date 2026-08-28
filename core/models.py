@@ -1,5 +1,7 @@
 from django.db import models
 from django.conf import settings
+from django.utils import timezone
+from decimal import Decimal
 import uuid
 import os
 from django.core.files.storage import default_storage
@@ -148,6 +150,85 @@ class ConfiguracionPresupuesto(models.Model):
 
     def __str__(self):
         return "Configuración de presupuesto"
+
+    @classmethod
+    def load(cls):
+        obj, _ = cls.objects.get_or_create(pk=1)
+        return obj
+
+
+class CostoFijo(models.Model):
+    """Una línea de la estructura de costos fijos del negocio.
+    Se administra desde Configuración → Estructura de costos (solo Gerencia)."""
+
+    PERIODICIDADES = [
+        ('mensual', 'Mensual'),
+        ('anual', 'Anual'),
+        ('unico', 'Único / amortizable'),
+    ]
+
+    concepto = models.CharField(max_length=120)
+    grupo = models.CharField(
+        max_length=60, blank=True,
+        help_text="Agrupador para lectura, ej: 'Ocupación', 'Sueldos', 'Impuestos', 'Servicios'.")
+    monto = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    periodicidad = models.CharField(
+        max_length=10, choices=PERIODICIDADES, default='mensual')
+    meses_amortizacion = models.PositiveIntegerField(
+        default=12,
+        help_text="Solo aplica si la periodicidad es 'Único'. En cuántos meses se reparte.")
+    activo = models.BooleanField(default=True)
+    vigencia_desde = models.DateField(default=timezone.localdate)
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Costo fijo"
+        verbose_name_plural = "Costos fijos"
+        ordering = ("grupo", "concepto")
+
+    def __str__(self):
+        return f"{self.concepto} (${self.monto} {self.periodicidad})"
+
+    @property
+    def monto_mensual(self):
+        """Normaliza cualquier periodicidad a un monto mensual."""
+        if self.periodicidad == 'anual':
+            return self.monto / 12
+        if self.periodicidad == 'unico':
+            return self.monto / max(self.meses_amortizacion, 1)
+        return self.monto
+
+
+class ParametrosProduccion(models.Model):
+    """Singleton con la capacidad productiva declarada. Ver load()."""
+
+    operarios = models.PositiveIntegerField(
+        default=1, help_text="Personas que producen (no incluye administración).")
+    horas_dia = models.DecimalField(max_digits=4, decimal_places=2, default=8)
+    dias_mes = models.PositiveIntegerField(default=22)
+
+    ratio_productivas = models.DecimalField(
+        max_digits=4, decimal_places=3, default=Decimal("0.700"),
+        help_text="Proporción de las horas disponibles que se dedican efectivamente a "
+                  "producir (el resto es atención, compras, limpieza, tiempo muerto). "
+                  "Entre 0 y 1. Ajustar cada trimestre con datos reales.")
+
+    factor_correccion_tiempos = models.DecimalField(
+        max_digits=5, decimal_places=2, default=Decimal("1.00"),
+        help_text="Multiplicador global sobre los tiempos estimados de cada producto. "
+                  "Arranca en 1,00. Si el total de horas vendidas del mes es "
+                  "sistemáticamente menor a las horas realmente trabajadas, subirlo.")
+
+    vigencia_desde = models.DateField(default=timezone.localdate)
+    updated = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Parámetros de producción"
+        verbose_name_plural = "Parámetros de producción"
+
+    def __str__(self):
+        return "Parámetros de producción"
 
     @classmethod
     def load(cls):

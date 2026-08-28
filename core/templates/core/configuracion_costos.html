@@ -1,0 +1,337 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% load l10n %}
+
+{% block title %}Estructura de costos{% endblock %}
+
+{% block header %}
+<div class="titulo">
+    <h1>Estructura de costos</h1>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 1040px;">
+
+    <p class="text-secondary">
+        Cargá los <strong>costos fijos</strong> del negocio y la <strong>capacidad
+        productiva</strong>. Con eso el sistema calcula la <strong>tasa por hora</strong>
+        que cada trabajo tiene que aportar para cubrir tu estructura. Los valores del
+        panel se recalculan a medida que editás; los cambios se guardan con los
+        botones de cada sección.
+    </p>
+
+    <!-- ── Panel de la tasa (recálculo en vivo) ──────────────────────────── -->
+    <div class="card mb-4 border-dark" style="position: sticky; top: 8px; z-index: 5;">
+        <div class="card-body">
+            <div class="row text-center g-3 align-items-center">
+                <div class="col-6 col-md-3">
+                    <div class="text-secondary small">Costo fijo mensual</div>
+                    <div class="fs-5 fw-semibold">$ <span id="panel-costo-fijo">—</span></div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="text-secondary small">Horas disponibles / mes</div>
+                    <div class="fs-5 fw-semibold"><span id="panel-horas-disp">—</span></div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="text-secondary small">Horas productivas / mes</div>
+                    <div class="fs-5 fw-semibold"><span id="panel-horas-prod">—</span></div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="text-secondary small text-uppercase">Tasa por hora</div>
+                    <div class="fw-bold text-success" style="font-size: 1.9rem;">
+                        $ <span id="panel-tasa">—</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Capacidad productiva ──────────────────────────────────────────── -->
+    <h5 class="fw-semibold mb-2">Capacidad productiva</h5>
+    <p class="text-secondary">
+        El denominador de la tasa son las <strong>horas productivas</strong>, no las
+        disponibles: <code>disponibles × ratio</code>. El ratio es qué proporción de las
+        horas pagadas se dedica efectivamente a producir.
+    </p>
+    <form method="POST" action="{% url 'guardar_parametros_produccion' %}"
+          id="form-parametros" class="card mb-4">
+        {% csrf_token %}
+        <div class="card-body row g-3 align-items-end">
+            <div class="col-6 col-md-2">
+                <label class="form-label fw-semibold">Operarios</label>
+                <input type="number" min="0" step="1" name="operarios" id="in-operarios"
+                       class="form-control" value="{{ parametros.operarios|unlocalize }}">
+            </div>
+            <div class="col-6 col-md-2">
+                <label class="form-label fw-semibold">Horas / día</label>
+                <input type="text" inputmode="decimal" name="horas_dia" id="in-horas-dia"
+                       class="form-control" value="{{ parametros.horas_dia }}">
+            </div>
+            <div class="col-6 col-md-2">
+                <label class="form-label fw-semibold">Días / mes</label>
+                <input type="number" min="0" max="31" step="1" name="dias_mes" id="in-dias-mes"
+                       class="form-control" value="{{ parametros.dias_mes|unlocalize }}">
+            </div>
+            <div class="col-6 col-md-3">
+                <label class="form-label fw-semibold">Ratio productivas</label>
+                <input type="text" inputmode="decimal" name="ratio_productivas" id="in-ratio"
+                       class="form-control" value="{{ parametros.ratio_productivas }}">
+                <div class="form-text">Entre 0 y 1 (ej: 0,70).</div>
+            </div>
+            <div class="col-6 col-md-3">
+                <label class="form-label fw-semibold">Factor corrección tiempos</label>
+                <input type="text" inputmode="decimal" name="factor_correccion_tiempos"
+                       id="in-factor" class="form-control" value="{{ parametros.factor_correccion_tiempos }}">
+                <div class="form-text">Arranca en 1,00.</div>
+            </div>
+            <div class="col-12 d-flex justify-content-end">
+                <button type="submit" class="btn btn-dark">
+                    <i class="fa-solid fa-floppy-disk"></i> Guardar capacidad
+                </button>
+            </div>
+        </div>
+    </form>
+
+    <!-- ── Estructura de costos ──────────────────────────────────────────── -->
+    <h5 class="fw-semibold mb-2">Costos fijos</h5>
+    <div class="border rounded bg-body-tertiary p-3 mb-3 small text-secondary">
+        <ul class="mb-0 ps-3">
+            <li><strong>Grupo</strong>: etiqueta libre para ordenar la lista (Ocupación, Sueldos, Impuestos…). No afecta el cálculo.</li>
+            <li><strong>Periodicidad</strong>:
+                <em>Mensual</em> = se paga todos los meses (alquiler, sueldos) ·
+                <em>Anual</em> = una vez al año, se reparte en 12 (un seguro) ·
+                <em>Único</em> = una compra grande de una sola vez (una máquina, una reforma). Vas a tener que completar en cuántos meses querés que se pague esa compra. Considerá que si querés amortizarla rápido, tu tasa va a crecer y vas a tener que vender más o subir tus precios para cubrirla.</li>
+            <li>El campo <strong>Meses</strong>: solo se usa en gastos con periodicidad <em>Único</em>. Es en cuántos meses repartís un gasto puntual como la compra de una máquina. Ej: plotter de $2.400.000 en 24 meses.</li>
+            <li><strong>= Costo mensual</strong>: lo que cada línea aporta por mes al total. <u>Es lo que usa la tasa</u>. Se calcula solo.</li>
+        </ul>
+    </div>
+
+    <!-- Alta inline de una línea -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="POST" action="{% url 'configuracion_costos' %}" id="form-alta"
+                  class="row g-2 align-items-end">
+                {% csrf_token %}
+                <div class="col-12 col-md-3">
+                    <label class="form-label fw-semibold">Concepto</label>
+                    <input type="text" name="concepto" class="form-control" placeholder="ej: Alquiler" required>
+                </div>
+                <div class="col-6 col-md-2">
+                    <label class="form-label fw-semibold">Grupo</label>
+                    <input type="text" name="grupo" class="form-control" placeholder="ej: Ocupación" list="grupos-existentes">
+                </div>
+                <div class="col-6 col-md-2">
+                    <label class="form-label fw-semibold">Monto</label>
+                    <input type="text" inputmode="decimal" name="monto" class="form-control alta-monto" placeholder="0,00">
+                </div>
+                <div class="col-6 col-md-2">
+                    <label class="form-label fw-semibold">Periodicidad</label>
+                    <select name="periodicidad" class="form-select alta-periodicidad">
+                        {% for val, txt in periodicidades %}
+                        <option value="{{ val }}">{{ txt }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-6 col-md-2">
+                    <label class="form-label fw-semibold">Meses</label>
+                    <input type="number" min="1" step="1" name="meses_amortizacion" class="form-control alta-meses" value="12">
+                </div>
+                <div class="col-12 col-md-1 d-grid">
+                    <button type="submit" class="btn btn-dark" title="Agregar costo">
+                        <i class="fa-solid fa-plus"></i>
+                    </button>
+                </div>
+                <div class="col-12">
+                    <span class="form-text">Aporta al mes: <strong>$ <span class="alta-costo-mensual">0,00</span></strong></span>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <datalist id="grupos-existentes">
+        {% for g in grupos_costos %}<option value="{{ g.nombre }}">{% endfor %}
+    </datalist>
+
+    <!-- Formularios por línea (asociados a las filas vía el atributo form=).
+         Van fuera de la tabla para no romper el HTML. -->
+    {% for g in grupos_costos %}{% for c in g.items %}
+    <form id="form-costo-{{ c.id }}" method="POST" action="{% url 'guardar_costo_fijo' c.id %}" class="d-none">{% csrf_token %}</form>
+    {% endfor %}{% endfor %}
+
+    <!-- Listado agrupado por grupo: una sola tabla, header una vez, y cada
+         grupo como fila separadora con su subtotal. -->
+    {% if grupos_costos %}
+    <div class="table-responsive">
+        <table class="table table-sm align-middle mb-0">
+            <thead>
+                <tr class="text-secondary small">
+                    <th style="min-width: 140px;">Concepto</th>
+                    <th style="min-width: 110px;" title="Etiqueta para ordenar. No afecta el cálculo.">Grupo</th>
+                    <th style="min-width: 105px;">Monto</th>
+                    <th style="min-width: 125px;">Periodicidad</th>
+                    <th style="min-width: 80px;" title="Solo para 'Único': en cuántos meses repartís la compra.">Meses</th>
+                    <th style="min-width: 115px;" class="text-end" title="Lo que aporta por mes. Es lo que usa la tasa.">= Costo mensual</th>
+                    <th class="text-center">Activo</th>
+                    <th class="text-end">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for g in grupos_costos %}
+                <tr class="table-active">
+                    <td colspan="8" class="py-1">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="fw-semibold">{{ g.nombre }}</span>
+                            <span class="text-secondary small">
+                                Subtotal mensual: $ <span class="subtotal-grupo" data-grupo-idx="{{ forloop.counter }}">—</span>
+                            </span>
+                        </div>
+                    </td>
+                </tr>
+                {% for c in g.items %}
+                <tr class="fila-costo" data-grupo-idx="{{ forloop.parentloop.counter }}">
+                    <td><input type="text" form="form-costo-{{ c.id }}" name="concepto" class="form-control form-control-sm" value="{{ c.concepto }}"></td>
+                    <td><input type="text" form="form-costo-{{ c.id }}" name="grupo" class="form-control form-control-sm" value="{{ c.grupo }}" list="grupos-existentes"></td>
+                    <td><input type="text" form="form-costo-{{ c.id }}" inputmode="decimal" name="monto" class="form-control form-control-sm in-monto" value="{{ c.monto }}"></td>
+                    <td>
+                        <select form="form-costo-{{ c.id }}" name="periodicidad" class="form-select form-select-sm in-periodicidad">
+                            {% for val, txt in periodicidades %}
+                            <option value="{{ val }}" {% if c.periodicidad == val %}selected{% endif %}>{{ txt }}</option>
+                            {% endfor %}
+                        </select>
+                    </td>
+                    <td><input type="number" form="form-costo-{{ c.id }}" min="1" step="1" name="meses_amortizacion" class="form-control form-control-sm in-meses" value="{{ c.meses_amortizacion|unlocalize }}"></td>
+                    <td class="text-end fw-semibold text-nowrap">$ <span class="costo-mensual">—</span></td>
+                    <td class="text-center">
+                        <input type="checkbox" form="form-costo-{{ c.id }}" name="activo" class="form-check-input in-activo" {% if c.activo %}checked{% endif %}>
+                    </td>
+                    <td class="text-end text-nowrap">
+                        <button type="submit" form="form-costo-{{ c.id }}" class="btn btn-sm btn-outline-dark" title="Guardar cambios">
+                            <i class="fa-solid fa-floppy-disk"></i>
+                        </button>
+                        <button type="submit" form="form-costo-{{ c.id }}" formaction="{% url 'borrar_costo_fijo' c.id %}"
+                                class="btn btn-sm btn-outline-danger" title="Eliminar" formnovalidate
+                                onclick="return confirm('¿Eliminar el costo &quot;{{ c.concepto|escapejs }}&quot;?');">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="border rounded bg-body-tertiary p-3 text-center text-secondary">
+        Todavía no cargaste ningún costo. Agregá el primero arriba.
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+    // Parser flexible para números chicos (ratio, factor, horas): acepta coma
+    // o punto decimal. Espeja parse_decimal_flexible del backend.
+    function parseNumFlexible(str) {
+        if (!str) return 0;
+        str = String(str).replace(/[^\d,.\-]/g, '');
+        if (!str) return 0;
+        if (str.indexOf(',') > -1 && str.indexOf('.') > -1) {
+            str = str.replace(/\./g, '').replace(',', '.');
+        } else if (str.indexOf(',') > -1) {
+            str = str.replace(',', '.');
+        }
+        var n = Number(str);
+        return isNaN(n) ? 0 : n;
+    }
+
+    // El monto normalizado a mensual según la periodicidad. No modifica el monto
+    // cargado: solo calcula cuánto aporta por mes.
+    function montoMensual(monto, periodicidad, meses) {
+        if (periodicidad === 'anual') return monto / 12;
+        if (periodicidad === 'unico') return monto / Math.max(meses || 1, 1);
+        return monto;
+    }
+
+    // El campo "Meses" solo aplica en periodicidad "Único": si no, se deshabilita
+    // y se ve en gris para que quede claro que no se usa.
+    function toggleMeses(selectEl, mesesEl) {
+        var esUnico = selectEl.value === 'unico';
+        mesesEl.disabled = !esUnico;
+        mesesEl.classList.toggle('bg-light', !esUnico);
+        mesesEl.classList.toggle('text-muted', !esUnico);
+    }
+
+    function recalcular() {
+        var subtotales = {};
+        var costoFijo = 0;
+        document.querySelectorAll('.fila-costo').forEach(function (fila) {
+            var gidx = fila.dataset.grupoIdx;
+            // Monto = dinero en formato AR -> parsearNumeroLocal (punto = miles).
+            var monto = parsearNumeroLocal(fila.querySelector('.in-monto').value);
+            var selPer = fila.querySelector('.in-periodicidad');
+            var inMeses = fila.querySelector('.in-meses');
+            var meses = parseInt(inMeses.value, 10);
+            var activo = fila.querySelector('.in-activo').checked;
+
+            toggleMeses(selPer, inMeses);
+            var mm = montoMensual(monto, selPer.value, meses);
+            // Mostrar el costo mensual de la fila (solo lectura).
+            fila.querySelector('.costo-mensual').textContent = formatearNumeroLocal(mm);
+
+            if (activo) {
+                subtotales[gidx] = (subtotales[gidx] || 0) + mm;
+                costoFijo += mm;
+            }
+        });
+        document.querySelectorAll('.subtotal-grupo').forEach(function (el) {
+            el.textContent = formatearNumeroLocal(subtotales[el.dataset.grupoIdx] || 0);
+        });
+
+        // Capacidad productiva (números chicos -> parser flexible).
+        var operarios = parseInt(document.getElementById('in-operarios').value, 10) || 0;
+        var horasDia = parseNumFlexible(document.getElementById('in-horas-dia').value);
+        var diasMes = parseInt(document.getElementById('in-dias-mes').value, 10) || 0;
+        var ratio = parseNumFlexible(document.getElementById('in-ratio').value);
+
+        var horasDisp = operarios * horasDia * diasMes;
+        var horasProd = horasDisp * ratio;
+        var tasa = horasProd > 0 ? costoFijo / horasProd : 0;
+
+        document.getElementById('panel-costo-fijo').textContent = formatearNumeroLocal(costoFijo);
+        document.getElementById('panel-horas-disp').textContent = formatearNumeroLocal(horasDisp);
+        document.getElementById('panel-horas-prod').textContent = formatearNumeroLocal(horasProd);
+        document.getElementById('panel-tasa').textContent = formatearNumeroLocal(tasa);
+    }
+
+    // Preview en vivo del alta.
+    function actualizarAlta() {
+        var form = document.getElementById('form-alta');
+        if (!form) return;
+        var monto = parsearNumeroLocal(form.querySelector('.alta-monto').value);
+        var selPer = form.querySelector('.alta-periodicidad');
+        var inMeses = form.querySelector('.alta-meses');
+        toggleMeses(selPer, inMeses);
+        var mm = montoMensual(monto, selPer.value, parseInt(inMeses.value, 10));
+        form.querySelector('.alta-costo-mensual').textContent = formatearNumeroLocal(mm);
+    }
+
+    ['input', 'change'].forEach(function (evt) {
+        document.addEventListener(evt, function (e) {
+            if (e.target.closest('.fila-costo') || e.target.closest('#form-parametros')) {
+                recalcular();
+            }
+            if (e.target.closest('#form-alta')) {
+                actualizarAlta();
+            }
+        });
+    });
+
+    recalcular();
+    actualizarAlta();
+})();
+</script>
+{% endblock %}

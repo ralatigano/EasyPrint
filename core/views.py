@@ -8,10 +8,16 @@ from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from .functions import *
 from django.contrib.auth.models import User, Group
-from .models import Usuario, AliasPago, ConfiguracionPresupuesto
+from .models import (
+    Usuario, AliasPago, ConfiguracionPresupuesto,
+    CostoFijo, ParametrosProduccion,
+)
 from datetime import datetime
 from .forms import RegistroUsuarioForm
 from core.decorators import solo_gerencia
+from core.utils import parse_ar, parse_decimal_flexible
+from core import costos
+from decimal import Decimal, InvalidOperation
 from django.views.decorators.http import require_POST, require_GET
 
 # Create your views here.
@@ -488,3 +494,161 @@ def borrar_alias_pago(request, alias_id):
             otro.save(update_fields=['activo'])
     messages.success(request, 'Alias eliminado.')
     return redirect('configuracion_pagos')
+
+
+# ── Configuración de estructura de costos — solo Gerencia ────────────────────
+def _safe_int(valor, default=0):
+    """int() tolerante: nunca lanza; devuelve `default` ante entrada inválida."""
+    try:
+        return int(str(valor).strip())
+    except (TypeError, ValueError):
+        return default
+
+
+def _grupos_costos():
+    """Agrupa las líneas de costo por `grupo` con subtotal (mensual) por grupo,
+    para el render del listado. El orden ya viene por (grupo, concepto)."""
+    grupos = {}
+    for c in CostoFijo.objects.all():
+        clave = c.grupo or 'Sin grupo'
+        grupos.setdefault(clave, {'nombre': clave, 'items': [], 'subtotal': Decimal('0')})
+        grupos[clave]['items'].append(c)
+        if c.activo:
+            grupos[clave]['subtotal'] += c.monto_mensual
+    return list(grupos.values())
+
+
+def _panel_costos():
+    """Valores autoritativos calculados en el server para el panel de la tasa."""
+    return {
+        'costo_fijo_mensual': costos.costo_fijo_mensual(),
+        'horas_disponibles': costos.horas_disponibles_mes(),
+        'horas_productivas': costos.horas_productivas_mes(),
+        'tasa_hora': costos.tasa_hora(),
+    }
+
+
+@login_required
+@solo_gerencia
+def configuracion_costos(request):
+    """Página de administración de la estructura de costos fijos y la capacidad
+    productiva. POST agrega una línea de costo nueva (alta inline)."""
+    if request.method == 'POST':
+        concepto = request.POST.get('concepto', '').strip()
+        periodicidad = request.POST.get('periodicidad', 'mensual')
+        periodicidades_validas = [p[0] for p in CostoFijo.PERIODICIDADES]
+        if not concepto:
+            messages.error(request, 'El concepto no puede estar vacío.')
+        elif periodicidad not in periodicidades_validas:
+            messages.error(request, 'Periodicidad inválida.')
+        else:
+            CostoFijo.objects.create(
+                concepto=concepto,
+                grupo=request.POST.get('grupo', '').strip(),
+                monto=parse_ar(request.POST.get('monto')),
+                periodicidad=periodicidad,
+                meses_amortizacion=max(_safe_int(
+                    request.POST.get('meses_amortizacion'), 12), 1),
+            )
+            messages.success(request, f'Costo "{concepto}" agregado.')
+        return redirect('configuracion_costos')
+
+    data = {
+        'usuario': request.session.get('usuario_nombre'),
+        'img': request.session.get('img'),
+        'autorizado': request.session.get('autorizado'),
+        'grupos_costos': _grupos_costos(),
+        'parametros': ParametrosProduccion.load(),
+        'periodicidades': CostoFijo.PERIODICIDADES,
+        'panel': _panel_costos(),
+    }
+    return render(request, 'core/configuracion_costos.html', data)
+
+
+@login_required
+@solo_gerencia
+@require_POST
+def guardar_costo_fijo(request, costo_id):
+    """Edición inline de una línea de costo existente."""
+    c = get_object_or_404(CostoFijo, id=costo_id)
+    concepto = request.POST.get('concepto', c.concepto).strip()
+    periodicidad = request.POST.get('periodicidad', c.periodicidad)
+    periodicidades_validas = [p[0] for p in CostoFijo.PERIODICIDADES]
+    if not concepto:
+        messages.error(request, 'El concepto no puede estar vacío.')
+        return redirect('configuracion_costos')
+    if periodicidad not in periodicidades_validas:
+        messages.error(request, 'Periodicidad inválida.')
+        return redirect('configuracion_costos')
+
+    c.concepto = concepto
+    c.grupo = request.POST.get('grupo', c.grupo).strip()
+    c.monto = parse_ar(request.POST.get('monto'))
+    c.periodicidad = periodicidad
+    c.meses_amortizacion = max(_safe_int(
+        request.POST.get('meses_amortizacion'), 12), 1)
+    c.activo = request.POST.get('activo') == 'on'
+    c.save()
+    messages.success(request, f'Costo "{c.concepto}" actualizado.')
+    return redirect('configuracion_costos')
+
+
+@login_required
+@solo_gerencia
+@require_POST
+def borrar_costo_fijo(request, costo_id):
+    """Elimina una línea de costo."""
+    c = get_object_or_404(CostoFijo, id=costo_id)
+    concepto = c.concepto
+    c.delete()
+    messages.success(request, f'Costo "{concepto}" eliminado.')
+    return redirect('configuracion_costos')
+
+
+@login_required
+@solo_gerencia
+@require_POST
+def guardar_parametros_produccion(request):
+    """Guarda el singleton de capacidad productiva (operarios, jornada, ratio,
+    factor de corrección).
+
+    Valida rangos y nunca deja pasar un valor que rompa el cálculo o el modelo:
+    ante un dato fuera de rango avisa y no guarda nada (evita corromper la tasa
+    en silencio y evita el 500 por overflow del DecimalField)."""
+    operarios = _safe_int(request.POST.get('operarios'), default=None)
+    dias_mes = _safe_int(request.POST.get('dias_mes'), default=None)
+    horas_dia = parse_decimal_flexible(request.POST.get('horas_dia'))
+    ratio = parse_decimal_flexible(request.POST.get('ratio_productivas'))
+    factor = parse_decimal_flexible(request.POST.get('factor_correccion_tiempos'))
+
+    errores = []
+    if operarios is None or operarios < 0:
+        errores.append('La cantidad de operarios debe ser un entero ≥ 0.')
+    if dias_mes is None or not (0 <= dias_mes <= 31):
+        errores.append('Los días por mes deben estar entre 0 y 31.')
+    if horas_dia is None or not (Decimal('0') <= horas_dia <= Decimal('24')):
+        errores.append('Las horas por día deben estar entre 0 y 24.')
+    if ratio is None or not (Decimal('0') <= ratio <= Decimal('1')):
+        errores.append(
+            'El ratio de horas productivas debe estar entre 0 y 1 (ej: 0,70).')
+    if factor is None or not (Decimal('0') < factor <= Decimal('100')):
+        errores.append('El factor de corrección debe ser mayor a 0 (ej: 1,00).')
+
+    if errores:
+        for e in errores:
+            messages.error(request, e)
+        return redirect('configuracion_costos')
+
+    p = ParametrosProduccion.load()
+    p.operarios = operarios
+    p.horas_dia = horas_dia
+    p.dias_mes = dias_mes
+    p.ratio_productivas = ratio
+    p.factor_correccion_tiempos = factor
+    try:
+        p.save()
+    except InvalidOperation:
+        messages.error(request, 'Alguno de los valores es demasiado grande.')
+        return redirect('configuracion_costos')
+    messages.success(request, 'Parámetros de producción actualizados.')
+    return redirect('configuracion_costos')
