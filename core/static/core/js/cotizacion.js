@@ -550,6 +550,27 @@ function mostrarModalResultado(data) {
   document.getElementById("descuento_prev").textContent = data.descuento || "—";
   document.getElementById("empaquetado_prev").textContent = data.empaquetado;
   document.getElementById("t_produccion_prev").textContent = formatearNumeroLocal(data.tiempo_produccion);
+
+  // Comparación de métodos (Fase 3): informativo, no cambia lo que se cobra.
+  document.getElementById("precio_actual_bruto_prev").textContent = formatearNumeroLocal(data.precio_actual_bruto);
+  document.getElementById("precio_sugerido_prev").textContent = formatearNumeroLocal(data.precio_sugerido);
+  document.getElementById("piso_absoluto_prev").textContent = formatearNumeroLocal(data.piso_absoluto);
+  document.getElementById("piso_absorcion_prev").textContent = formatearNumeroLocal(data.piso_absorcion);
+  document.getElementById("tasa_hora_prev").textContent = formatearNumeroLocal(data.tasa_hora);
+
+  // Diferencia % entre el método sugerido y el actual (bruto vs bruto).
+  const actualBruto = Number(data.precio_actual_bruto) || 0;
+  const sugerido = Number(data.precio_sugerido) || 0;
+  const difEl = document.getElementById("diferencia_prev");
+  if (actualBruto > 0) {
+    const difPct = (sugerido / actualBruto - 1) * 100;
+    const signo = difPct >= 0 ? "+" : "";
+    difEl.textContent = `${signo}${formatearNumeroLocal(difPct)} %`;
+    difEl.className = difPct >= 0 ? "text-success" : "text-danger";
+  } else {
+    difEl.textContent = "—";
+    difEl.className = "";
+  }
   document.getElementById("detalle_prev").textContent = data.detalle;
 
   const modal = new bootstrap.Modal(document.getElementById("resultadoPrevioModal"));

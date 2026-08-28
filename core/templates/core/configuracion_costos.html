@@ -85,6 +85,12 @@
                        id="in-factor" class="form-control" value="{{ parametros.factor_correccion_tiempos }}">
                 <div class="form-text">Arranca en 1,00.</div>
             </div>
+            <div class="col-6 col-md-3">
+                <label class="form-label fw-semibold">Margen objetivo (método nuevo)</label>
+                <input type="text" inputmode="decimal" name="margen_objetivo"
+                       id="in-margen-objetivo" class="form-control" value="{{ parametros.margen_objetivo }}">
+                <div class="form-text">Sobre el costo total. Ej: 1,30 = +30%.</div>
+            </div>
             <div class="col-12 d-flex justify-content-end">
                 <button type="submit" class="btn btn-dark">
                     <i class="fa-solid fa-floppy-disk"></i> Guardar capacidad

@@ -220,6 +220,12 @@ class ParametrosProduccion(models.Model):
                   "Arranca en 1,00. Si el total de horas vendidas del mes es "
                   "sistemáticamente menor a las horas realmente trabajadas, subirlo.")
 
+    margen_objetivo = models.DecimalField(
+        max_digits=4, decimal_places=2, default=Decimal("1.30"),
+        help_text="Margen del método nuevo sobre el costo total (material a costo + "
+                  "estructura). Es distinto del 'factor' del producto (que es markup "
+                  "sobre el material). Ej: 1,30 = 30% sobre el costo total.")
+
     vigencia_desde = models.DateField(default=timezone.localdate)
     updated = models.DateTimeField(auto_now=True)
 

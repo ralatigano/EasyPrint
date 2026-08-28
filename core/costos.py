@@ -39,3 +39,9 @@ def tasa_hora() -> Decimal:
     if horas == 0:
         return Decimal("0")
     return costo_fijo_mensual() / horas
+
+
+def margen_objetivo() -> Decimal:
+    """Margen del método nuevo sobre el costo total (config, distinto del factor
+    del producto). Ver PLAN_ESTRUCTURA_COSTOS.md, hallazgo de la Fase 3."""
+    return ParametrosProduccion.load().margen_objetivo

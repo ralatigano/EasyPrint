@@ -25,6 +25,7 @@ _RANGO_RE = re.compile(r'^(.*?)\s*\[(\d+)[-]([\d]+|INF)\]\s*$')
 import json
 from core.decorators import solo_gerencia
 from core.models import AliasPago, ConfiguracionPresupuesto
+from core import costos
 from django.db.models import Max
 from django.db import models
 
@@ -193,12 +194,28 @@ def calcular_cotizacion_final(request):
         precio_empaquetado = Producto.objects.get(
             nombre="Empaquetado").precio_proveedor if empaquetado else 0
 
-        # Cálculo
+        # ---- Método actual (ES EL QUE SE COBRA) ----
         subtotal = cantidad_producto * precio_producto * margen
         costo_produccion = tiempo * precio_hora
         total_bruto = subtotal + costo_produccion + precio_empaquetado
         total_con_descuento = total_bruto * \
             (1 - descuento / 100) if descuento > 0 else total_bruto
+
+        # ---- Método nuevo (sugerido; NO se cobra en esta etapa, Fase 3) ----
+        # La estructura se recupera A COSTO y se aplica un margen objetivo
+        # configurable sobre el costo total (material a costo + empaquetado +
+        # estructura). NO se usa producto.factor acá: factor es un markup sobre el
+        # material (×10 en imprenta), y multiplicar la estructura por eso explota.
+        # Ver hallazgo de la Fase 3 en PLAN_ESTRUCTURA_COSTOS.md.
+        # Se asume que el precio del empaquetado es su costo (margen 1): simplificación.
+        tasa_hora = costos.tasa_hora()
+        margen_objetivo = costos.margen_objetivo()
+        costo_insumos = cantidad_producto * precio_producto
+        costo_empaquetado = Decimal(str(precio_empaquetado))
+        costo_variable = costo_insumos + costo_empaquetado          # piso absoluto
+        costo_total = costo_variable + tiempo * tasa_hora           # piso absorción
+        precio_sugerido = costo_total * margen_objetivo
+
         # Guardar en sesión
         request.session["cotizacion_previa"] = {
             "producto_id": producto_id,
@@ -211,6 +228,15 @@ def calcular_cotizacion_final(request):
             "descuento": float(descuento),
             "total_bruto": float(total_bruto),
             "precio_total": float(total_con_descuento),
+            # Snapshots del método nuevo (Fase 3)
+            "costo_insumos_snap": float(costo_insumos),
+            "costo_empaquetado_snap": float(costo_empaquetado),
+            "margen_snap": float(margen_objetivo),  # el margen del método nuevo
+            "tasa_hora_snap": float(tasa_hora),
+            "precio_hora_legacy_snap": float(precio_hora),
+            "precio_sugerido": float(precio_sugerido),
+            "piso_absoluto": float(costo_variable),
+            "piso_absorcion": float(costo_total),
             # "detalle": extra
         }
 
@@ -224,6 +250,12 @@ def calcular_cotizacion_final(request):
             "descuento": f"{descuento}%",
             "empaquetado": f"SI" if empaquetado else "NO",
             "tiempo_produccion": float(tiempo),
+            # Comparación de métodos (informativo; el que se cobra es precio_total)
+            "precio_actual_bruto": round(total_bruto, 2),
+            "precio_sugerido": round(precio_sugerido, 2),
+            "piso_absoluto": round(costo_variable, 2),
+            "piso_absorcion": round(costo_total, 2),
+            "tasa_hora": round(tasa_hora, 2),
             # "detalle": extra
         })
 
@@ -315,6 +347,9 @@ def agregar_producto(request):
         t_produccion = datos["tiempo_produccion"]
         empaquetado = datos["empaquetado"]
 
+        def _snap(clave, default="0"):
+            return Decimal(str(datos.get(clave, default)))
+
         # --- Crear instancia ---
         kwargs = {
             "insumo": insumo,
@@ -328,6 +363,15 @@ def agregar_producto(request):
             "t_produccion": t_produccion,
             "empaquetado": empaquetado,
             "vendedor": vendedor,
+            # Snapshots del método nuevo (Fase 3): fotos del momento de cotizar.
+            "costo_insumos_snap": _snap("costo_insumos_snap"),
+            "costo_empaquetado_snap": _snap("costo_empaquetado_snap"),
+            "margen_snap": _snap("margen_snap", "1"),
+            "tasa_hora_snap": _snap("tasa_hora_snap"),
+            "precio_hora_legacy_snap": _snap("precio_hora_legacy_snap"),
+            "precio_sugerido": _snap("precio_sugerido"),
+            "piso_absoluto": _snap("piso_absoluto"),
+            "piso_absorcion": _snap("piso_absorcion"),
         }
 
         if editando_presup:

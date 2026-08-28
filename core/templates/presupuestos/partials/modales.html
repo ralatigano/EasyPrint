@@ -13,8 +13,42 @@
                     <p>Producto: <span id="prod_prev" style="font-weight: bold"> </span></p>
                     <p>Cantidad: <span id="cant_prev" style="font-weight: bold"> </span></p>
                     <p>Cantidad hojas/Área/Metros: <span id="cant_area_prev" style="font-weight: bold"> </span></p>
-                    <p>Precio: $ <span id="precio_prev" style="font-weight: bold"> </span></p>
+                    <p class="mb-1">Precio a cobrar: $ <span id="precio_prev" style="font-weight: bold"> </span></p>
                     <p>Descuento: <span id="descuento_prev" style="font-weight: bold"></span></p>
+
+                    <!-- Comparación de métodos (Fase 3): informativo, NO cambia lo que se cobra -->
+                    <div class="border rounded bg-body-tertiary p-2 my-2 small">
+                        <div class="fw-semibold text-secondary mb-1">
+                            Comparación de métodos
+                            <span class="fw-normal">— informativo, no cambia lo que se cobra</span>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span>Precio método actual (bruto)</span>
+                            <span>$ <span id="precio_actual_bruto_prev">—</span></span>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span>Precio sugerido (con estructura)</span>
+                            <span>$ <span id="precio_sugerido_prev">—</span></span>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span>Diferencia</span>
+                            <span id="diferencia_prev">—</span>
+                        </div>
+                        <hr class="my-1">
+                        <div class="d-flex justify-content-between text-secondary">
+                            <span>Costo variable (piso absoluto)</span>
+                            <span>$ <span id="piso_absoluto_prev">—</span></span>
+                        </div>
+                        <div class="d-flex justify-content-between text-secondary">
+                            <span>Costo con estructura (piso absorción)</span>
+                            <span>$ <span id="piso_absorcion_prev">—</span></span>
+                        </div>
+                        <div class="d-flex justify-content-between text-secondary">
+                            <span>Tasa por hora usada</span>
+                            <span>$ <span id="tasa_hora_prev">—</span></span>
+                        </div>
+                    </div>
+
                     <p>Empaquetado: <span id="empaquetado_prev" style="font-weight: bold"> </span></p>
                     <p>Tiempo de producción [hs]: <span id="t_produccion_prev" style="font-weight: bold"> </span></p>
                     <p>Producto final: <span id="producto_final_prev" style="font-weight: bold"></span></p>

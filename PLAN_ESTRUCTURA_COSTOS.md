@@ -353,6 +353,37 @@ Extender el endpoint `productos/obtener_producto` (o crear uno nuevo) para devol
 
 El corazón del cambio. Todo pasa por `presupuestos/views.py::calcular_cotizacion_final`.
 
+> ### ⚠️ HALLAZGO (durante la implementación) — la fórmula de 3.1 se cambió
+>
+> Al probar con datos reales, `precio_sugerido = costo_total * margen` daba números
+> absurdos (ej: $589.332 sugeridos para 100 tarjetas que se cobran $5.499). **Causa
+> raíz**: `producto.factor` **no es un margen de ganancia, es un markup sobre el
+> material** (para una imprenta, ×10, porque el papel es baratísimo y el valor está en
+> la impresión). Multiplicar el **costo de estructura** por ese ×10 marca el propio
+> costo fijo un 900% → explota. El supuesto de 3.1 ("margen modesto") no aplica a este
+> negocio.
+>
+> **Decisión (con la dueña):** en el método nuevo la estructura se recupera **a costo**
+> y se aplica un **margen objetivo configurable, aparte del `factor`**, sobre el costo
+> total:
+>
+> ```python
+> precio_sugerido = costo_total * margen_objetivo   # NO * producto.factor
+> ```
+>
+> `margen_objetivo` es un campo nuevo en `ParametrosProduccion` (config Estructura de
+> costos), default `1.30`. Se probó con 1,30. `margen_snap` de `ProductoCotizado`
+> guarda el `margen_objetivo` usado (no el `factor`).
+>
+> **Checkpoint de rollback**: tag git `checkpoint-pre-tasa-estructural` (commit
+> `ef4db04`), por si hay que volver al estado previo al experimento.
+>
+> **Observación pendiente (segundo orden)**: con material barato, la ganancia sobre el
+> costo total queda fina y casi todo el precio lo define `tiempo × tasa_hora`. El driver
+> real pasa a ser la **calidad de los tiempos** (Fase 2) y si la `tasa_hora` (hoy alta
+> por 1 operario / 132 h productivas) representa el ritmo real de trabajos por hora.
+> Ver con datos guardados.
+
 ### 3.1 Las dos fórmulas
 
 ```python

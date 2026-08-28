@@ -129,12 +129,46 @@ class ProductoCotizado(models.Model):
     cliente = models.CharField(max_length=200, null=True, blank=True)
     info_adic = models.TextField(null=True, blank=True)
 
+    # --- Snapshots del momento de la cotización (Fase 3) ---
+    # Congelan los insumos del cálculo para poder reconstruir y comparar los dos
+    # métodos después, sin que actualizar los costos reescriba la historia.
+    # NO recalcular nunca: son fotos del momento de cotizar.
+    costo_insumos_snap = models.DecimalField(
+        max_digits=12, decimal_places=2, default=0)
+    costo_empaquetado_snap = models.DecimalField(
+        max_digits=10, decimal_places=2, default=0)
+    margen_snap = models.DecimalField(max_digits=6, decimal_places=2, default=1)
+    tasa_hora_snap = models.DecimalField(
+        max_digits=12, decimal_places=2, default=0)
+    precio_hora_legacy_snap = models.DecimalField(
+        max_digits=12, decimal_places=2, default=0)
+
+    precio_sugerido = models.DecimalField(
+        max_digits=12, decimal_places=2, default=0)
+    piso_absoluto = models.DecimalField(
+        max_digits=12, decimal_places=2, default=0)
+    piso_absorcion = models.DecimalField(
+        max_digits=12, decimal_places=2, default=0)
+
+    # True si el precio final se editó a mano (distinto del calculado). Permite
+    # reportar después cuánto margen se resignó. Se setea en la Fase 4.
+    precio_manual = models.BooleanField(default=False)
+
     def __str__(self):
         return f"{self.insumo.nombre} x {self.cantidad} - ${self.resultado}"
 
     @property
     def precio_bruto(self):
         return self.resultado + self.desc_plata
+
+    @property
+    def contribucion(self):
+        """Precio efectivamente cobrado menos costo variable."""
+        return self.resultado - self.piso_absoluto
+
+    @property
+    def contribucion_por_hora(self):
+        return self.contribucion / self.t_produccion if self.t_produccion else None
 
 
 class FaltanteInsumo(models.Model):
