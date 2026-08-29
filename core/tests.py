@@ -51,6 +51,14 @@ class CostoFijoMontoMensualTests(TestCase):
         c = CostoFijo(monto=Decimal("1000"), periodicidad="mensual")
         self.assertEqual(c.monto_mensual, Decimal("1000"))
 
+    def test_trimestral_se_divide_por_3(self):
+        c = CostoFijo(monto=Decimal("900"), periodicidad="trimestral")
+        self.assertEqual(c.monto_mensual, Decimal("300"))
+
+    def test_cuatrimestral_se_divide_por_4(self):
+        c = CostoFijo(monto=Decimal("800"), periodicidad="cuatrimestral")
+        self.assertEqual(c.monto_mensual, Decimal("200"))
+
     def test_anual_se_divide_por_12(self):
         c = CostoFijo(monto=Decimal("1200"), periodicidad="anual")
         self.assertEqual(c.monto_mensual, Decimal("100"))

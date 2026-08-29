@@ -329,6 +329,13 @@ function _fmtHoras(valor, dec = 3) {
   return n.toLocaleString("es-AR", { maximumFractionDigits: dec });
 }
 
+/** Equivalente en minutos de un valor en horas, para no tener que calcularlo. */
+function _minTxt(horas) {
+  const m = Number(horas) * 60;
+  if (m > 0 && m < 1) return "<1 min";
+  return `${Math.round(m)} min`;
+}
+
 /** Escribe la leyenda de desglose debajo del input de tiempo. */
 function _renderDesgloseTiempo(texto) {
   const el = document.getElementById("tiempoDesglose");
@@ -428,12 +435,13 @@ function precargarTiempoEstimado(resetContexto = false) {
     .catch(err => console.error("Error al precargar el tiempo estimado:", err));
 }
 
-/** Arma el texto de desglose `Setup S h + q u × U h [× F] = T h`. */
+/** Arma el texto de desglose con el equivalente en minutos de cada tiempo. */
 function _leyendaDesglose(setup, q, unitario, factor, total, tipo, sufijo = "") {
   const unidad = _UNIDAD_POR_TIPO[tipo] || "unidades";
   const factorTxt = (Number(factor) !== 1) ? ` × ${_fmtHoras(factor, 2)}` : "";
-  return `Setup ${_fmtHoras(setup)} h + ${_fmtHoras(q)} ${unidad}` +
-         ` × ${_fmtHoras(unitario)} h${factorTxt} = ${_fmtHoras(total, 2)} h${sufijo}`;
+  return `Setup ${_fmtHoras(setup)} h (${_minTxt(setup)}) + ${_fmtHoras(q)} ${unidad}` +
+         ` × ${_fmtHoras(unitario)} h (${_minTxt(unitario)} c/u)${factorTxt}` +
+         ` = ${_fmtHoras(total, 2)} h (${_minTxt(total)})${sufijo}`;
 }
 
 /**
@@ -452,8 +460,8 @@ function _recomputarTiempoOverride() {
 
   if (!tiemposCtx.qConocida && tiemposCtx.tipo !== "D") {
     _renderDesgloseTiempo(
-      `Ajuste manual — Setup ${_fmtHoras(setup)} h + (cantidad al generar el dibujo)` +
-      ` × ${_fmtHoras(unitario)} h`);
+      `Ajuste manual — Setup ${_fmtHoras(setup)} h (${_minTxt(setup)}) + ` +
+      `(cantidad al generar el dibujo) × ${_fmtHoras(unitario)} h (${_minTxt(unitario)} c/u)`);
   } else {
     _renderDesgloseTiempo(_leyendaDesglose(
       setup, q, unitario, factor, total, tiemposCtx.tipo, " (ajuste manual)"));

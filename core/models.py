@@ -163,6 +163,8 @@ class CostoFijo(models.Model):
 
     PERIODICIDADES = [
         ('mensual', 'Mensual'),
+        ('trimestral', 'Trimestral'),
+        ('cuatrimestral', 'Cuatrimestral'),
         ('anual', 'Anual'),
         ('unico', 'Único / amortizable'),
     ]
@@ -173,7 +175,7 @@ class CostoFijo(models.Model):
         help_text="Agrupador para lectura, ej: 'Ocupación', 'Sueldos', 'Impuestos', 'Servicios'.")
     monto = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     periodicidad = models.CharField(
-        max_length=10, choices=PERIODICIDADES, default='mensual')
+        max_length=15, choices=PERIODICIDADES, default='mensual')
     meses_amortizacion = models.PositiveIntegerField(
         default=12,
         help_text="Solo aplica si la periodicidad es 'Único'. En cuántos meses se reparte.")
@@ -193,6 +195,10 @@ class CostoFijo(models.Model):
     @property
     def monto_mensual(self):
         """Normaliza cualquier periodicidad a un monto mensual."""
+        if self.periodicidad == 'trimestral':
+            return self.monto / 3
+        if self.periodicidad == 'cuatrimestral':
+            return self.monto / 4
         if self.periodicidad == 'anual':
             return self.monto / 12
         if self.periodicidad == 'unico':

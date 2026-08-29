@@ -264,6 +264,8 @@
     // El monto normalizado a mensual según la periodicidad. No modifica el monto
     // cargado: solo calcula cuánto aporta por mes.
     function montoMensual(monto, periodicidad, meses) {
+        if (periodicidad === 'trimestral') return monto / 3;
+        if (periodicidad === 'cuatrimestral') return monto / 4;
         if (periodicidad === 'anual') return monto / 12;
         if (periodicidad === 'unico') return monto / Math.max(meses || 1, 1);
         return monto;
