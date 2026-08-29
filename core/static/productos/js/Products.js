@@ -253,6 +253,8 @@ async function completarFormulario(idProducto) {
     document.getElementById('productoAncho').value = data.ancho;
     document.getElementById('productoAlto').value = data.alto;
     document.getElementById('productoMargen').value = formatearNumeroLocal(data.margen);
+    document.getElementById('productoTiempoSetup').value = data.tiempo_setup ?? 0;
+    document.getElementById('productoTiempoUnitario').value = data.tiempo_unitario ?? 0;
     document.getElementById('tercerizado-checkbox').checked = data.tercerizado;
     document.getElementById('productoPrecioProveedor').value = formatearNumeroLocal(data.precio_proveedor);
 
@@ -290,6 +292,8 @@ async function limpiarModalProducto() {
   document.getElementById('tercerizado-checkbox').checked = true;
   document.getElementById('productoPrecioProveedor').value = ' ';
   document.getElementById('productoMargen').value = '1';
+  document.getElementById('productoTiempoSetup').value = '0';
+  document.getElementById('productoTiempoUnitario').value = '0';
   document.getElementById('seccion-insumos').style.display = 'none';
 }
 
@@ -332,6 +336,8 @@ async function guardarProducto() {
   formData.append("productoAncho", document.getElementById("productoAncho").value || '');
   formData.append("productoAlto", document.getElementById("productoAlto").value || '');
   formData.append("productoMargen", document.getElementById("productoMargen").value || '');
+  formData.append("productoTiempoSetup", document.getElementById("productoTiempoSetup").value || '0');
+  formData.append("productoTiempoUnitario", document.getElementById("productoTiempoUnitario").value || '0');
   const precioTexto = document.getElementById("costo-total").textContent;
   const precioLimpio = parsearNumeroLocal(precioTexto.replace(/\$/g, "").trim());
   formData.append("productoPrecio", precioLimpio);

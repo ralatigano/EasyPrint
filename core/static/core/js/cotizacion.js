@@ -31,6 +31,20 @@ const RANGO_RE = /^(.*?)\s*\[(\d+)[-](\d+|INF)\]\s*$/;
 let resolvedProductoId = null;
 let resolvedProductoNombre = null;
 
+// Contexto de tiempos de producción (Fase 2). Lo alimenta precargarTiempoEstimado
+// y lo consumen el override manual (checkbox "Ajustar tiempos") y el save-back.
+let tiemposCtx = {
+  productoId: null,
+  tipo: "D",
+  q: 0,             // cantidad_producto convergida (0 si aún no se conoce)
+  qConocida: false, // en A/B/C, si ya hay dibujo
+  setup: 0,
+  unitario: 0,
+  factor: 1,
+  tieneTiempos: false,
+  override: false,  // checkbox "Ajustar tiempos" activo
+};
+
 document.addEventListener("DOMContentLoaded", () => {
     aplicarDefaultTipoCalculo();
     inicializarSelect2();
@@ -177,6 +191,9 @@ function actualizarBotonGrafico(tipo) {
 // Escuchar cambios en los radios
 document.querySelectorAll('input[name="tipoProducto"]').forEach(radio => {
   radio.addEventListener("change", actualizarVisibilidadPorTipo);
+  // Al cambiar de tipo, la magnitud de la cantidad cambia (elementos vs
+  // pliegos/m²/metros): refrescar la precarga y su leyenda (cambio de contexto).
+  radio.addEventListener("change", () => precargarTiempoEstimado(true));
 });
 
 
@@ -283,6 +300,11 @@ $("#selectProducto").on("change", function () {
   if (!tipoDSeleccionado) {
     obtenerDimensionesProducto(productoId);
   }
+
+  // Precargar el tiempo estimado del producto recién elegido (Fase 2). En tipos
+  // A/B/C todavía no hay gráfico, así que la precarga fina vuelve a correr al
+  // generarlo; acá cubre el tipo D y deja un valor de arranque.
+  precargarTiempoEstimado(true);
 });
 
 
@@ -296,6 +318,170 @@ $("#selectProducto").on("change", function () {
  *
  * @param {number} productoId - The ID of the product for which dimensions are retrieved.
  */
+
+// Unidad de la magnitud convergida (cantidad_producto) según el tipo de cálculo.
+const _UNIDAD_POR_TIPO = { A: "pliegos", B: "m²", C: "m", D: "unidades" };
+
+/** Formatea horas en formato AR con hasta `dec` decimales (sin ceros de más). */
+function _fmtHoras(valor, dec = 3) {
+  const n = Number(valor);
+  if (isNaN(n)) return "";
+  return n.toLocaleString("es-AR", { maximumFractionDigits: dec });
+}
+
+/** Escribe la leyenda de desglose debajo del input de tiempo. */
+function _renderDesgloseTiempo(texto) {
+  const el = document.getElementById("tiempoDesglose");
+  if (el) el.textContent = texto;
+}
+
+/**
+ * Precarga el tiempo estimado de producción y muestra su desglose (Fase 2).
+ *
+ * Pide al backend el tiempo estimado (fórmula (setup + unitario × q) × factor)
+ * y lo escribe en #inputTiempo como SUGERENCIA (el campo sigue editable).
+ *
+ * La cantidad relevante es la magnitud convergida (cantidad_producto):
+ *  - tipo D: cantidad de elementos, conocida al instante.
+ *  - tipos A/B/C: sale del packing, así que solo existe DESPUÉS del dibujo.
+ *    Antes de generarlo NO se precarga (mezclaría unidades): se avisa en la
+ *    leyenda y queda el default.
+ *
+ * Se usa el producto ya resuelto por tier (resolvedProductoId) si existe, para
+ * que el tiempo precargado sea el del producto que efectivamente se cotiza.
+ *
+ * `resetContexto` = true en cambios de contexto (producto/tipo/dibujo): si el
+ * producto no tiene tiempos, se resetea el input al default de 1 h para que no
+ * quede un valor stale del producto anterior. En cambios de solo cantidad va
+ * false, para no pisar una edición manual en un producto sin tiempos.
+ */
+function precargarTiempoEstimado(resetContexto = false) {
+  const productoId = resolvedProductoId || document.getElementById("selectProducto")?.value;
+  const tipo = document.querySelector('input[name="tipoProducto"]:checked')?.value || "D";
+  tiemposCtx.productoId = productoId || null;
+  tiemposCtx.tipo = tipo;
+
+  if (!productoId) {
+    tiemposCtx.qConocida = false;
+    tiemposCtx.tieneTiempos = false;
+    if (!tiemposCtx.override) _renderDesgloseTiempo("");
+    return;
+  }
+
+  const cantidadElementos = parseFloat(document.getElementById("cantidadElementos")?.value) || 0;
+  let cantidadProducto = cantidadElementos;
+  if (tipo !== "D") {
+    const resultadoGraficoInput = document.querySelector("#resultadoGraficoValor");
+    const valorGrafico = resultadoGraficoInput
+      ? parseFloat(resultadoGraficoInput.value || resultadoGraficoInput.dataset.valor)
+      : 0;
+    if (!(valorGrafico > 0)) {
+      // Todavía no hay dibujo: la cantidad convergida (pliegos/m²/metros) aún no
+      // existe. No se precarga para no mezclar unidades con la cant. de elementos.
+      tiemposCtx.qConocida = false;
+      tiemposCtx.q = 0;
+      if (tiemposCtx.override) {
+        _recomputarTiempoOverride();
+      } else {
+        if (resetContexto) document.getElementById("inputTiempo").value = 1;
+        _renderDesgloseTiempo("El tiempo se calculará al generar el dibujo.");
+      }
+      return;
+    }
+    cantidadProducto = valorGrafico;
+  }
+
+  tiemposCtx.q = cantidadProducto;
+  tiemposCtx.qConocida = cantidadProducto > 0;
+  if (cantidadProducto <= 0) {
+    if (!tiemposCtx.override) _renderDesgloseTiempo("");
+    return;
+  }
+
+  fetch(`/productos/obtenerTiempos/${productoId}?cantidad=${encodeURIComponent(cantidadProducto)}`)
+    .then(res => res.json())
+    .then(data => {
+      tiemposCtx.setup = Number(data.tiempo_setup) || 0;
+      tiemposCtx.unitario = Number(data.tiempo_unitario) || 0;
+      tiemposCtx.factor = Number(data.factor_correccion) || 1;
+      tiemposCtx.tieneTiempos = !!data.tiene_tiempos;
+
+      if (tiemposCtx.override) {
+        // El usuario tomó control manual: no pisar sus valores, solo recalcular
+        // el total con la q (que puede haber cambiado al regenerar el dibujo).
+        _recomputarTiempoOverride();
+        return;
+      }
+
+      if (data.tiene_tiempos && data.tiempo_estimado != null) {
+        document.getElementById("inputTiempo").value = data.tiempo_estimado;
+        _renderDesgloseTiempo(_leyendaDesglose(
+          data.tiempo_setup, cantidadProducto, data.tiempo_unitario,
+          data.factor_correccion, data.tiempo_estimado, tipo));
+      } else {
+        // Sin tiempos configurados: en cambio de contexto se resetea a 1 h (para
+        // no dejar un valor stale); en cambio de cantidad se respeta lo tipeado.
+        if (resetContexto) document.getElementById("inputTiempo").value = 1;
+        _renderDesgloseTiempo("Utilizando el valor por defecto (1 h).");
+      }
+    })
+    .catch(err => console.error("Error al precargar el tiempo estimado:", err));
+}
+
+/** Arma el texto de desglose `Setup S h + q u × U h [× F] = T h`. */
+function _leyendaDesglose(setup, q, unitario, factor, total, tipo, sufijo = "") {
+  const unidad = _UNIDAD_POR_TIPO[tipo] || "unidades";
+  const factorTxt = (Number(factor) !== 1) ? ` × ${_fmtHoras(factor, 2)}` : "";
+  return `Setup ${_fmtHoras(setup)} h + ${_fmtHoras(q)} ${unidad}` +
+         ` × ${_fmtHoras(unitario)} h${factorTxt} = ${_fmtHoras(total, 2)} h${sufijo}`;
+}
+
+/**
+ * Recalcula #inputTiempo a partir de los tiempos que el usuario ingresó a mano
+ * (checkbox "Ajustar tiempos"), con la fórmula (setup + unitario × q) × factor.
+ * En A/B/C sin dibujo (q desconocida) usa solo el setup y avisa que se completa
+ * al generar el dibujo.
+ */
+function _recomputarTiempoOverride() {
+  const setup = parseFloat(document.getElementById("inputSetupAjuste")?.value) || 0;
+  const unitario = parseFloat(document.getElementById("inputUnitarioAjuste")?.value) || 0;
+  const factor = tiemposCtx.factor || 1;
+  const q = tiemposCtx.qConocida ? tiemposCtx.q : 0;
+  const total = (setup + unitario * q) * factor;
+  document.getElementById("inputTiempo").value = Math.round(total * 100) / 100;
+
+  if (!tiemposCtx.qConocida && tiemposCtx.tipo !== "D") {
+    _renderDesgloseTiempo(
+      `Ajuste manual — Setup ${_fmtHoras(setup)} h + (cantidad al generar el dibujo)` +
+      ` × ${_fmtHoras(unitario)} h`);
+  } else {
+    _renderDesgloseTiempo(_leyendaDesglose(
+      setup, q, unitario, factor, total, tiemposCtx.tipo, " (ajuste manual)"));
+  }
+}
+
+/** Activa/desactiva el override manual de tiempos (checkbox "Ajustar tiempos"). */
+function toggleAjusteTiempos(activo) {
+  tiemposCtx.override = activo;
+  const wrapper = document.getElementById("tiemposAjuste");
+  const inputTiempo = document.getElementById("inputTiempo");
+  if (wrapper) wrapper.style.display = activo ? "flex" : "none";
+
+  if (activo) {
+    // Precargar los inputs de ajuste con los tiempos actuales del producto y
+    // pasar el total a solo-lectura (se calcula desde setup/unitario).
+    const inSetup = document.getElementById("inputSetupAjuste");
+    const inUnit = document.getElementById("inputUnitarioAjuste");
+    if (inSetup) inSetup.value = tiemposCtx.setup || 0;
+    if (inUnit) inUnit.value = tiemposCtx.unitario || 0;
+    if (inputTiempo) inputTiempo.readOnly = true;
+    _recomputarTiempoOverride();
+  } else {
+    // Volver a la sugerencia automática.
+    if (inputTiempo) inputTiempo.readOnly = false;
+    precargarTiempoEstimado(true);
+  }
+}
 
 function obtenerDimensionesProducto(productoId) {
   fetch(`/productos/obtenerDimensiones/${productoId}`)
@@ -379,6 +565,10 @@ function generarGrafico() {
           }
         }
       }
+
+      // Ya hay resultado de gráfico (y tier resuelto para tipo A): precargar el
+      // tiempo estimado con la cantidad convergida real (hojas/m²/metros).
+      precargarTiempoEstimado(true);
     })
     .catch(err => {
       console.error("❌ Error al generar gráfico:", err);
@@ -680,6 +870,64 @@ function getCookie(name) {
 ["cantidadElementos", "inputAnchoElemento", "inputAltoElemento", "separacionElementos"].forEach(id => {
   const el = document.getElementById(id);
   if (el) el.addEventListener("input", resetearSiHayGrafico);
+});
+
+// En tipo D el tiempo depende directo de la cantidad de elementos (no hay
+// gráfico que lo dispare), así que se reprecarga al cambiarla. En A/B/C la
+// precarga la maneja generarGrafico con la cantidad convergida real.
+document.getElementById("cantidadElementos")?.addEventListener("input", function () {
+  const tipoD = document.getElementById("tipoD")?.checked;
+  // resetContexto=false: no pisar una edición manual en productos sin tiempos.
+  if (tipoD) precargarTiempoEstimado(false);
+});
+
+// --- Override manual de tiempos (Fase 2, checkbox "Ajustar tiempos") ---
+document.getElementById("chkAjustarTiempos")?.addEventListener("change", function () {
+  toggleAjusteTiempos(this.checked);
+});
+["inputSetupAjuste", "inputUnitarioAjuste"].forEach(id => {
+  document.getElementById(id)?.addEventListener("input", function () {
+    if (tiemposCtx.override) _recomputarTiempoOverride();
+  });
+});
+
+/**
+ * Intercepta "Agregar" para ofrecer guardar en el producto los tiempos ajustados
+ * a mano (Fase 2, save-back). Cualquier vendedor puede guardarlos; la traza queda
+ * en el t_produccion del ProductoCotizado y en la leyenda mostrada. Si no hubo
+ * override, o el usuario dice que no, se agrega normalmente.
+ */
+document.getElementById("btnAgregarProducto")?.addEventListener("click", function (e) {
+  const destino = this.getAttribute("href") || "/presupuestos/agregarProducto";
+  if (!tiemposCtx.override || !tiemposCtx.productoId) return; // flujo normal
+
+  e.preventDefault();
+  const setup = parseFloat(document.getElementById("inputSetupAjuste")?.value) || 0;
+  const unitario = parseFloat(document.getElementById("inputUnitarioAjuste")?.value) || 0;
+
+  const guardar = confirm(
+    `¿Guardar estos tiempos en el producto para futuras cotizaciones?\n\n` +
+    `Setup: ${_fmtHoras(setup)} h\nPor unidad: ${_fmtHoras(unitario)} h\n\n` +
+    `(Aceptar = guardar y agregar · Cancelar = agregar sin guardar)`);
+
+  if (!guardar) { window.location.href = destino; return; }
+
+  const formData = new FormData();
+  formData.append("producto_id", tiemposCtx.productoId);
+  formData.append("tiempo_setup", setup);
+  formData.append("tiempo_unitario", unitario);
+
+  fetch("/productos/guardarTiempos", {
+    method: "POST",
+    headers: { "X-CSRFToken": getCookie("csrftoken") },
+    body: formData
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (!data.ok) console.error("No se pudieron guardar los tiempos:", data.mensaje);
+    })
+    .catch(err => console.error("Error al guardar los tiempos:", err))
+    .finally(() => { window.location.href = destino; });
 });
 
 function syncClienteYEnviar(url) {

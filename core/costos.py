@@ -45,3 +45,29 @@ def margen_objetivo() -> Decimal:
     """Margen del método nuevo sobre el costo total (config, distinto del factor
     del producto). Ver PLAN_ESTRUCTURA_COSTOS.md, hallazgo de la Fase 3."""
     return ParametrosProduccion.load().margen_objetivo
+
+
+def factor_correccion_tiempos() -> Decimal:
+    """Multiplicador global sobre los tiempos estimados de cada producto (Fase 2).
+
+    Arranca en 1,00. Corrige un sesgo sistemático de estimación sin medir trabajo
+    por trabajo (D5 del plan). Se aplica UNA sola vez, al precargar el tiempo en el
+    cotizador; el cálculo de la cotización usa ese valor ya corregido tal cual.
+    """
+    return ParametrosProduccion.load().factor_correccion_tiempos
+
+
+def tiempo_estimado(setup, unitario, cantidad_producto, factor) -> Decimal:
+    """Horas estimadas de producción de un trabajo (Fase 2, fórmula 2.2).
+
+        tiempo_estimado = (setup + unitario * cantidad_producto) * factor
+
+    ``cantidad_producto`` es la magnitud a la que convergen los cuatro tipos de
+    cálculo (hojas/m²/metros/unidades), la misma que multiplica al precio del
+    insumo, no la cantidad de elementos. Función pura (sin DB) para poder testearla.
+    """
+    setup = Decimal(str(setup))
+    unitario = Decimal(str(unitario))
+    cantidad_producto = Decimal(str(cantidad_producto))
+    factor = Decimal(str(factor))
+    return (setup + unitario * cantidad_producto) * factor

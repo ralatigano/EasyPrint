@@ -76,6 +76,20 @@ class Producto(models.Model):
         'Categoria', on_delete=models.SET_NULL, null=True, blank=True)
     activo = models.BooleanField(default=True)
 
+    # --- Tiempos de producción (Fase 2) ---
+    # Alimentan la precarga del tiempo estimado al cotizar. Si ambos son 0, el
+    # producto no tiene tiempos configurados y el cotizador cae al default de 1h
+    # (neutro, como antes de la Fase 2). Ver PLAN_ESTRUCTURA_COSTOS.md.
+    tiempo_setup = models.DecimalField(
+        max_digits=6, decimal_places=2, default=0,
+        help_text="Horas de preparación por trabajo, independientes de la cantidad "
+                  "(armar el archivo, calibrar, arranque, primera prueba).")
+    tiempo_unitario = models.DecimalField(
+        max_digits=8, decimal_places=4, default=0,
+        help_text="Horas por unidad producida. La unidad es la misma que la del precio "
+                  "del producto: por hoja (tipo A), por m² (tipo B), por metro lineal "
+                  "(tipo C) o por unidad (tipo D).")
+
     insumos = models.ManyToManyField(
         'Insumo',
         through='ComponenteProducto',

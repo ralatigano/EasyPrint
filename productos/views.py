@@ -8,8 +8,10 @@ import openpyxl
 from openpyxl import Workbook
 from django.http import HttpResponse, Http404
 from django.utils import timezone
-from core.utils import format_ar, parse_ar
+from core.utils import format_ar, parse_ar, parse_decimal_flexible
 from core.decorators import solo_gerencia
+from core import costos
+from decimal import Decimal, InvalidOperation
 import re
 
 # Regex compartido: detecta "Nombre [N-M]" o "Nombre [N-INF]"
@@ -50,6 +52,8 @@ def obtener_producto(request, producto_id):
         "tercerizado": producto.tercerizado,
         "precio_proveedor": producto.precio_proveedor,
         "margen": producto.factor,
+        "tiempo_setup": producto.tiempo_setup,
+        "tiempo_unitario": producto.tiempo_unitario,
         "insumos": []
     }
 
@@ -62,6 +66,67 @@ def obtener_producto(request, producto_id):
             })
 
     return JsonResponse(data)
+
+
+@login_required
+def obtener_tiempos_producto(request, producto_id):
+    """Tiempos de producción de un producto + tiempo estimado ya calculado (Fase 2).
+
+    El cotizador precarga con esto el input de tiempo. La fórmula vive en el
+    backend (``core.costos.tiempo_estimado``) para poder testearla; el front solo
+    pisa el input con ``tiempo_estimado`` cuando ``tiene_tiempos`` es True.
+
+    ``cantidad`` es la magnitud convergida (hojas/m²/metros/unidades), la misma
+    que multiplica al precio del insumo. Sin tiempos configurados no se toca el
+    input: queda el default de 1h (neutro, como antes de la Fase 2).
+    """
+    producto = get_object_or_404(Producto, id=producto_id)
+
+    try:
+        cantidad = Decimal(str(request.GET.get("cantidad", "0")))
+    except (InvalidOperation, ValueError):
+        cantidad = Decimal("0")
+    if cantidad < 0:
+        cantidad = Decimal("0")
+
+    tiene_tiempos = (producto.tiempo_setup > 0 or producto.tiempo_unitario > 0)
+    factor = costos.factor_correccion_tiempos()
+
+    estimado = None
+    if tiene_tiempos:
+        estimado = costos.tiempo_estimado(
+            producto.tiempo_setup, producto.tiempo_unitario, cantidad, factor)
+
+    return JsonResponse({
+        "tiempo_setup": float(producto.tiempo_setup),
+        "tiempo_unitario": float(producto.tiempo_unitario),
+        "factor_correccion": float(factor),
+        "tiene_tiempos": tiene_tiempos,
+        "tiempo_estimado": round(float(estimado), 2) if estimado is not None else None,
+    })
+
+
+@login_required
+def guardar_tiempos_producto(request):
+    """Persiste en el producto los tiempos ajustados a mano en una cotización
+    (Fase 2, save-back). Abierto a cualquier vendedor por decisión de producto:
+    el contexto real es una sola PC con usuario de Gerencia, y la traza queda en
+    el t_produccion de cada ProductoCotizado y en la leyenda mostrada al cotizar.
+    """
+    if request.method != "POST":
+        return JsonResponse({"ok": False, "mensaje": "Método no permitido"}, status=405)
+    try:
+        producto = get_object_or_404(Producto, id=request.POST.get("producto_id"))
+        setup = parse_decimal_flexible(request.POST.get("tiempo_setup")) or Decimal("0")
+        unitario = parse_decimal_flexible(request.POST.get("tiempo_unitario")) or Decimal("0")
+        if setup < 0 or unitario < 0:
+            return JsonResponse({"ok": False, "mensaje": "Los tiempos no pueden ser negativos."})
+        producto.tiempo_setup = setup
+        producto.tiempo_unitario = unitario
+        producto.save(update_fields=["tiempo_setup", "tiempo_unitario"])
+        return JsonResponse({"ok": True})
+    except Exception as e:
+        return JsonResponse({"ok": False, "mensaje": f"No se pudieron guardar los tiempos: {e}"})
 
 
 @login_required
@@ -120,6 +185,12 @@ def guardar_producto(request):
         precio = float(request.POST.get(
             "productoPrecio") or 0)
         margen = float(parse_ar(request.POST.get("productoMargen")) or 1)
+        # Tiempos de producción (Fase 2). Son horas: decimales chicos, así que se
+        # parsean con parse_decimal_flexible (el punto es decimal, no miles).
+        tiempo_setup = parse_decimal_flexible(
+            request.POST.get("productoTiempoSetup")) or Decimal("0")
+        tiempo_unitario = parse_decimal_flexible(
+            request.POST.get("productoTiempoUnitario")) or Decimal("0")
         categoria = get_object_or_404(Categoria, id=categoria_id)
 
         # 2. Crear o editar producto
@@ -142,6 +213,8 @@ def guardar_producto(request):
             producto.precio = precio
             producto.precio_proveedor = 0
         producto.factor = margen
+        producto.tiempo_setup = tiempo_setup
+        producto.tiempo_unitario = tiempo_unitario
         producto.save()
 
         # 3. Procesar insumos si no es tercerizado
@@ -247,6 +320,12 @@ def importar_productos_excel(request):
                 alto = float(fila_data.get("Alto") or 0)
                 precio_excel = float(fila_data.get("Precio") or 0)
                 factor = float(fila_data.get("Factor") or 1.0)
+                # Tiempos de producción (Fase 2). Opcionales: si la columna no
+                # está o viene vacía, quedan en 0 (producto sin tiempos → 1h).
+                tiempo_setup = parse_decimal_flexible(
+                    fila_data.get("Tiempo setup")) or Decimal("0")
+                tiempo_unitario = parse_decimal_flexible(
+                    fila_data.get("Tiempo unitario")) or Decimal("0")
                 categoria_nombre = str(fila_data.get("Categoría", "")).strip()
 
                 valor_raw = str(fila_data.get(
@@ -273,6 +352,8 @@ def importar_productos_excel(request):
                         "alto": alto,
                         "tercerizado": tercerizado,
                         "factor": factor,
+                        "tiempo_setup": tiempo_setup,
+                        "tiempo_unitario": tiempo_unitario,
                         "categoria": categoria,
                         "activo": True,
                     }
@@ -285,7 +366,7 @@ def importar_productos_excel(request):
                 if not tercerizado:
                     componentes = []
                     for key, value in fila_data.items():
-                        if key.lower() in ["nombre", "alto", "ancho", "precio", "tercerizado", "categoría", "factor"]:
+                        if key.lower() in ["nombre", "alto", "ancho", "precio", "tercerizado", "categoría", "factor", "tiempo setup", "tiempo unitario"]:
                             continue  # No intentar parsear estas columnas
 
                         if not value:
@@ -372,7 +453,8 @@ def exportar_productos_excel(request):
 
     # Encabezados fijos
     headers = ["Nombre", "Ancho", "Alto",
-               "Tercerizado", "Precio", "Factor", "Categoría"]
+               "Tercerizado", "Precio", "Factor",
+               "Tiempo setup", "Tiempo unitario", "Categoría"]
     max_insumos = 0
     filas = []
 
@@ -385,6 +467,8 @@ def exportar_productos_excel(request):
             "Sí" if producto.tercerizado else "No",
             producto.precio_proveedor if producto.tercerizado else producto.precio,
             producto.factor,
+            producto.tiempo_setup,
+            producto.tiempo_unitario,
             producto.categoria.nombre if producto.categoria else "",
         ]
 

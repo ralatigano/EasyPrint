@@ -1,6 +1,7 @@
 from decimal import Decimal
 from django.test import TestCase, Client
 from django.contrib.auth.models import User, Group
+from core.models import ParametrosProduccion
 from .models import Categoria, Insumo, Producto, ComponenteProducto
 
 
@@ -280,3 +281,121 @@ class PropagacionPrecioInsumoTest(TestCase):
         self.producto.refresh_from_db()
         log(f"Resultado   : precio del producto = ${self.producto.precio}")
         self.assertEqual(self.producto.precio, Decimal("20"))
+
+
+# ---------------------------------------------------------------------------
+# Tests: tiempos de produccion por producto (Fase 2)
+# ---------------------------------------------------------------------------
+
+class TiemposProductoTests(TestCase):
+    """Grupo: carga y precarga de tiempos de produccion (Fase 2)."""
+
+    def setUp(self):
+        self.client = Client()
+        self.user = crear_usuario_gerencia()
+        self.client.login(username="gerente", password="test1234")
+        self.cat, _ = crear_datos_base()
+
+    def test_guardar_producto_persiste_tiempos(self):
+        # Los campos setup/unitario llegan como decimales "a la inglesa" (input
+        # type=number) y se guardan tal cual.
+        self.client.post("/productos/guardarProducto", {
+            "id_producto": "0",
+            "productoNombre": "Tarjeta",
+            "productoCategoria": self.cat.id,
+            "productoAncho": "9",
+            "productoAlto": "5",
+            "tercerizado": "on",
+            "productoMargen": "1",
+            "productoPrecioProveedor": "100",
+            "productoTiempoSetup": "0.5",
+            "productoTiempoUnitario": "0.002",
+        })
+        producto = Producto.objects.get(nombre="Tarjeta")
+        self.assertEqual(producto.tiempo_setup, Decimal("0.5"))
+        self.assertEqual(producto.tiempo_unitario, Decimal("0.002"))
+
+    def test_guardar_producto_tiempos_formato_ar(self):
+        # Defensa: si vinieran con coma decimal, parse_decimal_flexible los toma.
+        self.client.post("/productos/guardarProducto", {
+            "id_producto": "0",
+            "productoNombre": "Lona",
+            "productoCategoria": self.cat.id,
+            "productoAncho": "100",
+            "productoAlto": "100",
+            "tercerizado": "on",
+            "productoMargen": "1",
+            "productoPrecioProveedor": "100",
+            "productoTiempoSetup": "1,25",
+            "productoTiempoUnitario": "0,05",
+        })
+        producto = Producto.objects.get(nombre="Lona")
+        self.assertEqual(producto.tiempo_setup, Decimal("1.25"))
+        self.assertEqual(producto.tiempo_unitario, Decimal("0.05"))
+
+    def test_obtener_tiempos_calcula_estimado(self):
+        # (setup + unitario*cantidad) * factor = (0.5 + 0.002*1000) * 1.2 = 3.0
+        p = ParametrosProduccion.load()
+        p.factor_correccion_tiempos = Decimal("1.2")
+        p.save()
+        producto = Producto.objects.create(
+            nombre="Tarjeta", categoria=self.cat, ancho=9, alto=5,
+            tiempo_setup=Decimal("0.5"), tiempo_unitario=Decimal("0.002"),
+        )
+        resp = self.client.get(
+            f"/productos/obtenerTiempos/{producto.id}?cantidad=1000")
+        data = resp.json()
+        self.assertTrue(data["tiene_tiempos"])
+        self.assertEqual(data["tiempo_estimado"], 3.0)
+
+    def test_obtener_tiempos_sin_configurar_no_estima(self):
+        # Producto con ambos tiempos en 0: no se precarga (queda el default 1h).
+        producto = Producto.objects.create(
+            nombre="Sin tiempos", categoria=self.cat, ancho=1, alto=1,
+        )
+        resp = self.client.get(
+            f"/productos/obtenerTiempos/{producto.id}?cantidad=1000")
+        data = resp.json()
+        self.assertFalse(data["tiene_tiempos"])
+        self.assertIsNone(data["tiempo_estimado"])
+
+    def test_guardar_tiempos_persiste_en_producto(self):
+        # Save-back: el override de una cotizacion se guarda en el producto.
+        producto = Producto.objects.create(
+            nombre="Estampa", categoria=self.cat, ancho=1, alto=1,
+        )
+        resp = self.client.post("/productos/guardarTiempos", {
+            "producto_id": producto.id,
+            "tiempo_setup": "0.25",
+            "tiempo_unitario": "0.025",
+        })
+        self.assertTrue(resp.json()["ok"])
+        producto.refresh_from_db()
+        self.assertEqual(producto.tiempo_setup, Decimal("0.25"))
+        self.assertEqual(producto.tiempo_unitario, Decimal("0.025"))
+
+    def test_guardar_tiempos_rechaza_negativos(self):
+        producto = Producto.objects.create(
+            nombre="Estampa", categoria=self.cat, ancho=1, alto=1,
+            tiempo_setup=Decimal("0.5"),
+        )
+        resp = self.client.post("/productos/guardarTiempos", {
+            "producto_id": producto.id,
+            "tiempo_setup": "-1",
+            "tiempo_unitario": "0",
+        })
+        self.assertFalse(resp.json()["ok"])
+        producto.refresh_from_db()
+        self.assertEqual(producto.tiempo_setup, Decimal("0.5"))  # sin cambios
+
+    def test_obtener_producto_incluye_tiempos(self):
+        # El modal de edicion necesita los tiempos para precargar.
+        producto = Producto.objects.create(
+            nombre="Tarjeta", categoria=self.cat, ancho=9, alto=5,
+            tercerizado=True, precio_proveedor=Decimal("100"),
+            tiempo_setup=Decimal("0.5"), tiempo_unitario=Decimal("0.002"),
+        )
+        resp = self.client.get(f"/productos/obtenerProducto/{producto.id}")
+        data = resp.json()
+        self.assertEqual(Decimal(str(data["tiempo_setup"])), Decimal("0.5"))
+        self.assertEqual(Decimal(str(data["tiempo_unitario"])), Decimal("0.0020"))

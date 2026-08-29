@@ -151,6 +151,25 @@
     <div class="col-md-4">
       <label class="form-label">Tiempo estimado de producción (horas)</label>
       <input type="number" id="inputTiempo" class="form-control" min="0" step="0.25" value="1">
+      <small id="tiempoDesglose" class="form-text text-secondary fst-italic"></small>
+      <div class="form-check mt-1">
+        <input class="form-check-input" type="checkbox" id="chkAjustarTiempos">
+        <label class="form-check-label small text-secondary" for="chkAjustarTiempos">
+          Ajustar tiempos (setup / por unidad)
+        </label>
+      </div>
+      <div id="tiemposAjuste" class="row g-2 mt-1" style="display: none;">
+        <div class="col">
+          <label for="inputSetupAjuste" class="form-label small mb-0">Setup (h)</label>
+          <input type="number" step="0.01" min="0" class="form-control form-control-sm"
+                 id="inputSetupAjuste" value="0">
+        </div>
+        <div class="col">
+          <label for="inputUnitarioAjuste" class="form-label small mb-0">Por unidad (h)</label>
+          <input type="number" step="0.001" min="0" class="form-control form-control-sm"
+                 id="inputUnitarioAjuste" value="0">
+        </div>
+      </div>
     </div>
     <div class="col-md-4 d-flex align-items-end">
       <div class="form-check">

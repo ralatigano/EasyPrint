@@ -107,6 +107,40 @@ class TasaHoraTests(TestCase):
         self.assertEqual(costos.tasa_hora(), Decimal("0"))
 
 
+class TiempoEstimadoTests(TestCase):
+    """Regresión de la fórmula de tiempo estimado de la Fase 2 (fórmula 2.2):
+
+        tiempo_estimado = (setup + unitario * cantidad_producto) * factor
+    """
+
+    def test_formula_basica(self):
+        # (0.5 + 0.002 * 1000) * 1 = 2.5
+        self.assertEqual(
+            costos.tiempo_estimado(Decimal("0.5"), Decimal("0.002"),
+                                   Decimal("1000"), Decimal("1")),
+            Decimal("2.5"))
+
+    def test_factor_correccion_multiplica_el_total(self):
+        # (0.5 + 0.002 * 1000) * 1.2 = 3.0
+        self.assertEqual(
+            costos.tiempo_estimado(Decimal("0.5"), Decimal("0.002"),
+                                   Decimal("1000"), Decimal("1.2")),
+            Decimal("3.0"))
+
+    def test_solo_setup(self):
+        # Setup sin unitario: cantidad no influye.
+        self.assertEqual(
+            costos.tiempo_estimado(Decimal("1"), Decimal("0"),
+                                   Decimal("500"), Decimal("1")),
+            Decimal("1"))
+
+    def test_acepta_tipos_no_decimal(self):
+        # La función normaliza a Decimal aunque le pasen int/float/str.
+        self.assertEqual(
+            costos.tiempo_estimado(0.5, 0.002, 1000, 1),
+            Decimal("2.5"))
+
+
 class ParseDecimalFlexibleTests(TestCase):
     """Regresión del bug: "0.75" tecleado a la inglesa en el ratio pasaba por
     parse_ar y valía 75, rompiendo el DecimalField (InvalidOperation / 500)."""

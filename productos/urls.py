@@ -4,7 +4,8 @@ from .views import (
     exportar_productos_excel, borrar_todos_productos, obtener_dimensiones_producto, obtener_productos_categoria,
     categorias, guardar_categoria, borrar_categoria, obtener_categoria, listar_categorias,
     insumos, guardar_insumo, borrar_insumo, info_insumo, importar_insumos_excel, exportar_insumos_excel, borrar_todos_insumos,
-    recalcular_precios_productos, resolver_tier_producto,
+    recalcular_precios_productos, resolver_tier_producto, obtener_tiempos_producto,
+    guardar_tiempos_producto,
 )
 
 urlpatterns = [
@@ -29,6 +30,9 @@ urlpatterns = [
          obtener_producto, name='obtenerProducto'),
     path('obtenerDimensiones/<int:producto_id>',
          obtener_dimensiones_producto, name='obtenerDimensiones'),
+    path('obtenerTiempos/<int:producto_id>',
+         obtener_tiempos_producto, name='obtenerTiempos'),
+    path('guardarTiempos', guardar_tiempos_producto, name='guardarTiempos'),
     path('obtenerInsumos', insumos_select, name='obtener_insumos'),
     path('datosInsumo/<int:id>', datos_insumo, name='datos_insumo'),
     path('obtenerCategorias', categorias_select, name='obtener_categorias'),
