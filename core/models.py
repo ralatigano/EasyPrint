@@ -226,6 +226,14 @@ class ParametrosProduccion(models.Model):
                   "estructura). Es distinto del 'factor' del producto (que es markup "
                   "sobre el material). Ej: 1,30 = 30% sobre el costo total.")
 
+    horas_legacy = models.DecimalField(
+        max_digits=5, decimal_places=2, default=Decimal("1.00"),
+        help_text="Horas fijas que usa el MÉTODO VIEJO (el que se cobra) para la "
+                  "mano de obra: cobrado = material×factor + horas_legacy×costo_hora "
+                  "+ empaquetado. Congela el precio cobrado para que sembrar los "
+                  "tiempos de producción (que alimentan el método nuevo) no lo mueva. "
+                  "Andamio temporal: se retira cuando se pase a cobrar el precio nuevo.")
+
     vigencia_desde = models.DateField(default=timezone.localdate)
     updated = models.DateTimeField(auto_now=True)
 

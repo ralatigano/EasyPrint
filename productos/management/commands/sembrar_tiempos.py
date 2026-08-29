@@ -8,9 +8,9 @@ Ejemplos:
     manage.py sembrar_tiempos --categoria-id 3 --setup 1 --unitario 0 --dry-run
     manage.py sembrar_tiempos --categoria "Lonas" --unitario 0.05 --solo-vacios
 
-Aviso: el tiempo es un input de la fórmula de precio ACTUAL (tiempo × precio_hora),
-así que sembrar tiempos mueve los precios cobrados de esos productos. Ver la nota
-de la Fase 2.5 del plan sobre la transición neutral.
+Nota: desde el DESACOPLE de la Fase 2, el precio COBRADO usa `horas_legacy`
+(constante de config), así que sembrar tiempos NO mueve lo que se cobra: solo
+alimenta el precio SUGERIDO (informativo). Ver PLAN_ESTRUCTURA_COSTOS.md.
 """
 import sys
 from decimal import Decimal, InvalidOperation
@@ -22,7 +22,8 @@ from productos.models import Categoria, Producto
 
 class Command(BaseCommand):
     help = ("Aplica tiempo_setup y/o tiempo_unitario a todos los productos de una "
-            "categoría. Mueve los precios cobrados: usar a conciencia.")
+            "categoría. Alimenta el precio sugerido (no mueve el cobrado, que usa "
+            "horas_legacy).")
 
     def add_arguments(self, parser):
         grupo = parser.add_mutually_exclusive_group(required=True)
@@ -124,4 +125,4 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS(
             f"Listo: {total} producto(s) de '{categoria.nombre}' actualizados. "
-            f"Ojo: esto mueve los precios cobrados de esos productos."))
+            f"Solo afecta el precio sugerido; el cobrado no se mueve (usa horas_legacy)."))

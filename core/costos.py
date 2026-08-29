@@ -47,6 +47,17 @@ def margen_objetivo() -> Decimal:
     return ParametrosProduccion.load().margen_objetivo
 
 
+def horas_legacy() -> Decimal:
+    """Horas fijas de mano de obra del método viejo (el que se cobra hoy).
+
+    Desacopla el tiempo de los dos métodos (Fase 2): el método viejo cobra con
+    estas horas constantes (congelando el precio cobrado), mientras el tiempo
+    estructural de cada producto alimenta solo el precio sugerido. Ver
+    PLAN_ESTRUCTURA_COSTOS.md (supera D3). Andamio temporal.
+    """
+    return ParametrosProduccion.load().horas_legacy
+
+
 def factor_correccion_tiempos() -> Decimal:
     """Multiplicador global sobre los tiempos estimados de cada producto (Fase 2).
 

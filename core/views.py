@@ -621,6 +621,7 @@ def guardar_parametros_produccion(request):
     ratio = parse_decimal_flexible(request.POST.get('ratio_productivas'))
     factor = parse_decimal_flexible(request.POST.get('factor_correccion_tiempos'))
     margen_objetivo = parse_decimal_flexible(request.POST.get('margen_objetivo'))
+    horas_legacy = parse_decimal_flexible(request.POST.get('horas_legacy'))
 
     errores = []
     if operarios is None or operarios < 0:
@@ -636,6 +637,8 @@ def guardar_parametros_produccion(request):
         errores.append('El factor de corrección debe ser mayor a 0 (ej: 1,00).')
     if margen_objetivo is None or not (Decimal('0') < margen_objetivo <= Decimal('99')):
         errores.append('El margen objetivo debe ser mayor a 0 (ej: 1,30).')
+    if horas_legacy is None or not (Decimal('0') <= horas_legacy <= Decimal('999')):
+        errores.append('Las horas del método viejo deben estar entre 0 y 999 (ej: 1,00).')
 
     if errores:
         for e in errores:
@@ -649,6 +652,7 @@ def guardar_parametros_produccion(request):
     p.ratio_productivas = ratio
     p.factor_correccion_tiempos = factor
     p.margen_objetivo = margen_objetivo
+    p.horas_legacy = horas_legacy
     try:
         p.save()
     except InvalidOperation:

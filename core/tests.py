@@ -189,7 +189,7 @@ class GuardarParametrosProduccionViewTests(TestCase):
         resp = self.client.post(self.url, {
             "operarios": "2", "horas_dia": "7.5", "dias_mes": "22",
             "ratio_productivas": "0.75", "factor_correccion_tiempos": "1.1",
-            "margen_objetivo": "1.3",
+            "margen_objetivo": "1.3", "horas_legacy": "1",
         })
         self.assertEqual(resp.status_code, 302)
         p = ParametrosProduccion.load()
@@ -200,7 +200,7 @@ class GuardarParametrosProduccionViewTests(TestCase):
         resp = self.client.post(self.url, {
             "operarios": "1", "horas_dia": "8,5", "dias_mes": "20",
             "ratio_productivas": "0,7", "factor_correccion_tiempos": "1,25",
-            "margen_objetivo": "1,3",
+            "margen_objetivo": "1,3", "horas_legacy": "1",
         })
         self.assertEqual(resp.status_code, 302)
         p = ParametrosProduccion.load()
@@ -211,10 +211,30 @@ class GuardarParametrosProduccionViewTests(TestCase):
         self.client.post(self.url, {
             "operarios": "1", "horas_dia": "8", "dias_mes": "22",
             "ratio_productivas": "0,75", "factor_correccion_tiempos": "1",
-            "margen_objetivo": "1,3",
+            "margen_objetivo": "1,3", "horas_legacy": "1",
         })
         self.assertEqual(ParametrosProduccion.load().margen_objetivo,
                          Decimal("1.30"))
+
+    def test_horas_legacy_se_guarda(self):
+        self.client.post(self.url, {
+            "operarios": "1", "horas_dia": "8", "dias_mes": "22",
+            "ratio_productivas": "0,75", "factor_correccion_tiempos": "1",
+            "margen_objetivo": "1,3", "horas_legacy": "2,5",
+        })
+        self.assertEqual(ParametrosProduccion.load().horas_legacy,
+                         Decimal("2.50"))
+
+    def test_horas_legacy_invalida_no_guarda(self):
+        # Negativa debe rechazarse; queda el default 1,00.
+        resp = self.client.post(self.url, {
+            "operarios": "1", "horas_dia": "8", "dias_mes": "22",
+            "ratio_productivas": "0,75", "factor_correccion_tiempos": "1",
+            "margen_objetivo": "1,3", "horas_legacy": "-1",
+        })
+        self.assertEqual(resp.status_code, 302)  # no 500
+        self.assertEqual(ParametrosProduccion.load().horas_legacy,
+                         Decimal("1.00"))
 
     def test_margen_objetivo_invalido_no_guarda(self):
         # margen_objetivo 0 (o negativo) debe rechazarse; queda el default 1,30.

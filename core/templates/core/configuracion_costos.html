@@ -91,6 +91,13 @@
                        id="in-margen-objetivo" class="form-control" value="{{ parametros.margen_objetivo }}">
                 <div class="form-text">Sobre el costo total. Ej: 1,30 = +30%.</div>
             </div>
+            <div class="col-6 col-md-3">
+                <label class="form-label fw-semibold">Horas mano de obra (método viejo)</label>
+                <input type="text" inputmode="decimal" name="horas_legacy"
+                       id="in-horas-legacy" class="form-control" value="{{ parametros.horas_legacy }}">
+                <div class="form-text">Horas fijas que cobra el método viejo. En 1,00 el
+                    precio cobrado queda como hasta hoy y sembrar tiempos no lo mueve.</div>
+            </div>
             <div class="col-12 d-flex justify-content-end">
                 <button type="submit" class="btn btn-dark">
                     <i class="fa-solid fa-floppy-disk"></i> Guardar capacidad

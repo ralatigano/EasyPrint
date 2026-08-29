@@ -195,8 +195,14 @@ def calcular_cotizacion_final(request):
             nombre="Empaquetado").precio_proveedor if empaquetado else 0
 
         # ---- Método actual (ES EL QUE SE COBRA) ----
+        # DESACOPLE (Fase 2, supera D3): el método viejo NO usa el tiempo del
+        # input, sino `horas_legacy` (constante de config, default 1h). Así sembrar
+        # los tiempos de producción —que alimentan el método nuevo— no mueve el
+        # precio cobrado. `horas_legacy` es un andamio temporal: se retira cuando se
+        # pase a cobrar el precio nuevo. Ver PLAN_ESTRUCTURA_COSTOS.md.
+        horas_legacy = costos.horas_legacy()
         subtotal = cantidad_producto * precio_producto * margen
-        costo_produccion = tiempo * precio_hora
+        costo_produccion = horas_legacy * precio_hora
         total_bruto = subtotal + costo_produccion + precio_empaquetado
         total_con_descuento = total_bruto * \
             (1 - descuento / 100) if descuento > 0 else total_bruto
