@@ -61,11 +61,15 @@ def horas_legacy() -> Decimal:
 def factor_correccion_tiempos() -> Decimal:
     """Multiplicador global sobre los tiempos estimados de cada producto (Fase 2).
 
-    Arranca en 1,00. Corrige un sesgo sistemático de estimación sin medir trabajo
-    por trabajo (D5 del plan). Se aplica UNA sola vez, al precargar el tiempo en el
-    cotizador; el cálculo de la cotización usa ese valor ya corregido tal cual.
+    DESHABILITADO (2026-08-29): se dejó FIJO en 1 y se sacó de la pantalla de
+    configuración. Al precio le hace lo mismo que el ratio productivo (el precio de
+    trabajo es proporcional a factor/ratio), pero el factor además distorsiona las
+    horas del panel y no tiene forma de calibrarse sin medir duraciones reales
+    (seguimos en "Nivel 0", ver plan). Se tantea con `ratio_productivas`. El campo
+    `ParametrosProduccion.factor_correccion_tiempos` se conserva por si algún día se
+    miden tiempos y se decide reactivarlo.
     """
-    return ParametrosProduccion.load().factor_correccion_tiempos
+    return Decimal("1")
 
 
 def tiempo_estimado(setup, unitario, cantidad_producto, factor) -> Decimal:

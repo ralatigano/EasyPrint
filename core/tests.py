@@ -338,7 +338,7 @@ class GuardarParametrosProduccionViewTests(TestCase):
         self.assertEqual(resp.status_code, 302)
         p = ParametrosProduccion.load()
         self.assertEqual(p.ratio_productivas, Decimal("0.700"))
-        self.assertEqual(p.factor_correccion_tiempos, Decimal("1.25"))
+        self.assertEqual(p.horas_dia, Decimal("8.50"))
 
     def test_margen_objetivo_se_guarda(self):
         self.client.post(self.url, {

@@ -620,7 +620,8 @@ def guardar_parametros_produccion(request):
     dias_mes = _safe_int(request.POST.get('dias_mes'), default=None)
     horas_dia = parse_decimal_flexible(request.POST.get('horas_dia'))
     ratio = parse_decimal_flexible(request.POST.get('ratio_productivas'))
-    factor = parse_decimal_flexible(request.POST.get('factor_correccion_tiempos'))
+    # factor_correccion_tiempos: deshabilitado (fijo en 1, fuera del form). Ver
+    # core/costos.py::factor_correccion_tiempos.
     margen_objetivo = parse_decimal_flexible(request.POST.get('margen_objetivo'))
     horas_legacy = parse_decimal_flexible(request.POST.get('horas_legacy'))
 
@@ -634,8 +635,6 @@ def guardar_parametros_produccion(request):
     if ratio is None or not (Decimal('0') <= ratio <= Decimal('1')):
         errores.append(
             'El ratio de horas productivas debe estar entre 0 y 1 (ej: 0,70).')
-    if factor is None or not (Decimal('0') < factor <= Decimal('100')):
-        errores.append('El factor de corrección debe ser mayor a 0 (ej: 1,00).')
     if margen_objetivo is None or not (Decimal('0') < margen_objetivo <= Decimal('99')):
         errores.append('El margen objetivo debe ser mayor a 0 (ej: 1,30).')
     if horas_legacy is None or not (Decimal('0') <= horas_legacy <= Decimal('999')):
@@ -651,7 +650,6 @@ def guardar_parametros_produccion(request):
     p.horas_dia = horas_dia
     p.dias_mes = dias_mes
     p.ratio_productivas = ratio
-    p.factor_correccion_tiempos = factor
     p.margen_objetivo = margen_objetivo
     p.horas_legacy = horas_legacy
     try:

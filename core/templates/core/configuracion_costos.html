@@ -79,12 +79,9 @@
                        class="form-control" value="{{ parametros.ratio_productivas }}">
                 <div class="form-text">Entre 0 y 1 (ej: 0,70).</div>
             </div>
-            <div class="col-6 col-md-3">
-                <label class="form-label fw-semibold">Factor corrección tiempos</label>
-                <input type="text" inputmode="decimal" name="factor_correccion_tiempos"
-                       id="in-factor" class="form-control" value="{{ parametros.factor_correccion_tiempos }}">
-                <div class="form-text">Arranca en 1,00.</div>
-            </div>
+            {# Factor de corrección de tiempos: deshabilitado (fijo en 1). Se tantea
+               con el ratio productivo, que le hace lo mismo al precio sin distorsionar
+               las horas del panel. Ver core/costos.py::factor_correccion_tiempos. #}
             <div class="col-6 col-md-3">
                 <label class="form-label fw-semibold">Margen objetivo (método nuevo)</label>
                 <input type="text" inputmode="decimal" name="margen_objetivo"
@@ -276,7 +273,9 @@
     function toggleMeses(selectEl, mesesEl) {
         var esUnico = selectEl.value === 'unico';
         mesesEl.disabled = !esUnico;
-        mesesEl.classList.toggle('bg-light', !esUnico);
+        // bg-body-tertiary (no bg-light) para que el "gris de deshabilitado" se
+        // adapte al tema oscuro; bg-light es un fondo claro fijo.
+        mesesEl.classList.toggle('bg-body-tertiary', !esUnico);
         mesesEl.classList.toggle('text-muted', !esUnico);
     }
 

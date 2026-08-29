@@ -228,3 +228,45 @@ body[data-bs-theme="dark"] .navbar .nav-link.nav-active {
   color: #ffffff !important;
   font-weight: 600;
 }
+/* ── Select2 adaptado al tema (claro/oscuro) ──────────────────────────────
+   El CSS del CDN de Select2 fija fondo blanco y no conoce data-bs-theme.
+   Estos overrides lo alinean con las variables de Bootstrap para que funcione
+   en ambos temas. Se usa !important en los puntos clave porque el CSS del CDN
+   se carga después de este archivo. */
+.select2-container--default .select2-selection--single,
+.select2-container--default .select2-selection--multiple {
+  background-color: var(--bs-body-bg) !important;
+  border-color: var(--bs-border-color) !important;
+  color: var(--bs-body-color);
+}
+.select2-container--default .select2-selection--single .select2-selection__rendered {
+  color: var(--bs-body-color);
+}
+.select2-container--default .select2-selection--single .select2-selection__placeholder {
+  color: var(--bs-secondary-color);
+}
+.select2-container--default .select2-selection--single .select2-selection__arrow b {
+  border-color: var(--bs-body-color) transparent transparent transparent;
+}
+.select2-dropdown {
+  background-color: var(--bs-body-bg);
+  border-color: var(--bs-border-color);
+  color: var(--bs-body-color);
+}
+.select2-container--default .select2-results__option {
+  color: var(--bs-body-color);
+}
+.select2-container--default .select2-results__option--highlighted[aria-selected],
+.select2-container--default .select2-results__option--highlighted {
+  background-color: var(--bs-primary) !important;
+  color: #fff !important;
+}
+.select2-container--default .select2-results__option[aria-selected="true"] {
+  background-color: var(--bs-tertiary-bg);
+  color: var(--bs-body-color);
+}
+.select2-search--dropdown .select2-search__field {
+  background-color: var(--bs-body-bg) !important;
+  color: var(--bs-body-color);
+  border-color: var(--bs-border-color) !important;
+}

@@ -334,10 +334,7 @@ class TiemposProductoTests(TestCase):
         self.assertEqual(producto.tiempo_unitario, Decimal("0.05"))
 
     def test_obtener_tiempos_calcula_estimado(self):
-        # (setup + unitario*cantidad) * factor = (0.5 + 0.002*1000) * 1.2 = 3.0
-        p = ParametrosProduccion.load()
-        p.factor_correccion_tiempos = Decimal("1.2")
-        p.save()
+        # factor deshabilitado (fijo en 1): (0.5 + 0.002*1000) * 1 = 2.5
         producto = Producto.objects.create(
             nombre="Tarjeta", categoria=self.cat, ancho=9, alto=5,
             tiempo_setup=Decimal("0.5"), tiempo_unitario=Decimal("0.002"),
@@ -346,7 +343,8 @@ class TiemposProductoTests(TestCase):
             f"/productos/obtenerTiempos/{producto.id}?cantidad=1000")
         data = resp.json()
         self.assertTrue(data["tiene_tiempos"])
-        self.assertEqual(data["tiempo_estimado"], 3.0)
+        self.assertEqual(data["tiempo_estimado"], 2.5)
+        self.assertEqual(data["factor_correccion"], 1.0)
 
     def test_obtener_tiempos_sin_configurar_no_estima(self):
         # Producto con ambos tiempos en 0: no se precarga (queda el default 1h).
