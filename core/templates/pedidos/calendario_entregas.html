@@ -1,0 +1,79 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% load l10n %}
+
+{% block title %}Calendario de entregas{% endblock %}
+
+{% block header %}
+<div class="titulo">
+    <h1>Calendario de entregas</h1>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-2">
+
+    {# ── Barra: volver a la tabla + navegación de mes ─────────────────────── #}
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+        <a href="/pedidos/v2" class="btn btn-sm btn-outline-secondary">
+            <i class="fa-solid fa-table-list me-1"></i> Ver como tabla
+        </a>
+        <div class="d-flex align-items-center gap-2">
+            <a href="?anio={{ prev_anio|unlocalize }}&mes={{ prev_mes|unlocalize }}"
+               class="btn btn-sm btn-outline-dark" title="Mes anterior">
+                <i class="fa-solid fa-chevron-left"></i>
+            </a>
+            <span class="fw-semibold" style="min-width: 11rem; text-align: center;">
+                {{ nombre_mes }} {{ anio|unlocalize }}
+            </span>
+            <a href="?anio={{ next_anio|unlocalize }}&mes={{ next_mes|unlocalize }}"
+               class="btn btn-sm btn-outline-dark" title="Mes siguiente">
+                <i class="fa-solid fa-chevron-right"></i>
+            </a>
+            <a href="/pedidos/calendario" class="btn btn-sm btn-outline-secondary ms-1">Hoy</a>
+        </div>
+    </div>
+
+    {# ── Grilla del mes ───────────────────────────────────────────────────── #}
+    <div class="table-responsive">
+        <table class="table table-bordered mb-0" style="table-layout: fixed;">
+            <thead>
+                <tr class="text-center text-secondary small">
+                    {% for d in dias_semana %}<th style="width: 14.28%;">{{ d }}</th>{% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for semana in semanas %}
+                <tr>
+                    {% for celda in semana %}
+                    <td class="align-top p-1 {% if not celda.en_mes %}bg-body-tertiary text-muted{% endif %}"
+                        style="height: 120px; vertical-align: top;">
+                        <div class="d-flex justify-content-between">
+                            <span class="small {% if celda.es_hoy %}badge bg-primary{% else %}text-secondary{% endif %}">
+                                {{ celda.dia }}
+                            </span>
+                        </div>
+                        {% for p in celda.pedidos %}
+                        <div class="mt-1 p-1 rounded border small" style="font-size: 11px; line-height: 1.2;">
+                            <div class="fw-semibold text-truncate">{{ p.cliente.referencia|default:"Sin cliente" }}</div>
+                            <div class="text-secondary text-truncate" title="{{ p.producto }}">{{ p.producto|default:"—" }}</div>
+                            {% if p.saldo_real > 0 %}
+                            <div class="text-danger">Debe $ {{ p.saldo_real|floatformat:0 }}</div>
+                            {% else %}
+                            <div class="text-success">Saldado</div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <p class="text-secondary small mt-2">
+        Vista de solo lectura. Para editar un pedido, usá la tabla.
+    </p>
+
+</div>
+{% endblock %}

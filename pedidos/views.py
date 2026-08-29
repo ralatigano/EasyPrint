@@ -21,6 +21,67 @@ from core.decorators import solo_gerencia
 # Create your views here.
 app_name = 'pedidos'
 
+_NOMBRES_MES = [
+    '', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
+]
+_DIAS_SEMANA = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
+
+
+@login_required
+def calendario_entregas(request):
+    """Vista calendario (accesoria, solo lectura) de las entregas de pedidos por
+    fecha_entrega. La tabla sigue siendo la vista principal. Muestra el mes con
+    navegación a meses vecinos; por pedido: cliente, productos y saldo (Fase 6)."""
+    import calendar as _cal
+
+    hoy = timezone.localdate()
+    try:
+        anio = int(request.GET.get('anio') or hoy.year)
+        mes = int(request.GET.get('mes') or hoy.month)
+    except (TypeError, ValueError):
+        anio, mes = hoy.year, hoy.month
+    if not (1 <= mes <= 12):
+        mes = hoy.month
+
+    semanas_fechas = _cal.Calendar(firstweekday=0).monthdatescalendar(anio, mes)
+    primer, ultimo = semanas_fechas[0][0], semanas_fechas[-1][-1]
+
+    pedidos = (
+        Pedido.objects.filter(
+            bloqueado_cancelado=False,
+            fecha_entrega__gte=primer, fecha_entrega__lte=ultimo,
+        ).select_related('cliente')
+    )
+    por_dia = {}
+    for p in pedidos:
+        por_dia.setdefault(p.fecha_entrega, []).append(p)
+
+    semanas = []
+    for semana in semanas_fechas:
+        semanas.append([{
+            'dia': d.day,
+            'en_mes': d.month == mes,
+            'es_hoy': d == hoy,
+            'pedidos': por_dia.get(d, []),
+        } for d in semana])
+
+    prev = (anio - 1, 12) if mes == 1 else (anio, mes - 1)
+    nxt = (anio + 1, 1) if mes == 12 else (anio, mes + 1)
+
+    return render(request, 'pedidos/calendario_entregas.html', {
+        'usuario': request.session.get('usuario_nombre'),
+        'img': request.session.get('img'),
+        'autorizado': request.session.get('autorizado'),
+        'anio': anio,
+        'mes': mes,
+        'nombre_mes': _NOMBRES_MES[mes],
+        'dias_semana': _DIAS_SEMANA,
+        'semanas': semanas,
+        'prev_anio': prev[0], 'prev_mes': prev[1],
+        'next_anio': nxt[0], 'next_mes': nxt[1],
+    })
+
 # Vista con la lista de pedidos
 
 

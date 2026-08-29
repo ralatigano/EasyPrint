@@ -159,6 +159,12 @@
     {% comment %}Bandera de gerencia accesible desde JS{% endcomment %}
     <span id="js_es_gerencia" data-value="{% if es_gerencia %}true{% else %}false{% endif %}" hidden></span>
 
+    <div class="d-flex justify-content-end mb-2">
+        <a href="/pedidos/calendario" class="btn btn-sm btn-outline-primary">
+            <i class="fa-solid fa-calendar-days me-1"></i> Ver calendario de entregas
+        </a>
+    </div>
+
     <!-- Barra de filtros -->
     <div class="filter-bar-v2">
 
