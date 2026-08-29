@@ -248,3 +248,24 @@ class ParametrosProduccion(models.Model):
     def load(cls):
         obj, _ = cls.objects.get_or_create(pk=1)
         return obj
+
+
+class Feriado(models.Model):
+    """Día no laborable, para el cálculo de días hábiles del control de fechas
+    de entrega (Fase 6). Se administra desde Configuración → Estructura de costos.
+
+    Se puede cargar a mano o, opcionalmente, importar de una API una vez al año
+    (comando importar_feriados). El cálculo de capacidad SIEMPRE lee esta tabla,
+    nunca una API en tiempo real. Ver PLAN_ESTRUCTURA_COSTOS.md, Fase 6.3.
+    """
+    fecha = models.DateField(unique=True)
+    descripcion = models.CharField(max_length=120, blank=True)
+    created = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['fecha']
+        verbose_name = "Feriado"
+        verbose_name_plural = "Feriados"
+
+    def __str__(self):
+        return f"{self.fecha} — {self.descripcion}" if self.descripcion else str(self.fecha)

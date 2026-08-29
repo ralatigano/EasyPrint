@@ -399,6 +399,46 @@ def confirmar_pedido(request):
 
 
 @login_required
+def evaluar_entrega_fecha(request):
+    """Evalúa la capacidad para una fecha de entrega (Fase 6). AJAX, no bloquea.
+
+    Las horas del pedido nuevo salen de los ítems de la cotización en curso, igual
+    que confirmar_pedido: si se edita un presupuesto, sus ítems; si no, los ítems
+    sueltos del vendedor en sesión.
+    """
+    from django.db.models import Sum
+    from core import capacidad as cap
+
+    fecha_str = request.GET.get('fecha')
+    if not fecha_str:
+        return JsonResponse({'ok': False, 'mensaje': 'Falta la fecha.'})
+    try:
+        fecha = datetime.strptime(fecha_str, "%Y-%m-%d").date()
+    except ValueError:
+        return JsonResponse({'ok': False, 'mensaje': 'Fecha inválida.'})
+
+    editando_presup = request.session.get('editando_presup', False)
+    np_global = request.session.get('np_global', 0)
+    vendedor = request.session.get('vendedor')
+    if editando_presup:
+        prods = ProductoCotizado.objects.filter(presupuesto=np_global)
+    else:
+        prods = ProductoCotizado.objects.filter(presupuesto=None, vendedor=vendedor)
+    horas_nuevas = prods.aggregate(s=Sum('t_produccion'))['s'] or 0
+
+    r = cap.evaluar_entrega(fecha, horas_nuevas)
+    return JsonResponse({
+        'ok': True,
+        'alcanza': r['alcanza'],
+        'capacidad': float(r['capacidad']),
+        'carga_comprometida': float(r['carga_comprometida']),
+        'margen_libre': float(r['margen_libre']),
+        'horas_nuevas': float(r['horas_nuevas']),
+        'faltante': float(r['faltante']),
+    })
+
+
+@login_required
 def get_productos_info(request):
     presupuesto_id = request.GET.get('presupuesto_id')
     pedido_numero = request.GET.get('pedido_numero')

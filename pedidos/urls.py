@@ -2,7 +2,7 @@ from django.urls import path
 from .views import (
     pedidos, pedidos_v2, cambiar_estado, cambiar_enc, agregar_descripcion, cambiar_cliente_pedido,
     agregar_senia, completar_pedido, confirmar_pedido, get_productos_info,
-    eliminar_pedido, preparar_completar_pedido,
+    eliminar_pedido, preparar_completar_pedido, evaluar_entrega_fecha,
     viajes_cadete, guardar_viaje_cadete, borrar_viaje_cadete, info_viaje_cadete, actualizar_estado_viajes, exportar_viajes_cadete,
     cambiar_estado_bulk, cambiar_enc_bulk,
 )
@@ -18,6 +18,7 @@ urlpatterns = [
     # Vista para completar el pedido en función de un presupuesto.
     path('completarPedido', completar_pedido, name='completarPedido'),
     path('confirmarPedido', confirmar_pedido, name='confirmarPedido'),
+    path('evaluarEntrega', evaluar_entrega_fecha, name='evaluarEntrega'),
     # Editar atributos específicos de un pedido
     path('cambiarEstado', cambiar_estado, name='cambiarEstado'),
     path('cambiarEncargado', cambiar_enc, name='cambiarEncargado'),

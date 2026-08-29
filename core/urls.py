@@ -10,6 +10,7 @@ from .views import (
     guardar_disclaimer,
     configuracion_costos, guardar_costo_fijo, borrar_costo_fijo,
     guardar_parametros_produccion,
+    configuracion_feriados, borrar_feriado, importar_feriados,
 )
 
 urlpatterns = [
@@ -56,4 +57,11 @@ urlpatterns = [
          borrar_costo_fijo, name='borrar_costo_fijo'),
     path('configuracion/costos/parametros',
          guardar_parametros_produccion, name='guardar_parametros_produccion'),
+    # Feriados (Fase 6)
+    path('configuracion/feriados', configuracion_feriados,
+         name='configuracion_feriados'),
+    path('configuracion/feriados/importar', importar_feriados,
+         name='importar_feriados'),
+    path('configuracion/feriados/borrar/<int:feriado_id>',
+         borrar_feriado, name='borrar_feriado'),
 ]

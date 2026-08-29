@@ -10,9 +10,10 @@ from .functions import *
 from django.contrib.auth.models import User, Group
 from .models import (
     Usuario, AliasPago, ConfiguracionPresupuesto,
-    CostoFijo, ParametrosProduccion,
+    CostoFijo, ParametrosProduccion, Feriado,
 )
 from datetime import datetime
+from django.utils import timezone
 from .forms import RegistroUsuarioForm
 from core.decorators import solo_gerencia
 from core.utils import parse_ar, parse_decimal_flexible
@@ -660,3 +661,117 @@ def guardar_parametros_produccion(request):
         return redirect('configuracion_costos')
     messages.success(request, 'Parámetros de producción actualizados.')
     return redirect('configuracion_costos')
+
+
+# ── Feriados (Fase 6) ─────────────────────────────────────────────────────────
+_NOMBRES_MES = [
+    '', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
+]
+
+
+@login_required
+@solo_gerencia
+def configuracion_feriados(request):
+    """Pantalla de feriados (Fase 6). GET lista los feriados del año agrupados por
+    mes; POST agrega uno a mano. La importación desde API y el borrado tienen sus
+    propias vistas."""
+    if request.method == 'POST':
+        fecha = request.POST.get('fecha')
+        descripcion = request.POST.get('descripcion', '').strip()
+        if not fecha:
+            messages.error(request, 'Indicá la fecha del feriado.')
+        else:
+            try:
+                d = datetime.strptime(fecha, '%Y-%m-%d').date()
+                _, creado = Feriado.objects.get_or_create(
+                    fecha=d, defaults={'descripcion': descripcion})
+                if creado:
+                    messages.success(request, f'Feriado {d} agregado.')
+                else:
+                    messages.info(request, f'El {d} ya estaba cargado.')
+            except ValueError:
+                messages.error(request, 'Fecha inválida.')
+        return redirect(f"{request.path}?anio={fecha[:4] if fecha else ''}")
+
+    hoy = timezone.localdate()
+    try:
+        anio = int(request.GET.get('anio') or hoy.year)
+    except (TypeError, ValueError):
+        anio = hoy.year
+
+    feriados = Feriado.objects.filter(fecha__year=anio)
+    meses = []
+    for m in range(1, 13):
+        fs = [f for f in feriados if f.fecha.month == m]
+        if fs:
+            meses.append({'nombre': _NOMBRES_MES[m], 'feriados': fs})
+
+    data = {
+        'usuario': request.session.get('usuario_nombre'),
+        'img': request.session.get('img'),
+        'autorizado': request.session.get('autorizado'),
+        'anio': anio,
+        'anios': [hoy.year - 1, hoy.year, hoy.year + 1],
+        'meses': meses,
+        'total': feriados.count(),
+    }
+    return render(request, 'core/configuracion_feriados.html', data)
+
+
+@login_required
+@solo_gerencia
+@require_POST
+def borrar_feriado(request, feriado_id):
+    f = get_object_or_404(Feriado, id=feriado_id)
+    anio = f.fecha.year
+    f.delete()
+    messages.success(request, 'Feriado eliminado.')
+    return redirect(f"/configuracion/feriados?anio={anio}")
+
+
+@login_required
+@solo_gerencia
+@require_POST
+def importar_feriados(request):
+    """Importa los feriados de Argentina de un año desde Nager.Date a la tabla
+    Feriado (upsert por fecha). Es una acción puntual disparada por el usuario; el
+    cálculo de días hábiles nunca consulta la API, solo lee la DB. Ver Fase 6.3."""
+    import json
+    import urllib.request
+
+    try:
+        anio = int(request.POST.get('anio'))
+    except (TypeError, ValueError):
+        messages.error(request, 'Año inválido.')
+        return redirect('configuracion_feriados')
+
+    url = f"https://date.nager.at/api/v3/PublicHolidays/{anio}/AR"
+    try:
+        req = urllib.request.Request(url, headers={'User-Agent': 'EasyPrint'})
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            datos = json.loads(resp.read().decode('utf-8'))
+    except Exception as e:
+        messages.error(
+            request, f'No se pudieron traer los feriados de {anio}: {e}. '
+            'Podés cargarlos a mano.')
+        return redirect(f"/configuracion/feriados?anio={anio}")
+
+    creados = 0
+    for item in datos:
+        try:
+            d = datetime.strptime(item['date'], '%Y-%m-%d').date()
+        except (KeyError, ValueError):
+            continue
+        desc = item.get('localName') or item.get('name') or ''
+        _, creado = Feriado.objects.get_or_create(
+            fecha=d, defaults={'descripcion': desc})
+        if creado:
+            creados += 1
+
+    messages.success(
+        request,
+        f'Importados {creados} feriados nuevos de {anio} '
+        f'({len(datos)} en total; los que ya estaban no se tocaron). '
+        'Revisá y agregá a mano los puentes turísticos si faltan.')
+    return redirect(f"/configuracion/feriados?anio={anio}")

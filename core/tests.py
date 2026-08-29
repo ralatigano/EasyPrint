@@ -1,10 +1,13 @@
+import json
+from datetime import date
 from decimal import Decimal
+from unittest.mock import patch, MagicMock
 
 from django.contrib.auth.models import User
-from django.test import TestCase
+from django.test import TestCase, override_settings
 
-from core import costos
-from core.models import CostoFijo, ParametrosProduccion
+from core import costos, capacidad
+from core.models import CostoFijo, ParametrosProduccion, Feriado
 from core.utils import format_ar, parse_ar, parse_decimal_flexible
 
 
@@ -139,6 +142,128 @@ class TiempoEstimadoTests(TestCase):
         self.assertEqual(
             costos.tiempo_estimado(0.5, 0.002, 1000, 1),
             Decimal("2.5"))
+
+
+class DiasHabilesTests(TestCase):
+    """Fase 6.3: días hábiles = lun-vie menos feriados de la DB."""
+
+    def test_semana_completa(self):
+        # Lun 2024-01-01 a Vie 2024-01-05 = 5 días hábiles.
+        self.assertEqual(capacidad.dias_habiles(date(2024, 1, 1), date(2024, 1, 5)), 5)
+
+    def test_excluye_fin_de_semana(self):
+        # Lun a Dom = 5 (sáb y dom no cuentan).
+        self.assertEqual(capacidad.dias_habiles(date(2024, 1, 1), date(2024, 1, 7)), 5)
+
+    def test_excluye_feriados(self):
+        Feriado.objects.create(fecha=date(2024, 1, 1), descripcion="Año nuevo")
+        self.assertEqual(capacidad.dias_habiles(date(2024, 1, 1), date(2024, 1, 5)), 4)
+
+    def test_hasta_antes_de_desde(self):
+        self.assertEqual(capacidad.dias_habiles(date(2024, 1, 5), date(2024, 1, 1)), 0)
+
+
+class CapacidadTests(TestCase):
+    """Fase 6.1: capacidad, carga comprometida y margen libre."""
+
+    def setUp(self):
+        p = ParametrosProduccion.load()
+        p.operarios = 2
+        p.horas_dia = Decimal("8")
+        p.ratio_productivas = Decimal("0.5")
+        p.save()
+
+    def test_capacidad_hasta(self):
+        # 5 días hábiles * 8 h * 2 operarios * 0.5 = 40 h.
+        cap = capacidad.capacidad_hasta(date(2024, 1, 5), hoy=date(2024, 1, 1))
+        self.assertEqual(cap, Decimal("40.0"))
+
+    def test_evaluar_entrega_alcanza_y_no_alcanza(self):
+        from pedidos.models import Pedido
+        from presupuestos.models import Presupuesto
+        from productos.models import Producto, ProductoCotizado
+
+        prod = Producto.objects.create(nombre="P", precio=Decimal("100"))
+        pre = Presupuesto.objects.create(numero=1)
+        ProductoCotizado.objects.create(
+            insumo=prod, presupuesto=pre, cantidad=1, t_produccion=Decimal("30"),
+            resultado=Decimal("1000"))
+        Pedido.objects.create(numero=1, presupuesto=1, precio=1000,
+                              descripcion="x", estado="En proceso",
+                              fecha_entrega=date(2024, 1, 5))
+
+        # Capacidad 40 h, ya comprometidas 30 h -> libre 10 h.
+        r = capacidad.evaluar_entrega(date(2024, 1, 5), 8, hoy=date(2024, 1, 1))
+        self.assertEqual(r["capacidad"], Decimal("40.0"))
+        self.assertEqual(r["carga_comprometida"], Decimal("30"))
+        self.assertEqual(r["margen_libre"], Decimal("10.0"))
+        self.assertTrue(r["alcanza"])       # 8 <= 10
+
+        r2 = capacidad.evaluar_entrega(date(2024, 1, 5), 15, hoy=date(2024, 1, 1))
+        self.assertFalse(r2["alcanza"])     # 15 > 10
+        self.assertEqual(r2["faltante"], Decimal("5.0"))
+
+
+@override_settings(STORAGES={
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+})
+class FeriadosViewTests(TestCase):
+    """Fase 6: pantalla de feriados (alta manual, borrado, agrupado, import).
+
+    Se usa storage estático plano: los tests que renderizan la página no dependen
+    del manifest de collectstatic.
+    """
+
+    def setUp(self):
+        self.user = User.objects.create_superuser("gerf", "gf@g.com", "pw12345")
+        self.client.force_login(self.user)
+
+    def test_alta_manual(self):
+        self.client.post("/configuracion/feriados",
+                         {"fecha": "2026-12-25", "descripcion": "Navidad"})
+        self.assertTrue(Feriado.objects.filter(fecha=date(2026, 12, 25)).exists())
+
+    def test_alta_duplicada_no_crea_otro(self):
+        Feriado.objects.create(fecha=date(2026, 1, 1), descripcion="Año nuevo")
+        self.client.post("/configuracion/feriados",
+                         {"fecha": "2026-01-01", "descripcion": "otro"})
+        self.assertEqual(Feriado.objects.filter(fecha=date(2026, 1, 1)).count(), 1)
+
+    def test_borrar(self):
+        f = Feriado.objects.create(fecha=date(2026, 1, 1))
+        self.client.post(f"/configuracion/feriados/borrar/{f.id}")
+        self.assertFalse(Feriado.objects.filter(id=f.id).exists())
+
+    def test_pagina_agrupa_por_mes(self):
+        Feriado.objects.create(fecha=date(2026, 1, 1))
+        Feriado.objects.create(fecha=date(2026, 5, 1))
+        resp = self.client.get("/configuracion/feriados?anio=2026")
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(len(resp.context["meses"]), 2)  # enero y mayo
+
+    def test_importar_desde_api_mockeada(self):
+        payload = json.dumps([
+            {"date": "2026-01-01", "localName": "Año Nuevo", "name": "New Year"},
+            {"date": "2026-05-01", "localName": "Día del Trabajador", "name": "Labour"},
+        ]).encode("utf-8")
+        cm = MagicMock()
+        cm.read.return_value = payload
+        cm.__enter__.return_value = cm
+        cm.__exit__.return_value = False
+        with patch("urllib.request.urlopen", return_value=cm):
+            self.client.post("/configuracion/feriados/importar", {"anio": "2026"})
+        self.assertEqual(Feriado.objects.filter(fecha__year=2026).count(), 2)
+        self.assertEqual(
+            Feriado.objects.get(fecha=date(2026, 1, 1)).descripcion, "Año Nuevo")
+
+    def test_importar_error_de_red_no_rompe(self):
+        with patch("urllib.request.urlopen", side_effect=Exception("network")):
+            resp = self.client.post("/configuracion/feriados/importar",
+                                    {"anio": "2026"}, follow=True)
+        self.assertEqual(resp.status_code, 200)  # redirige, no 500
+        self.assertEqual(Feriado.objects.count(), 0)
 
 
 class ParseDecimalFlexibleTests(TestCase):

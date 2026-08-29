@@ -53,6 +53,8 @@
     <div class="form-group fecha-entrega">
         <label for="fecha_entrega" style="font-weight: bold">Fecha de entrega:</label>
         <input type="date" id="fecha_entrega" name="fecha_entrega" class="form-control" required>
+        {# Aviso de capacidad (Fase 6): informativo, NO bloquea el guardado #}
+        <div id="avisoCapacidad" class="mt-2 p-2 rounded small border" style="display:none;"></div>
     </div>
     <div class="form-group info_adic">
         <label for="info_adic" style="font-weight: bold">Información adicional</label>
@@ -98,5 +100,43 @@
 {% endblock %}
 <!--------------------------------------------------------------------------- Block scripts --------------------------------------------------------------------------->
 {% block scripts %}
-<!-- Custom Js -->
+<script>
+// Aviso de capacidad al elegir la fecha de entrega (Fase 6). Es informativo:
+// nunca bloquea el guardado; la prioridad la decide la persona.
+(function () {
+  const input = document.getElementById('fecha_entrega');
+  const aviso = document.getElementById('avisoCapacidad');
+  if (!input || !aviso) return;
+
+  function fmt(n) {
+    return (typeof formatearNumeroLocal === 'function')
+      ? formatearNumeroLocal(n)
+      : Number(n).toLocaleString('es-AR', { maximumFractionDigits: 1 });
+  }
+
+  input.addEventListener('change', function () {
+    const fecha = input.value;
+    if (!fecha) { aviso.style.display = 'none'; return; }
+
+    fetch(`/pedidos/evaluarEntrega?fecha=${encodeURIComponent(fecha)}`)
+      .then(r => r.json())
+      .then(d => {
+        if (!d.ok) { aviso.style.display = 'none'; return; }
+        const detalle =
+          `Este pedido: <strong>${fmt(d.horas_nuevas)} h</strong> · ` +
+          `libre hasta esa fecha: <strong>${fmt(d.margen_libre)} h</strong> ` +
+          `(capacidad ${fmt(d.capacidad)} h − comprometido ${fmt(d.carga_comprometida)} h).`;
+        if (d.alcanza) {
+          aviso.className = 'mt-2 p-2 rounded small border border-success text-success';
+          aviso.innerHTML = `✅ Hay tiempo para producirlo. ${detalle}`;
+        } else {
+          aviso.className = 'mt-2 p-2 rounded small border border-danger text-danger';
+          aviso.innerHTML = `⚠️ Puede no llegar: faltan <strong>${fmt(d.faltante)} h</strong> de capacidad. ${detalle}<br>Es solo un aviso: podés confirmar igual y reordenar prioridades.`;
+        }
+        aviso.style.display = 'block';
+      })
+      .catch(() => { aviso.style.display = 'none'; });
+  });
+})();
+</script>
 {% endblock %}

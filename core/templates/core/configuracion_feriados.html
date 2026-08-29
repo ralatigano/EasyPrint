@@ -1,0 +1,90 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% load l10n %}
+
+{% block title %}Feriados{% endblock %}
+
+{% block header %}
+<div class="titulo">
+    <h1>Feriados</h1>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 900px;">
+
+    <p class="text-secondary">
+        Los feriados se usan para calcular los <strong>días hábiles</strong> del control
+        de fechas de entrega. Podés <strong>importarlos</strong> de una vez para el año o
+        <strong>cargarlos a mano</strong>. La lista es editable: revisá y agregá los
+        puentes con fines turísticos si la importación no los trae.
+    </p>
+
+    {# ── Selector de año + import ─────────────────────────────────────────── #}
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+        <div class="btn-group">
+            {% for a in anios %}
+            <a href="?anio={{ a|unlocalize }}"
+               class="btn btn-sm {% if a == anio %}btn-dark{% else %}btn-outline-secondary{% endif %}">{{ a|unlocalize }}</a>
+            {% endfor %}
+        </div>
+        <form method="POST" action="{% url 'importar_feriados' %}" class="m-0">
+            {% csrf_token %}
+            <input type="hidden" name="anio" value="{{ anio|unlocalize }}">
+            <button type="submit" class="btn btn-sm btn-primary">
+                <i class="fa-solid fa-cloud-arrow-down me-1"></i>
+                Importar feriados {{ anio|unlocalize }} (Argentina)
+            </button>
+        </form>
+    </div>
+
+    {# ── Alta manual ──────────────────────────────────────────────────────── #}
+    <form method="POST" action="{% url 'configuracion_feriados' %}"
+          class="row g-2 align-items-end p-3 border rounded bg-body-tertiary mb-4">
+        {% csrf_token %}
+        <div class="col-12 col-sm-4">
+            <label for="fecha" class="form-label mb-0 small fw-semibold">Fecha</label>
+            <input type="date" id="fecha" name="fecha" class="form-control form-control-sm" required>
+        </div>
+        <div class="col-12 col-sm-6">
+            <label for="descripcion" class="form-label mb-0 small fw-semibold">Descripción</label>
+            <input type="text" id="descripcion" name="descripcion" class="form-control form-control-sm"
+                   placeholder="Ej: Feriado puente turístico">
+        </div>
+        <div class="col-12 col-sm-2 d-grid">
+            <button type="submit" class="btn btn-sm btn-success">Agregar</button>
+        </div>
+    </form>
+
+    {# ── Lista por mes ────────────────────────────────────────────────────── #}
+    {% if meses %}
+        {% for mes in meses %}
+        <h6 class="fw-semibold text-secondary mt-3 mb-1">{{ mes.nombre }}</h6>
+        <ul class="list-group mb-2">
+            {% for f in mes.feriados %}
+            <li class="list-group-item d-flex justify-content-between align-items-center py-2">
+                <span>
+                    <strong>{{ f.fecha|date:"d/m/Y" }}</strong>
+                    {% if f.descripcion %}<span class="text-secondary ms-2">{{ f.descripcion }}</span>{% endif %}
+                </span>
+                <form method="POST" action="{% url 'borrar_feriado' f.id %}" class="m-0"
+                      onsubmit="return confirm('¿Borrar el feriado {{ f.fecha|date:'d/m/Y' }}?');">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Borrar">
+                        <i class="fa-solid fa-trash-can"></i>
+                    </button>
+                </form>
+            </li>
+            {% endfor %}
+        </ul>
+        {% endfor %}
+        <p class="text-secondary small mt-2">{{ total }} feriado(s) cargado(s) en {{ anio|unlocalize }}.</p>
+    {% else %}
+        <div class="text-center text-secondary py-4 border rounded">
+            No hay feriados cargados para {{ anio|unlocalize }}.
+            Importalos o agregalos a mano.
+        </div>
+    {% endif %}
+
+</div>
+{% endblock %}
