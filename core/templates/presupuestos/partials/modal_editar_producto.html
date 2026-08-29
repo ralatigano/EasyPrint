@@ -32,11 +32,11 @@
             <div class="row mb-3">
               <div class="col-md-4">
                 <label for="descuento_editar" class="form-label">Descuento (%)</label>
-                <input type="number" class="form-control" id="descuento_editar" name="descuento" step="0.01">
+                <input type="text" inputmode="decimal" class="form-control" id="descuento_editar" name="descuento">
               </div>
               <div class="col-md-4">
                 <label for="tiempo_editar" class="form-label">Tiempo producción (hs)</label>
-                <input type="number" class="form-control" id="tiempo_editar" name="tiempo" step="0.1">
+                <input type="text" inputmode="decimal" class="form-control" id="tiempo_editar" name="tiempo">
               </div>
               <div class="col-md-4 d-flex align-items-end">
                 <div class="form-check">
@@ -51,6 +51,18 @@
               <input type="hidden" id="resultado_calculado" name="resultado">
               <strong>Nuevo precio:</strong> <span id="nuevo_precio_calculado" class="text-info" title="">$ —</span>
             </div>
+
+            <!-- Semáforo de precio (Fase 4): informativo, NUNCA bloquea -->
+            <div id="semaforoPrecio" class="mt-2 p-2 rounded small border d-none">
+              <div class="d-flex align-items-center gap-2">
+                <span id="semaforoDot" style="width:12px;height:12px;border-radius:50%;display:inline-block;flex:0 0 auto;"></span>
+                <span id="semaforoTexto" class="fw-semibold"></span>
+              </div>
+              <div id="semaforoDetalle" class="text-secondary mt-1"></div>
+            </div>
+
+            <!-- Headroom / aporte (Fase 4.1): capacidad de negociación a pedido -->
+            <div id="headroomPrecio" class="mt-2 small text-secondary d-none"></div>
           </div>
         </div>
 

@@ -41,7 +41,12 @@ const CotizacionEditor = {
   tiempoOriginal: 0,
   descuentoOriginal: 0,
   empaquetadoOriginal: false,
-  esPrecioArbitrario: false
+  esPrecioArbitrario: false,
+  // Snapshots para el semáforo (Fase 4)
+  cantidad: 0,
+  precioSugerido: 0,
+  pisoAbsoluto: 0,
+  pisoAbsorcion: 0
 };
 
 // 1. Entrada principal: se llama al abrir el modal
@@ -66,8 +71,9 @@ function mostrarModal(data) {
   nombreProductoSpan.textContent = data.producto_nombre;
   infoAdicionalInput.value = data.info_adicional || '';
   precioInput.value = `$ ${formatearNumeroLocal(data.precio)}`;
-  descuentoInput.value = data.descuento || 0;
-  tiempoInput.value = data.tiempo_estimado || 0;
+  // Precarga en formato AR (coma decimal), consistente con el resto de los campos.
+  descuentoInput.value = _arNum(data.descuento || 0);
+  tiempoInput.value = _arNum(data.tiempo_estimado || 0);
   empaquetadoCheckbox.checked = data.empaquetado || false;
   precioArbCheckbox.checked = data.precio_arbitrario || false;
 
@@ -86,6 +92,10 @@ function inicializarEditor(data) {
   CotizacionEditor.empaquetadoOriginal = Boolean(data.empaquetado);
   CotizacionEditor.descuentoOriginal = parseFloat(data.descuento) || 0;
   CotizacionEditor.esPrecioArbitrario = Boolean(data.precio_arbitrario);
+  CotizacionEditor.cantidad = parseFloat(data.cantidad) || 0;
+  CotizacionEditor.precioSugerido = parseFloat(data.precio_sugerido) || 0;
+  CotizacionEditor.pisoAbsoluto = parseFloat(data.piso_absoluto) || 0;
+  CotizacionEditor.pisoAbsorcion = parseFloat(data.piso_absorcion) || 0;
 
   tiempoInput.addEventListener('input', actualizarVista);
   descuentoInput.addEventListener('input', actualizarVista);
@@ -98,8 +108,12 @@ function inicializarEditor(data) {
     CotizacionEditor.esPrecioArbitrario = this.checked;
       if (this.checked) {
         precioInput.removeAttribute('readonly');
+        // Quitar el "$" y dejar el número en formato AR: así se edita sin romper
+        // el parseo (el "$" hacía que el semáforo no calculara).
+        precioInput.value = formatearNumeroLocal(_parsePrecio(precioInput.value));
       } else {
         precioInput.setAttribute('readonly', true);
+        precioInput.value = `$ ${formatearNumeroLocal(_parsePrecio(precioInput.value))}`;
       }
       actualizarVista();
     });
@@ -112,8 +126,8 @@ function inicializarEditor(data) {
 
 // 4. Cálculo reactivo
 function calcularPrecioFinal() {
-  const tiempoNuevo = parseFloat(tiempoInput.value) || 0;
-  const descuentoNuevo = parseFloat(descuentoInput.value) || 0;
+  const tiempoNuevo = parsearDecimalFlexible(tiempoInput.value);
+  const descuentoNuevo = parsearDecimalFlexible(descuentoInput.value);
   const empaquetadoNuevo = empaquetadoCheckbox.checked;
   const subtotalInput = document.getElementById('subtotal_calculado');
 
@@ -135,15 +149,27 @@ function calcularPrecioFinal() {
   return precioFinal;
 }
 
+// Parseo robusto de un precio en formato AR, tolerante a "$" y espacios.
+// (parsearNumeroLocal por sí solo no descarta el símbolo de moneda.)
+function _parsePrecio(v) {
+  return parsearNumeroLocal(String(v).replace(/\$/g, '').trim());
+}
+
+// Muestra un número en formato AR simple (coma decimal), sin forzar decimales.
+function _arNum(v) {
+  return String(v).replace('.', ',');
+}
+
 function actualizarVista() {
   const nuevoPrecioSpan = document.getElementById('nuevo_precio_calculado');
   const resultadoInput = document.getElementById('resultado_calculado');
 
   if (CotizacionEditor.esPrecioArbitrario) {
-    const precioManual = parseFloat(precioInput.value) || 0;
+    const precioManual = _parsePrecio(precioInput.value);
     nuevoPrecioSpan.textContent = `$ ${formatearNumeroLocal(precioManual)}`;
     resultadoInput.value = precioManual.toFixed(2);
     nuevoPrecioSpan.setAttribute('title', 'Precio arbitrario definido por el usuario. No se aplican cálculos.');
+    actualizarSemaforo(precioManual);
     return;
   }
 
@@ -151,7 +177,79 @@ function actualizarVista() {
   resultadoInput.value = nuevoPrecio.toFixed(2);
   nuevoPrecioSpan.textContent = `$ ${formatearNumeroLocal(nuevoPrecio)}`;
   nuevoPrecioSpan.setAttribute('title', generarResumenTooltip());
+  actualizarSemaforo(nuevoPrecio);
   //precioInput.value = nuevoPrecio.toFixed(2);
+}
+
+// --- Semáforo de precio y headroom (Fase 4 / 4.1) -------------------------
+// Compara el precio final contra los pisos y el sugerido (snapshots del momento
+// de cotizar). Es informativo: NUNCA bloquea. El headroom aparece atado al precio
+// que el vendedor está poniendo (capacidad de negociación a pedido, no un empujón
+// a descontar).
+const _ZONAS_PRECIO = {
+  verde:   { color: '#198754', texto: 'Con este precio cubrís material, estructura y tu margen objetivo.' },
+  amarillo:{ color: '#ffc107', texto: 'Con este precio cubrís material y estructura pero NO el margen objetivo. Estás resignando ganancia.' },
+  naranja: { color: '#fd7e14', texto: 'Con este precio cubrís material pero no tu estructura. Estás trabajando gratis.' },
+  rojo:    { color: '#dc3545', texto: 'Con este precio no cubrís nada.' },
+};
+
+function actualizarSemaforo(precio) {
+  const cont = document.getElementById('semaforoPrecio');
+  const headroom = document.getElementById('headroomPrecio');
+  const { precioSugerido, pisoAbsoluto, pisoAbsorcion } = CotizacionEditor;
+
+  // Sin snapshots (cotización vieja anterior a la Fase 3) o precio inválido: ocultar.
+  if (!isFinite(precio) || (precioSugerido <= 0 && pisoAbsorcion <= 0 && pisoAbsoluto <= 0)) {
+    cont.classList.add('d-none');
+    headroom.classList.add('d-none');
+    return;
+  }
+
+  // El número entre paréntesis es el precio a copiar en el input para quedar
+  // justo en ese umbral.
+  let zona, faltaTxt;
+  if (precio >= precioSugerido) {
+    zona = 'verde';
+    faltaTxt = `Estás $ ${formatearNumeroLocal(precio - precioSugerido)} por encima del sugerido (precio = $ ${formatearNumeroLocal(precioSugerido)}).`;
+  } else if (precio >= pisoAbsorcion) {
+    zona = 'amarillo';
+    faltaTxt = `Faltan $ ${formatearNumeroLocal(precioSugerido - precio)} para el precio sugerido (precio = $ ${formatearNumeroLocal(precioSugerido)}).`;
+  } else if (precio >= pisoAbsoluto) {
+    zona = 'naranja';
+    faltaTxt = `Faltan $ ${formatearNumeroLocal(pisoAbsorcion - precio)} para cubrir la estructura (precio = $ ${formatearNumeroLocal(pisoAbsorcion)}).`;
+  } else {
+    zona = 'rojo';
+    faltaTxt = `Faltan $ ${formatearNumeroLocal(pisoAbsoluto - precio)} para no perder plata (precio = $ ${formatearNumeroLocal(pisoAbsoluto)}).`;
+  }
+
+  const info = _ZONAS_PRECIO[zona];
+  document.getElementById('semaforoDot').style.backgroundColor = info.color;
+  const txtEl = document.getElementById('semaforoTexto');
+  txtEl.textContent = info.texto;
+  txtEl.style.color = info.color;
+  document.getElementById('semaforoDetalle').textContent = faltaTxt;
+  cont.classList.remove('d-none');
+
+  // Headroom (4.1): cuánto descuento se puede aplicar antes de cada piso. Es
+  // capacidad a pedido: solo se muestra el margen que realmente existe.
+  const hastaAbsorcion = precio - pisoAbsorcion;
+  const hastaNoPerder = precio - pisoAbsoluto;
+  const descPct = (piso) => precio > 0 ? formatearNumeroLocal((precio - piso) / precio * 100) : '0';
+
+  const lineas = [];
+  if (hastaAbsorcion > 0) {
+    lineas.push(`Podés aplicar un descuento de hasta ${descPct(pisoAbsorcion)}% (precio = $ ${formatearNumeroLocal(pisoAbsorcion)}) y aún cubrirías tu estructura.`);
+  }
+  if (hastaNoPerder > 0) {
+    lineas.push(`Podés aplicar un descuento de hasta ${descPct(pisoAbsoluto)}% (precio = $ ${formatearNumeroLocal(pisoAbsoluto)}) si querés vender al costo.`);
+  }
+
+  if (lineas.length) {
+    headroom.innerHTML = lineas.join('<br>');
+    headroom.classList.remove('d-none');
+  } else {
+    headroom.classList.add('d-none');
+  }
 }
 
 function generarResumenTooltip() {
@@ -159,8 +257,8 @@ function generarResumenTooltip() {
     return 'Precio arbitrario definido por el usuario. No se aplican cálculos.';
   }
 
-  const tiempoNuevo = parseFloat(tiempoInput.value) || 0;
-  const descuentoNuevo = parseFloat(descuentoInput.value) || 0;
+  const tiempoNuevo = parsearDecimalFlexible(tiempoInput.value);
+  const descuentoNuevo = parsearDecimalFlexible(descuentoInput.value);
   const empaquetadoNuevo = empaquetadoCheckbox.checked;
 
   const deltaTiempo = tiempoNuevo - CotizacionEditor.tiempoOriginal;
@@ -191,6 +289,10 @@ function resetEditor() {
   CotizacionEditor.empaquetadoOriginal = false;
   CotizacionEditor.descuentoOriginal = 0;
   CotizacionEditor.esPrecioArbitrario = false;
+  CotizacionEditor.cantidad = 0;
+  CotizacionEditor.precioSugerido = 0;
+  CotizacionEditor.pisoAbsoluto = 0;
+  CotizacionEditor.pisoAbsorcion = 0;
 
   // Limpiar campos del DOM
   infoAdicionalInput.value = '';
@@ -201,4 +303,8 @@ function resetEditor() {
   precioArbCheckbox.checked = false;
   nuevoPrecioSpan.textContent = '$ —';
   nuevoPrecioSpan.setAttribute('title', '');
+
+  // Ocultar semáforo y headroom (Fase 4)
+  document.getElementById('semaforoPrecio')?.classList.add('d-none');
+  document.getElementById('headroomPrecio')?.classList.add('d-none');
 }

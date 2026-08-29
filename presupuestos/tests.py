@@ -129,6 +129,29 @@ class DobleCalculoCotizacionTests(TestCase):
         # contribución por hora = 10500 / 2 = 5250 (t_produccion estructural = 2)
         self.assertEqual(pc.contribucion_por_hora, Decimal("5250"))
 
+    def test_agregar_con_precio_sugerido(self):
+        # "Agregar con precio sugerido" cobra el sugerido (14000) sin descuento,
+        # y NO marca precio_manual (es un precio del sistema).
+        self._cotizar(descuento="10")
+        session = self.client.session
+        session["vendedor"] = self.user.id
+        session.save()
+        self.client.get("/presupuestos/agregarProducto?usar=sugerido")
+        pc = ProductoCotizado.objects.latest("id")
+        self.assertEqual(pc.resultado, Decimal("14000"))
+        self.assertEqual(pc.desc_porcentaje, Decimal("0"))
+        self.assertFalse(pc.precio_manual)
+
+    def test_agregar_normal_usa_el_cobrado(self):
+        # Sin ?usar=sugerido se agrega con el precio del método viejo (cobrado).
+        self._cotizar()
+        session = self.client.session
+        session["vendedor"] = self.user.id
+        session.save()
+        self.client.get("/presupuestos/agregarProducto")
+        pc = ProductoCotizado.objects.latest("id")
+        self.assertEqual(pc.resultado, Decimal("15500"))
+
     def test_sin_estructura_no_explota(self):
         # Sin costos ni horas productivas, tasa_hora = 0:
         # sugerido = costo_variable * margen_objetivo = 5000 * 2 = 10000.
@@ -148,3 +171,62 @@ class DobleCalculoCotizacionTests(TestCase):
         j = self._cotizar().json()
         self.assertEqual(Decimal(j["precio_sugerido"]), Decimal("14000"))
         self.assertNotEqual(Decimal(j["precio_sugerido"]), Decimal("21000"))
+
+
+class SemaforoFase4Tests(TestCase):
+    """Fase 4: info_prod_cotizado expone los snapshots para el semáforo, y editar
+    marca precio_manual cuando el precio se fija a mano (precio arbitrario)."""
+
+    def setUp(self):
+        self.user = User.objects.create_superuser("v2", "v2@v.com", "pw12345")
+        self.client.force_login(self.user)
+        # info_prod_cotizado busca estos productos fantasma.
+        Producto.objects.create(nombre="Mano de obra", precio_proveedor=Decimal("500"))
+        Producto.objects.create(nombre="Empaquetado", precio_proveedor=Decimal("300"))
+        prod = Producto.objects.create(
+            nombre="X", precio=Decimal("100"), factor=Decimal("2"))
+        self.pc = ProductoCotizado.objects.create(
+            insumo=prod, cantidad=10, resultado=Decimal("5000"),
+            t_produccion=Decimal("1"), precio_sugerido=Decimal("6000"),
+            piso_absoluto=Decimal("2000"), piso_absorcion=Decimal("4000"))
+
+    def test_info_incluye_snapshots(self):
+        r = self.client.get(f"/presupuestos/infoProductoCotizado/{self.pc.id}/")
+        j = r.json()
+        self.assertEqual(Decimal(str(j["precio_sugerido"])), Decimal("6000"))
+        self.assertEqual(Decimal(str(j["piso_absoluto"])), Decimal("2000"))
+        self.assertEqual(Decimal(str(j["piso_absorcion"])), Decimal("4000"))
+        self.assertEqual(j["cantidad"], 10)
+        self.assertFalse(j["precio_manual"])
+
+    def test_precio_arbitrario_marca_manual(self):
+        self.client.post("/presupuestos/editarProductoCotizado/", {
+            "id_producto": self.pc.id, "precio": "5500",
+            "precio_arb_checkbox": "on", "info_adicional": "",
+            "descuento": "0", "tiempo": "1", "subtotal": "5000", "resultado": "5000",
+        })
+        self.pc.refresh_from_db()
+        self.assertTrue(self.pc.precio_manual)
+        self.assertEqual(self.pc.resultado, Decimal("5500"))
+
+    def test_precio_arbitrario_formato_ar(self):
+        # El precio arbitrario llega en formato AR (con "$"): parse_ar lo tolera.
+        self.client.post("/presupuestos/editarProductoCotizado/", {
+            "id_producto": self.pc.id, "precio": "$ 3.499,00",
+            "precio_arb_checkbox": "on", "info_adicional": "",
+            "descuento": "0", "tiempo": "1", "subtotal": "5000", "resultado": "5000",
+        })
+        self.pc.refresh_from_db()
+        self.assertEqual(self.pc.resultado, Decimal("3499.00"))
+        self.assertTrue(self.pc.precio_manual)
+
+    def test_precio_calculado_no_marca_manual(self):
+        self.pc.precio_manual = True
+        self.pc.save()
+        self.client.post("/presupuestos/editarProductoCotizado/", {
+            "id_producto": self.pc.id, "precio": "5000", "info_adicional": "",
+            "descuento": "10", "tiempo": "1", "subtotal": "5000", "resultado": "4500",
+        })
+        self.pc.refresh_from_db()
+        self.assertFalse(self.pc.precio_manual)
+        self.assertEqual(self.pc.resultado, Decimal("4500"))

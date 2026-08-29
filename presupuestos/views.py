@@ -26,6 +26,7 @@ import json
 from core.decorators import solo_gerencia
 from core.models import AliasPago, ConfiguracionPresupuesto
 from core import costos
+from core.utils import parse_ar, parse_decimal_flexible
 from django.db.models import Max
 from django.db import models
 
@@ -356,6 +357,16 @@ def agregar_producto(request):
         def _snap(clave, default="0"):
             return Decimal(str(datos.get(clave, default)))
 
+        # "Agregar con precio sugerido" (Fase 4): cobra el precio sugerido tal cual
+        # (el precio "justo" del método nuevo), sin el descuento del método viejo.
+        # No se marca precio_manual: es un precio ofrecido por el sistema, no una
+        # baja/suba a mano.
+        usar_sugerido = request.GET.get("usar") == "sugerido"
+        if usar_sugerido:
+            resultado = _snap("precio_sugerido")
+            desc_plata = Decimal("0")
+            desc_porcentaje = Decimal("0")
+
         # --- Crear instancia ---
         kwargs = {
             "insumo": insumo,
@@ -380,14 +391,16 @@ def agregar_producto(request):
             "piso_absorcion": _snap("piso_absorcion"),
         }
 
+        msg = ("Producto agregado con el precio sugerido."
+               if usar_sugerido else "Producto agregado al presupuesto.")
         if editando_presup:
             kwargs["presupuesto"] = Presupuesto.objects.get(numero=np_global)
             ProductoCotizado.objects.create(**kwargs)
-            messages.success(request, "Producto agregado al presupuesto.")
+            messages.success(request, msg)
             url = f'/presupuestos/verPresupuesto/{np_global}'
         else:
             ProductoCotizado.objects.create(**kwargs)
-            messages.success(request, "Producto agregado al presupuesto.")
+            messages.success(request, msg)
             url = '/presupuestos/inicio'
 
         # Limpiar sesión
@@ -706,6 +719,12 @@ def info_prod_cotizado(request, producto_id):
             'empaquetado': producto.empaquetado,
             'precio_hora': precio_hora,
             'precio_empaquetado': precio_empaquetado,
+            # Snapshots del momento de cotizar (Fase 3), para el semáforo (Fase 4).
+            'cantidad': producto.cantidad,
+            'precio_sugerido': producto.precio_sugerido,
+            'piso_absoluto': producto.piso_absoluto,
+            'piso_absorcion': producto.piso_absorcion,
+            'precio_manual': producto.precio_manual,
         }
         return JsonResponse(data)
     except ProductoCotizado.DoesNotExist:
@@ -730,12 +749,16 @@ def editar_producto_cotizado(request):
             resultado = request.POST.get('resultado')
             empaquetado = request.POST.get('empaquetado') == 'on'
             precio_arb = request.POST.get('precio_arb_checkbox') == 'on'
-            # Conversión segura
-            precio = float(precio) if precio else 0
+            # Conversión segura. El precio arbitrario llega del input de texto en
+            # formato AR (y puede traer "$"): parse_ar lo tolera. El resto son
+            # hidden/type=number en formato inglés (float directo).
+            precio = float(parse_ar(precio)) if precio else 0
             subtotal = float(subtotal) if subtotal else 0
             resultado = float(resultado) if resultado else 0
-            descuento = float(descuento) if descuento else 0
-            tiempo = float(tiempo) if tiempo else 0
+            # descuento y tiempo llegan en formato AR (coma decimal): usar el
+            # parser de decimales chicos (el punto NO es separador de miles acá).
+            descuento = float(parse_decimal_flexible(descuento) or 0)
+            tiempo = float(parse_decimal_flexible(tiempo) or 0)
 
             # Lógica de edición
             producto.info_adic = info_adicional
@@ -745,6 +768,9 @@ def editar_producto_cotizado(request):
                 producto.resultado = precio
                 producto.desc_plata = 0
                 producto.desc_porcentaje = 0
+                # Precio fijado a mano: marca que se resignó (o sumó) margen a
+                # propósito, para poder reportarlo después (Fase 4).
+                producto.precio_manual = True
                 # El tiempo de producción se conserva: precio y tiempo son
                 # independientes (un ítem con precio manual ocupó el taller igual).
                 messages.success(
@@ -754,6 +780,8 @@ def editar_producto_cotizado(request):
                 producto.t_produccion = tiempo
                 producto.desc_plata = round(subtotal * descuento / 100, 2)
                 producto.resultado = resultado
+                # Precio calculado por la fórmula (con su descuento): no es manual.
+                producto.precio_manual = False
                 messages.success(
                     request, f'Producto editado correctamente. Precio final: ${resultado:.2f}')
 

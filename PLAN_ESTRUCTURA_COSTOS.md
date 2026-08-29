@@ -647,6 +647,33 @@ Antes de dar una fase por terminada:
 
 ---
 
+## 9. Decisiones pendientes (charla con la dueña)
+
+Anotadas para resolver con la dueña; no bloquean el avance técnico. Mientras tanto
+se toma el default indicado.
+
+1. **Cuándo pasar a COBRAR el precio sugerido** (retirar `horas_legacy` y que el
+   método nuevo sea el que se factura). Default hoy: se muestra pero no se cobra (D1).
+2. **¿Editar el tiempo de un ítem debe mover el precio cobrado?** En cotización
+   nueva ya NO (desacople Fase 2), pero en la **edición** de un ítem todavía SÍ
+   (`deltaTiempo × precio_hora` en `editar_producto_cotizado.js`). Unificar hacia el
+   desacople implica que editar el tiempo solo actualice el tiempo estructural
+   (`t_produccion`) sin tocar lo cobrado. Default hoy: se deja como está (sigue
+   moviéndolo) hasta confirmar.
+3. **Refinar los tiempos sembrados por categoría.** Los actuales son defaults
+   aproximados, sembrados solo en la DB local. Falta validarlos con la dueña y
+   sembrar en producción.
+4. **Calibrar `ratio_productivas` y `factor_correccion_tiempos`** con datos reales
+   (revisión trimestral).
+5. **Fase 5 (panel de horas):** ¿se muestra a todos o solo Gerencia? Confirmar que
+   el número grande es el punto de equilibrio en horas.
+6. **Fase 6 (fechas de entrega):** si se implementa; días hábiles y feriados a cargar.
+7. **Semáforo (Fase 4):** se mantiene la regla de **nunca bloquear** (solo advertir).
+   Esquema de colores definido en 4 zonas (ver Fase 4). Confirmar con la dueña que
+   los cortes (piso absoluto / piso absorción / sugerido) le resultan claros.
+
+---
+
 ## 8. Glosario
 
 | Término | Significado |
