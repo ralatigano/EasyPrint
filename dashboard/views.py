@@ -13,6 +13,7 @@ from presupuestos.models import Presupuesto
 from productos.models import ProductoCotizado
 from clientes.models import Cliente
 from .models import ObjetivoVentas
+from .metrics import panel_horas
 
 
 @login_required
@@ -149,11 +150,16 @@ def dashboard(request):
 
     objetivos_vigentes = [o for o in objetivos_con_progreso if o['activo']]
 
+    # ── Panel de horas / punto de equilibrio (Fase 5) ────────────────────────
+    # Mes en curso, independiente del filtro de período de arriba.
+    horas = panel_horas(hoy)
+
     context = {
         'autorizado': request.session.get('autorizado'),
         'usuario': request.session.get('usuario_nombre'),
         'img': request.session.get('img'),
         'periodo': periodo,
+        'horas': horas,
         'pedidos_en_curso_count': pedidos_en_curso.count(),
         'total_saldo_pendiente': total_saldo_pendiente,
         'pedidos_completados_count': pedidos_completados.count(),
