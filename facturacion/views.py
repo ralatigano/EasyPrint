@@ -1,16 +1,18 @@
 import json
 
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, JsonResponse
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
 from clientes.functions import normalizar_cuit
-from core.utils import parse_ar
+from core.decorators import solo_gerencia
+from core.utils import format_ar, parse_ar
 from pedidos.models import Pedido
 
-from .models import Comprobante
-from .services import config, emision, padron, pdf
+from .models import Comprobante, ConfiguracionMonotributo
+from .services import config, emision, monotributo, padron, pdf
 from .services.wsaa import WSAAError
 from .services.wsfev1 import WSFEError
 
@@ -199,8 +201,6 @@ def emitir_comprobante(request):
 @login_required
 def lista_comprobantes(request):
     """Página global de comprobantes emitidos, con descarga de PDF."""
-    from core.utils import format_ar
-
     comprobantes = list(
         Comprobante.objects.select_related("pedido", "pedido__cliente").all()
     )
@@ -213,8 +213,35 @@ def lista_comprobantes(request):
         "comprobantes": comprobantes,
         "ambiente": config.ambiente_actual(),
         "Estado": Comprobante.Estado,
+        "monotributo": monotributo.resumen(),
     }
     return render(request, "facturacion/comprobantes.html", data)
+
+
+@login_required
+@solo_gerencia
+@require_POST
+def guardar_config_monotributo(request):
+    """Guarda la categoría de monotributo y su tope anual (modal del widget)."""
+    categoria = (request.POST.get("categoria") or "").strip().upper()
+    validas = [c[0] for c in ConfiguracionMonotributo.CATEGORIAS]
+    if categoria not in validas:
+        messages.error(request, "Categoría de monotributo inválida.")
+        return redirect("lista_comprobantes")
+
+    tope = parse_ar(request.POST.get("tope_anual"))
+    if tope <= 0:
+        messages.error(request, "El tope de la categoría debe ser mayor a cero.")
+        return redirect("lista_comprobantes")
+
+    cfg = ConfiguracionMonotributo.load()
+    cfg.categoria = categoria
+    cfg.tope_anual = tope
+    cfg.save(update_fields=["categoria", "tope_anual", "updated"])
+    messages.success(
+        request, f"Categoría {categoria} guardada (tope ${format_ar(tope)})."
+    )
+    return redirect("lista_comprobantes")
 
 
 @login_required

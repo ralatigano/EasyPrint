@@ -347,3 +347,13 @@ Versión v3.5.1
         *Se corrige el número de presupuesto, que aparecía con separador de miles (ej: "3.000.001.388"); ahora se muestra sin puntos.
         *Se corrige la posición de los datos de la fecha, que quedaban fuera de los recuadros, y el borde de la imagen de fondo que se llegaba a ver dentro del encabezado. Los textos superpuestos ahora se posicionan de forma relativa a la imagen (independiente de la escala del render), así el ajuste no vuelve a "correrse".
         *El PDF ahora usa la fecha de CREACIÓN del presupuesto en lugar de la fecha actual. Así, al reenviar un presupuesto emitido tiempo atrás, conserva la fecha en que fue cotizado (importante porque los presupuestos tienen vigencia y los precios pueden cambiar).
+****************** 5/9/2026 ******************
+Versión v3.6.0
+
+    -Comprobantes (nuevo widget)
+        *La vista de Comprobantes muestra arriba un panel de "Facturación electrónica" con cuánto se lleva facturado contra el tope de la categoría de monotributo, para saber qué margen queda antes de una recategorización.
+        *El panel replica el del portal de ARCA: barra de progreso, monto facturado acumulado, tope de la categoría con su letra, y el período considerado junto al título.
+        *El acumulado se calcula sobre los comprobantes emitidos DESDE LA APP. Las notas de crédito restan y las de débito suman; los borradores, rechazados y anulados no cuentan. Si se factura algo por fuera de la app, ese monto no aparece acá.
+        *El período no son 12 meses móviles ni el año calendario: es la ventana de 12 meses que evalúa la próxima recategorización, igual que ARCA. De agosto a diciembre toma el año en curso; en enero, el año anterior completo; de febrero a julio, del 1/7 anterior al 30/6.
+        *La barra cambia de color según cuánto se consumió del tope: normal hasta el 70%, ámbar entre 70% y 90%, y roja por encima del 90%. Debajo se indica el porcentaje y cuánto queda disponible.
+        *La categoría y el tope se cargan desde el botón "Categoría" del propio panel (solo Gerencia), porque ARCA actualiza los topes cada semestre. Mientras no estén cargados, el panel invita a configurarlos en lugar de mostrar la barra.

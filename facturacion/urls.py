@@ -12,6 +12,11 @@ urlpatterns = [
     path("emitir", views.emitir_comprobante, name="emitir_comprobante"),
     path("comprobantes", views.lista_comprobantes, name="lista_comprobantes"),
     path(
+        "configuracion/monotributo",
+        views.guardar_config_monotributo,
+        name="guardar_config_monotributo",
+    ),
+    path(
         "comprobante/<int:comprobante_id>/pdf",
         views.comprobante_pdf,
         name="comprobante_pdf",

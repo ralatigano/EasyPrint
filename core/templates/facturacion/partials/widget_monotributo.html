@@ -1,0 +1,98 @@
+{% comment %}
+Widget "Facturación vs. tope de categoría" (monotributo).
+Contexto esperado: `monotributo` (dict de facturacion.services.monotributo.resumen)
+y `autorizado` (para mostrar el botón de configuración).
+
+FASE 1: el acumulado sale sólo de los comprobantes emitidos por la app.
+No usar la clase `.alert` acá: base.html oculta todos los `.alert` a los 7 s.
+{% endcomment %}
+{% load static %}
+
+<div class="card shadow-sm mb-3 widget-monotributo">
+    <div class="card-body">
+
+        <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+            <div>
+                <h5 class="card-title mb-1">Facturación electrónica</h5>
+                <span class="text-body-secondary small">
+                    Período {{ monotributo.desde|date:"d/m/Y" }} — {{ monotributo.hasta|date:"d/m/Y" }}
+                </span>
+            </div>
+            {% comment %}Sin configurar el CTA va en el cuerpo, no acá.{% endcomment %}
+            {% if autorizado and monotributo.configurado %}
+            <button type="button" class="btn btn-sm btn-outline-secondary"
+                    data-bs-toggle="modal" data-bs-target="#modalMonotributo"
+                    title="Configurar categoría y tope">
+                <i class="fa-solid fa-gear"></i> Categoría
+            </button>
+            {% endif %}
+        </div>
+
+        {% if monotributo.configurado %}
+
+            <div class="mt-marcadores mb-2">
+                <div class="mt-marcador">
+                    <div class="mt-monto">$ {{ monotributo.facturado_fmt }}</div>
+                    <div class="mt-etiqueta text-body-secondary">Monto facturado</div>
+                </div>
+                <div class="mt-marcador mt-marcador-tope">
+                    <div class="d-flex align-items-center justify-content-end gap-2">
+                        <span class="mt-monto">$ {{ monotributo.tope_fmt }}</span>
+                        <span class="mt-categoria">{{ monotributo.categoria }}</span>
+                    </div>
+                    <div class="mt-etiqueta text-body-secondary">
+                        Tope categoría {{ monotributo.categoria }}
+                    </div>
+                </div>
+            </div>
+
+            <div class="progress mt-barra" role="progressbar"
+                 aria-label="Consumo del tope de la categoría"
+                 aria-valuenow="{{ monotributo.porcentaje_barra }}"
+                 aria-valuemin="0" aria-valuemax="100">
+                <div class="progress-bar nivel-{{ monotributo.nivel }}"
+                     style="width: {{ monotributo.porcentaje_barra }}%;">
+                    {% if monotributo.porcentaje >= 8 %}{{ monotributo.porcentaje }}%{% endif %}
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-between flex-wrap gap-2 mt-2">
+                <span class="small
+                    {% if monotributo.nivel == 'critico' %}text-danger fw-semibold
+                    {% elif monotributo.nivel == 'alerta' %}text-warning-emphasis fw-semibold
+                    {% else %}text-body-secondary{% endif %}">
+                    {% if monotributo.excedido %}
+                        Superaste el tope por $ {{ monotributo.restante_fmt }}
+                        ({{ monotributo.porcentaje }}% del tope).
+                    {% else %}
+                        Llevás el {{ monotributo.porcentaje }}% del tope
+                        — te quedan $ {{ monotributo.restante_fmt }}.
+                    {% endif %}
+                </span>
+                <span class="small text-body-secondary">
+                    Actualizado {{ monotributo.actualizado|date:"d/m/Y H:i" }}
+                </span>
+            </div>
+
+        {% else %}
+
+            <p class="text-body-secondary mb-2">
+                Cargá tu <strong>categoría de monotributo</strong> y el <strong>tope
+                de facturación</strong> vigente para ver cuánto margen te queda antes
+                de la próxima recategorización.
+            </p>
+            {% if autorizado %}
+            <button type="button" class="btn btn-dark btn-sm"
+                    data-bs-toggle="modal" data-bs-target="#modalMonotributo">
+                <i class="fa-solid fa-gear"></i> Configurar categoría
+            </button>
+            {% else %}
+            <span class="small text-body-secondary">
+                Pedile a Gerencia que la configure.
+            </span>
+            {% endif %}
+
+        {% endif %}
+
+    </div>
+</div>

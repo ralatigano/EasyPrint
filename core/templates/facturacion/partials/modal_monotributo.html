@@ -1,0 +1,54 @@
+{% comment %}
+Modal de configuración de la categoría de monotributo (solo Gerencia).
+Los topes cambian cada semestre: se editan acá, sin tocar código.
+{% endcomment %}
+
+<div class="modal fade" id="modalMonotributo" tabindex="-1"
+     aria-labelledby="modalMonotributoTitulo" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <form method="POST" action="{% url 'guardar_config_monotributo' %}" class="modal-content">
+      {% csrf_token %}
+      <div class="modal-header">
+        <h5 class="modal-title" id="modalMonotributoTitulo">Categoría de monotributo</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        <p class="text-body-secondary small">
+          ARCA actualiza los topes cada semestre. Copiá el tope de ingresos brutos
+          anuales de tu categoría de la tabla vigente.
+        </p>
+
+        <div class="mb-3">
+          <label for="mtCategoria" class="form-label fw-semibold">Categoría</label>
+          <select id="mtCategoria" name="categoria" class="form-select" required>
+            <option value="" {% if not monotributo.configurado %}selected{% endif %} disabled>
+              Elegí una categoría…
+            </option>
+            {% for valor, etiqueta in monotributo.categorias %}
+            <option value="{{ valor }}" {% if valor == monotributo.categoria %}selected{% endif %}>
+              {{ etiqueta }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="mb-1">
+          <label for="mtTope" class="form-label fw-semibold">Tope anual de facturación</label>
+          <div class="input-group">
+            <span class="input-group-text">$</span>
+            <input type="text" id="mtTope" name="tope_anual" class="form-control"
+                   inputmode="decimal" placeholder="24.670.494,31" required
+                   value="{% if monotributo.configurado %}{{ monotributo.tope_fmt }}{% endif %}">
+          </div>
+          <div class="form-text">Formato argentino: punto para miles, coma para decimales.</div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="submit" class="btn btn-dark">
+          <i class="fa-solid fa-floppy-disk"></i> Guardar
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
