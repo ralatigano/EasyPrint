@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Comprobante, TokenAcceso
+from .models import Comprobante, ConfiguracionMonotributo, TokenAcceso
 
 
 @admin.register(Comprobante)
@@ -23,3 +23,11 @@ class ComprobanteAdmin(admin.ModelAdmin):
 class TokenAccesoAdmin(admin.ModelAdmin):
     list_display = ("servicio", "ambiente", "expiracion", "generado")
     readonly_fields = ("token", "sign", "generado")
+
+
+@admin.register(ConfiguracionMonotributo)
+class ConfiguracionMonotributoAdmin(admin.ModelAdmin):
+    """Singleton: se edita normalmente desde el widget de comprobantes."""
+
+    list_display = ("categoria", "tope_anual", "updated")
+    readonly_fields = ("updated",)

@@ -1,0 +1,81 @@
+/* Widget "Facturación vs. tope de categoría" (vista de comprobantes).
+   Los colores del semáforo salen de estas variables: cambiarlas acá alcanza
+   para retocar toda la barra. Ver UMBRAL_ALERTA/UMBRAL_CRITICO en
+   facturacion/services/monotributo.py para los cortes. */
+.widget-monotributo {
+    --mt-ok: #1c6e7d;       /* petróleo del tema: consumo normal */
+    --mt-alerta: #d99b0b;   /* ámbar: se acerca al tope */
+    --mt-critico: #c0392b;  /* rojo: al borde o pasado */
+}
+
+.widget-monotributo .mt-barra {
+    height: 26px;
+    border-radius: 8px;
+}
+
+.widget-monotributo .mt-barra .progress-bar {
+    border-radius: 8px;
+    transition: width .8s ease;
+    font-weight: 600;
+}
+
+.widget-monotributo .mt-barra .progress-bar.nivel-ok      { background-color: var(--mt-ok); }
+.widget-monotributo .mt-barra .progress-bar.nivel-alerta  { background-color: var(--mt-alerta); }
+.widget-monotributo .mt-barra .progress-bar.nivel-critico { background-color: var(--mt-critico); }
+
+/* Badge circular con la letra de la categoría, como en el portal de ARCA. */
+.widget-monotributo .mt-categoria {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background-color: var(--mt-ok);
+    color: #fff;
+    font-weight: 700;
+    font-size: .95rem;
+    flex: 0 0 auto;
+}
+
+/* Marcadores de monto facturado / tope. En pantallas angostas se apilan
+   debajo de la barra en vez de quedar uno a cada lado. */
+.widget-monotributo .mt-marcadores {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: .75rem;
+    flex-wrap: wrap;
+}
+
+.widget-monotributo .mt-marcador {
+    min-width: 0;
+}
+
+.widget-monotributo .mt-marcador-tope {
+    text-align: right;
+}
+
+.widget-monotributo .mt-monto {
+    font-size: 1.15rem;
+    font-weight: 700;
+    line-height: 1.2;
+    white-space: nowrap;
+}
+
+.widget-monotributo .mt-etiqueta {
+    font-size: .8rem;
+}
+
+@media (max-width: 575.98px) {
+    .widget-monotributo .mt-marcadores {
+        flex-direction: column;
+    }
+    .widget-monotributo .mt-marcador-tope {
+        text-align: left;
+    }
+    .widget-monotributo .mt-monto {
+        font-size: 1rem;
+        white-space: normal;
+    }
+}

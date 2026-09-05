@@ -1,4 +1,5 @@
 from datetime import timedelta
+from decimal import Decimal
 
 from django.db import models
 from django.utils import timezone
@@ -128,3 +129,46 @@ class Comprobante(models.Model):
     @property
     def es_nota(self):
         return self.tipo_cbte in (self.Tipo.NOTA_DEBITO_C, self.Tipo.NOTA_CREDITO_C)
+
+
+class ConfiguracionMonotributo(models.Model):
+    """Singleton con la categoría de monotributo vigente y su tope anual de
+    facturación. Alimenta el widget "Facturación vs. tope de categoría" de la
+    vista de comprobantes.
+
+    Los topes NO se hardcodean: ARCA los actualiza cada semestre y la categoría
+    cambia con cada recategorización, así que se editan desde la UI (modal de la
+    propia vista de comprobantes, solo Gerencia). Mientras no estén cargados el
+    widget se muestra en estado "sin configurar".
+    """
+
+    CATEGORIAS = [(letra, letra) for letra in "ABCDEFGHIJK"]
+
+    categoria = models.CharField(
+        max_length=1, choices=CATEGORIAS, blank=True,
+        help_text="Letra de la categoría de monotributo vigente (A a K).")
+    tope_anual = models.DecimalField(
+        max_digits=15, decimal_places=2, default=Decimal("0.00"),
+        help_text="Tope de ingresos brutos anuales de la categoría, según la "
+                  "tabla vigente de ARCA.")
+    updated = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Configuración de monotributo"
+        verbose_name_plural = "Configuración de monotributo"
+
+    def __str__(self):
+        if not self.configurado:
+            return "Configuración de monotributo (sin configurar)"
+        return f"Categoría {self.categoria} — tope ${self.tope_anual}"
+
+    @classmethod
+    def load(cls):
+        obj, _ = cls.objects.get_or_create(pk=1)
+        return obj
+
+    @property
+    def configurado(self):
+        """True si hay categoría y tope cargados (el tope debe ser > 0 para
+        poder calcular un porcentaje)."""
+        return bool(self.categoria) and self.tope_anual > 0
