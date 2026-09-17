@@ -78,7 +78,7 @@
                         </div>
                         <div class="d-flex gap-1 align-items-center">
                             <button class="btn btn-xs btn-outline-secondary"
-                                    onclick="editarObjetivo('{{ obj.id|unlocalize }}','{{ obj.nombre }}','{{ obj.monto_objetivo }}','{{ obj.fecha_desde }}','{{ obj.fecha_hasta }}')">
+                                    onclick="editarObjetivo('{{ obj.id|unlocalize }}','{{ obj.nombre }}','{{ obj.monto_objetivo|unlocalize }}','{{ obj.fecha_desde|date:"Y-m-d" }}','{{ obj.fecha_hasta|date:"Y-m-d" }}')">
                                 <i class="bi bi-pencil"></i>
                             </button>
                             <a href="/dashboard/eliminar-objetivo/{{ obj.id|unlocalize }}/"
