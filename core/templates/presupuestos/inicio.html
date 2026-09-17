@@ -273,14 +273,14 @@
                               <button type="button" class="btn btn-dark btn-xs"
                                       data-bs-toggle="modal"
                                       data-bs-target="#editarProductoPresupuestoModal"
-                                      data-bs-whatever="{{ c.id }}"
+                                      data-bs-whatever="{{ c.id|unlocalize }}"
                                       title="Editar producto">
                                   <i class="fa-solid fa-pencil"></i>
                               </button>
-                              <a href="/presupuestos/deleteCalc_Presupuesto/{{ c.id }}"
+                              <a href="/presupuestos/deleteCalc_Presupuesto/{{ c.id|unlocalize }}"
                                 class="btn btn-dark btn-xs btnEliminacion"
                                 data-tipo="presupuesto"
-                                data-fetch-url="/presupuestos/infoProductoCotizado/{{ c.id }}/"
+                                data-fetch-url="/presupuestos/infoProductoCotizado/{{ c.id|unlocalize }}/"
                                 title="Eliminar producto">
                                   <i class="fa-solid fa-trash-can"></i>
                               </a>
