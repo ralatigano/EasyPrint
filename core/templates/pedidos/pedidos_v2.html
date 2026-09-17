@@ -173,7 +173,7 @@
             <select id="filtroCliente" class="form-select" multiple size="3">
                 <option value="">Todos</option>
                 {% for cliente in Clientes %}
-                    <option value="{{ cliente.id }}">{{ cliente.referencia }}</option>
+                    <option value="{{ cliente.id|unlocalize }}">{{ cliente.referencia }}</option>
                 {% endfor %}
             </select>
         </div>

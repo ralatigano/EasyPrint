@@ -66,12 +66,12 @@
                         <td>{{ i.stock|floatformat:"-2" }}</td>
                         <td>{{ i.stock_real|floatformat:"0" }}</td>
                         <td>
-                            <button type="button" class="btn btn-dark btn-xs" data-bs-toggle="modal" data-bs-target="#crearEditarInsumoModal" data-id="{{i.id}}" onclick=""><i class="fa-solid fa-pencil sm"></i></button>
+                            <button type="button" class="btn btn-dark btn-xs" data-bs-toggle="modal" data-bs-target="#crearEditarInsumoModal" data-id="{{ i.id|unlocalize }}" onclick=""><i class="fa-solid fa-pencil sm"></i></button>
                             {% if es_gerencia %}
-                            <a href="/productos/borrarInsumo/{{ i.id }}"
+                            <a href="/productos/borrarInsumo/{{ i.id|unlocalize }}"
                                 class="btn btn-dark btn-xs btnEliminacion"
                                 data-tipo="insumo"
-                                data-fetch-url="/productos/datosInsumo/{{ i.id }}"
+                                data-fetch-url="/productos/datosInsumo/{{ i.id|unlocalize }}"
                                 title="Eliminar insumo">
                                     <i class="fa-solid fa-trash-can"></i>
                             </a>
