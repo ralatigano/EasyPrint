@@ -166,7 +166,7 @@
     <!-- Formularios por línea (asociados a las filas vía el atributo form=).
          Van fuera de la tabla para no romper el HTML. -->
     {% for g in grupos_costos %}{% for c in g.items %}
-    <form id="form-costo-{{ c.id }}" method="POST" action="{% url 'guardar_costo_fijo' c.id %}" class="d-none">{% csrf_token %}</form>
+    <form id="form-costo-{{ c.id|unlocalize }}" method="POST" action="{% url 'guardar_costo_fijo' c.id %}" class="d-none">{% csrf_token %}</form>
     {% endfor %}{% endfor %}
 
     <!-- Listado agrupado por grupo: una sola tabla, header una vez, y cada
@@ -200,26 +200,26 @@
                 </tr>
                 {% for c in g.items %}
                 <tr class="fila-costo" data-grupo-idx="{{ forloop.parentloop.counter }}">
-                    <td><input type="text" form="form-costo-{{ c.id }}" name="concepto" class="form-control form-control-sm" value="{{ c.concepto }}"></td>
-                    <td><input type="text" form="form-costo-{{ c.id }}" name="grupo" class="form-control form-control-sm" value="{{ c.grupo }}" list="grupos-existentes"></td>
-                    <td><input type="text" form="form-costo-{{ c.id }}" inputmode="decimal" name="monto" class="form-control form-control-sm in-monto" value="{{ c.monto }}"></td>
+                    <td><input type="text" form="form-costo-{{ c.id|unlocalize }}" name="concepto" class="form-control form-control-sm" value="{{ c.concepto }}"></td>
+                    <td><input type="text" form="form-costo-{{ c.id|unlocalize }}" name="grupo" class="form-control form-control-sm" value="{{ c.grupo }}" list="grupos-existentes"></td>
+                    <td><input type="text" form="form-costo-{{ c.id|unlocalize }}" inputmode="decimal" name="monto" class="form-control form-control-sm in-monto" value="{{ c.monto }}"></td>
                     <td>
-                        <select form="form-costo-{{ c.id }}" name="periodicidad" class="form-select form-select-sm in-periodicidad">
+                        <select form="form-costo-{{ c.id|unlocalize }}" name="periodicidad" class="form-select form-select-sm in-periodicidad">
                             {% for val, txt in periodicidades %}
                             <option value="{{ val }}" {% if c.periodicidad == val %}selected{% endif %}>{{ txt }}</option>
                             {% endfor %}
                         </select>
                     </td>
-                    <td><input type="number" form="form-costo-{{ c.id }}" min="1" step="1" name="meses_amortizacion" class="form-control form-control-sm in-meses" value="{{ c.meses_amortizacion|unlocalize }}"></td>
+                    <td><input type="number" form="form-costo-{{ c.id|unlocalize }}" min="1" step="1" name="meses_amortizacion" class="form-control form-control-sm in-meses" value="{{ c.meses_amortizacion|unlocalize }}"></td>
                     <td class="text-end fw-semibold text-nowrap">$ <span class="costo-mensual">—</span></td>
                     <td class="text-center">
-                        <input type="checkbox" form="form-costo-{{ c.id }}" name="activo" class="form-check-input in-activo" {% if c.activo %}checked{% endif %}>
+                        <input type="checkbox" form="form-costo-{{ c.id|unlocalize }}" name="activo" class="form-check-input in-activo" {% if c.activo %}checked{% endif %}>
                     </td>
                     <td class="text-end text-nowrap">
-                        <button type="submit" form="form-costo-{{ c.id }}" class="btn btn-sm btn-outline-dark" title="Guardar cambios">
+                        <button type="submit" form="form-costo-{{ c.id|unlocalize }}" class="btn btn-sm btn-outline-dark" title="Guardar cambios">
                             <i class="fa-solid fa-floppy-disk"></i>
                         </button>
-                        <button type="submit" form="form-costo-{{ c.id }}" formaction="{% url 'borrar_costo_fijo' c.id %}"
+                        <button type="submit" form="form-costo-{{ c.id|unlocalize }}" formaction="{% url 'borrar_costo_fijo' c.id %}"
                                 class="btn btn-sm btn-outline-danger" title="Eliminar" formnovalidate
                                 onclick="return confirm('¿Eliminar el costo &quot;{{ c.concepto|escapejs }}&quot;?');">
                             <i class="fa-solid fa-trash-can"></i>
