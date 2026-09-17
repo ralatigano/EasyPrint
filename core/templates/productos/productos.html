@@ -76,19 +76,19 @@
                     <tbody id="tableBody_Productos">
                     {% for p in prods %}
                         <tr>
-                            <td>{{p.id}}</td>
+                            <td>{{ p.id|unlocalize }}</td>
                             <td>{{p.nombre}}</td>
                             <td>{{p.ancho}}*{{p.alto}}</td>
                             <td>$ {% if p.tercerizado %}{{p.precio_proveedor|localize}} {% else %}{{p.precio|localize}}{% endif %}</td>
                             <td>{{p.categoria}}</td>
                             <td>{% if p.tercerizado %}Si{% else %}No{% endif %}</td>
                                 <td>
-                                    <button type="button" class="btn btn-dark btn-xs" data-bs-toggle="modal" data-bs-target="#crearProductoModal" data-bs-whatever="{{p.id}}" onclick=""><i class="fa-solid fa-pencil sm"></i></button>
+                                    <button type="button" class="btn btn-dark btn-xs" data-bs-toggle="modal" data-bs-target="#crearProductoModal" data-bs-whatever="{{ p.id|unlocalize }}" onclick=""><i class="fa-solid fa-pencil sm"></i></button>
                                     {% if es_gerencia %}
-                                    <a href="borrarProducto/{{ p.id }}"
+                                    <a href="borrarProducto/{{ p.id|unlocalize }}"
                                         class="btn btn-dark btn-xs btnEliminacion"
                                         data-tipo="producto"
-                                        data-fetch-url="/productos/obtenerProducto/{{ p.id }}"
+                                        data-fetch-url="/productos/obtenerProducto/{{ p.id|unlocalize }}"
                                         title="Eliminar producto">
                                             <i class="fa-solid fa-trash-can"></i>
                                     </a>

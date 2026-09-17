@@ -219,7 +219,7 @@
                   placeholder="Nombre del cliente">
             <datalist id="lista_clientes">
                 {% for c in clientes %}
-                    <option value="{{ c.id }}|{{ c.referencia }}"></option>
+                    <option value="{{ c.id|unlocalize }}|{{ c.referencia }}"></option>
                 {% endfor %}
             </datalist>
         </div>

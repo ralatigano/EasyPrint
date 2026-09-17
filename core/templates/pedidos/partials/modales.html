@@ -1,3 +1,4 @@
+{% load l10n %}
 <!-- ------------------------------------------------------------------------------Modales pedidos------------------------------------------------------------------------------ -->
 
 <!-- Modal confirmaación seña -->
@@ -82,7 +83,7 @@
 
                 <datalist id="lista_clientes_modal">
                     {% for c in Clientes %}
-                        <option value="{{ c.id }}|{{ c.referencia }}"></option>
+                        <option value="{{ c.id|unlocalize }}|{{ c.referencia }}"></option>
                     {% endfor %}
                 </datalist>
             </div>

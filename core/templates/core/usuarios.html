@@ -1,5 +1,6 @@
 {% extends 'core/base.html' %}
 {% load static %}
+{% load l10n %}
 
 <!--------------------------------------------------------------------------- Block head --------------------------------------------------------------------------->
 {% block head %}
@@ -63,14 +64,14 @@
                             <td class="text-center">
                                 <button type="button"
                                         class="btn btn-dark btn-xs btn-editar-usuario"
-                                        data-id="{{ u.id }}"
+                                        data-id="{{ u.id|unlocalize }}"
                                         title="Editar usuario">
                                     <i class="fa-solid fa-user-pen"></i>
                                 </button>
-                                <a href="/borrarUsuario/{{ u.id }}"
+                                <a href="/borrarUsuario/{{ u.id|unlocalize }}"
                                     class="btn btn-dark btn-xs btnEliminacion"
                                     data-tipo="usuario"
-                                    data-fetch-url="/usuarios/info/{{ u.id }}"
+                                    data-fetch-url="/usuarios/info/{{ u.id|unlocalize }}"
                                     title="Eliminar usuario">
                                         <i class="fa-solid fa-person-rifle"></i>
                                 </a>

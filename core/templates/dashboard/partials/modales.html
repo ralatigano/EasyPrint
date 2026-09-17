@@ -1,3 +1,4 @@
+{% load l10n %}
 {# ── Modal: Nuevo objetivo ──────────────────────────────────────────────── #}
 <div class="modal fade" id="modalObjetivo" tabindex="-1">
     <div class="modal-dialog">
@@ -77,10 +78,10 @@
                         </div>
                         <div class="d-flex gap-1 align-items-center">
                             <button class="btn btn-xs btn-outline-secondary"
-                                    onclick="editarObjetivo('{{ obj.id }}','{{ obj.nombre }}','{{ obj.monto_objetivo }}','{{ obj.fecha_desde }}','{{ obj.fecha_hasta }}')">
+                                    onclick="editarObjetivo('{{ obj.id|unlocalize }}','{{ obj.nombre }}','{{ obj.monto_objetivo }}','{{ obj.fecha_desde }}','{{ obj.fecha_hasta }}')">
                                 <i class="bi bi-pencil"></i>
                             </button>
-                            <a href="/dashboard/eliminar-objetivo/{{ obj.id }}/"
+                            <a href="/dashboard/eliminar-objetivo/{{ obj.id|unlocalize }}/"
                                class="btn btn-xs btn-outline-danger"
                                onclick="return confirm('¿Eliminar este objetivo?')">
                                 <i class="bi bi-trash"></i>

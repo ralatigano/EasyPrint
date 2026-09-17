@@ -1,3 +1,4 @@
+{% load l10n %}
 <!-- ------------------------------------------------------------------------------Modales inicio------------------------------------------------------------------------------ -->
 <!-- Modal resultado del cálculo -->
 <div class="modal fade" id="resultadoPrevioModal" tabindex="-1" aria-labelledby="resultadoPrevioModalLabel" data-bs-backdrop="static" aria-hidden="true">   
@@ -56,7 +57,7 @@
 
                 <datalist id="lista_clientes_modal">
                     {% for c in Clientes %}
-                        <option value="{{ c.id }}|{{ c.referencia }}"></option>
+                        <option value="{{ c.id|unlocalize }}|{{ c.referencia }}"></option>
                     {% endfor %}
                 </datalist>
             </div>
