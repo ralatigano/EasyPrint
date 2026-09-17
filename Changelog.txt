@@ -366,3 +366,6 @@ Versión v3.6.1
 
     -General
         *Se corrige el mismo problema de fondo en el resto de las pantallas (productos, insumos, categorías, clientes, pedidos, viajes de cadete, usuarios, comprobantes y objetivos): los identificadores a partir de 1000 se mostraban con punto de miles (ej. "1.009"), lo que rompía los botones de editar/eliminar y la selección de clientes.
+
+    -Dashboard
+        *Al editar un objetivo, el monto y las fechas ahora se precargan correctamente en el formulario (antes aparecían vacíos y había que volver a cargarlos).
