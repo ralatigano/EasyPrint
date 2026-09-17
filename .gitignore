@@ -187,3 +187,6 @@ keys/**/*.pem
 
 # Instrucciones de conexión a la VM (contiene IP/infra) -- local, no commitear
 CONEXION_VM.txt
+
+# Archivos
+PLAN_ESTRUCTURA_COSTOS.md
