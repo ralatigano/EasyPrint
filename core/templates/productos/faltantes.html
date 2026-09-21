@@ -30,7 +30,7 @@
 {% if faltantes %}
 <p class="text-muted small mb-2">
     Cada fila suma lo que falta de un insumo en todos los pedidos. En <strong>A comprar</strong> podés
-    cambiar la cantidad para ver cuántos pedidos se cubren. Los pedidos se cubren por orden de
+    cambiar la cantidad (por ejemplo, si el presupuesto no alcanza) para ver cuántos pedidos se cubren. Los pedidos se cubren por orden de
     prioridad: primero la fecha de entrega más cercana. Desde el botón de pedidos de cada insumo
     podés <strong>priorizar</strong> o <strong>postergar</strong> un pedido para decidir cuáles cubrir.
 </p>
@@ -69,7 +69,7 @@
                 <th class="centered">Proveedor</th>
                 <th class="centered">Faltante</th>
                 <th class="centered" title="Unidades de compra necesarias para cubrir todo el faltante">Sugerido</th>
-                <th class="centered" title="Unidades de compra: editá para simular una compra parcial">A comprar</th>
+                <th class="centered" title="Unidades de compra. Automático: lo justo para los pedidos no postergados. Editalo para simular una compra parcial">A comprar</th>
                 <th class="centered">Cubre</th>
                 <th class="centered">Costo est.</th>
                 <th class="centered">Acciones</th>
@@ -135,9 +135,9 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-dark btn-fuente" id="btnAjustarComprar"
-                        title="Pone en 'A comprar' lo justo para cubrir los pedidos que no están postergados">
-                    <i class="fa-solid fa-calculator"></i> <span id="btnAjustarComprarTexto">Ajustar "A comprar"</span>
+                <button type="button" class="btn btn-dark btn-fuente d-none" id="btnAjustarComprar"
+                        title="Deja de usar la cantidad cargada a mano y vuelve a lo justo para cubrir los pedidos no postergados">
+                    <i class="fa-solid fa-rotate-left"></i> <span id="btnAjustarComprarTexto">Ajustar "A comprar"</span>
                 </button>
                 <button type="button" class="btn btn-dark btn-fuente" data-bs-dismiss="modal">Cerrar</button>
             </div>

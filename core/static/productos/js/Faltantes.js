@@ -17,10 +17,13 @@
     const EPS = 1e-6;
     const porId = new Map(datos.map(i => [i.id, i]));
 
-    // Estado de la simulación: seleccionado y unidades de compra por insumo.
+    // Estado de la simulación por insumo. "A comprar" es automático (lo justo
+    // para los pedidos no postergados) hasta que el usuario lo edita a mano:
+    // ahí queda fijo (manual) hasta que vuelva a automático.
     const estado = new Map(datos.map(i => [i.id, {
         seleccionado: false,
         comprar: sugerido(i),
+        manual: false,
     }]));
 
     // Prioridad manual por número de pedido: "priorizar" | "postergar".
@@ -142,7 +145,12 @@
             <td>${contactoHTML(i.proveedor)}</td>
             <td data-order="${i.faltante}">${num(i.faltante)} ${esc(i.unidad_uso)}</td>
             <td data-order="${sugerido(i)}">${num(sugerido(i))} ${esc(i.unidad_compra)}</td>
-            <td><input type="number" min="0" step="1" class="form-control form-control-sm input-comprar" value="${e.comprar}"></td>
+            <td class="text-nowrap">
+                <input type="number" min="0" step="1" class="form-control form-control-sm input-comprar" value="${e.comprar}">
+                <button type="button" class="btn btn-link btn-sm p-0 ms-1 btn-auto d-none" title="Cantidad cargada a mano. Volver a la automática (lo justo para los pedidos no postergados)">
+                    <i class="fa-solid fa-rotate-left"></i>
+                </button>
+            </td>
             <td class="cubre"></td>
             <td class="costo text-end"></td>
             <td class="text-nowrap">
@@ -174,6 +182,7 @@
         // No pisar el input mientras se está escribiendo en él.
         const input = tr.querySelector(".input-comprar");
         if (document.activeElement !== input) input.value = e.comprar;
+        tr.querySelector(".btn-auto").classList.toggle("d-none", !e.manual);
         tr.querySelector(".costo").textContent = moneda(e.comprar * insumo.precio);
         tr.querySelector(".chk-insumo").checked = e.seleccionado;
         tr.classList.toggle("fila-seleccionada", e.seleccionado);
@@ -228,7 +237,16 @@
             : `Con esta compra no se completa ningún pedido (de ${total}): a todos les sigue faltando algún insumo.`;
     }
 
+    // Los insumos en modo automático siguen a las prioridades.
+    function recalcularAutomaticos() {
+        for (const i of datos) {
+            const e = estado.get(i.id);
+            if (!e.manual) e.comprar = unidadesParaNoPostergados(i);
+        }
+    }
+
     function actualizarTodo() {
+        recalcularAutomaticos();
         filas().forEach(actualizarFila);
         actualizarResumen();
         actualizarTotal();
@@ -242,24 +260,30 @@
 
     function renderModalPedidos() {
         const insumo = insumoEnModal;
-        const comprar = estado.get(insumo.id).comprar;
+        const { comprar, manual } = estado.get(insumo.id);
         const asignacion = asignar(insumo, comprar);
         document.getElementById("modalPedidosInsumoLabel").textContent = `Pedidos que necesitan ${insumo.nombre}`;
         document.getElementById("modalPedidosInsumoAyuda").textContent =
             `En el orden en que se cubren: primero la fecha de entrega más cercana, salvo que priorices o postergues ` +
-            `un pedido (la elección vale para todos sus insumos). "Con la compra" usa la cantidad indicada en la tabla: ` +
-            `${num(comprar)} ${insumo.unidad_compra} = ${num(comprar * insumo.factor)} ${insumo.unidad_uso}.`;
+            `un pedido (la elección vale para todos sus insumos). "Con la compra" usa lo indicado en "A comprar": ` +
+            `${num(comprar)} ${insumo.unidad_compra} = ${num(comprar * insumo.factor)} ${insumo.unidad_uso}` +
+            (manual ? " (cargado a mano)." : " (automático: lo justo para los pedidos no postergados).");
 
         document.getElementById("modalPedidosInsumoBody").innerHTML = asignacion.map((a, idx) => {
             const otros = a.numero === null ? [] : datos
                 .filter(i => i.id !== insumo.id && i.pedidos.some(p => p.numero === a.numero))
                 .map(i => i.nombre);
+            const valor = prioridad.get(a.numero) || "";
+            const postergado = valor === "postergar";
             const badge = a.completo
-                ? '<span class="badge bg-success">Cubierto</span>'
+                ? (postergado
+                    ? '<span class="badge bg-info text-dark" title="Está postergado, pero la cantidad a comprar alcanza también para él">Cubierto con sobrante</span>'
+                    : '<span class="badge bg-success">Cubierto</span>')
                 : a.parcial
                     ? `<span class="badge bg-warning text-dark">Parcial (${num(a.cubre)})</span>`
-                    : '<span class="badge bg-danger">Sin cubrir</span>';
-            const valor = prioridad.get(a.numero) || "";
+                    : (postergado
+                        ? '<span class="badge bg-secondary">Postergado</span>'
+                        : '<span class="badge bg-danger">Sin cubrir</span>');
             const selector = a.numero === null ? "—" : `
                 <select class="form-select form-select-sm select-prioridad" data-numero="${a.numero}">
                     <option value="" ${valor === "" ? "selected" : ""}>Normal</option>
@@ -280,9 +304,11 @@
             </tr>`;
         }).join("");
 
+        // El botón solo tiene sentido si la cantidad se cargó a mano.
         const justo = unidadesParaNoPostergados(insumo);
+        document.getElementById("btnAjustarComprar").classList.toggle("d-none", !manual);
         document.getElementById("btnAjustarComprarTexto").textContent =
-            `Ajustar "A comprar" a ${num(justo)} ${insumo.unidad_compra}`;
+            `Volver a automático (${num(justo)} ${insumo.unidad_compra})`;
     }
 
     // Unidades de compra justas para cubrir los pedidos no postergados.
@@ -481,7 +507,9 @@
     tbody.addEventListener("input", (ev) => {
         if (!ev.target.classList.contains("input-comprar")) return;
         const tr = ev.target.closest("tr[data-id]");
-        estado.get(Number(tr.dataset.id)).comprar = Math.max(Number(ev.target.value) || 0, 0);
+        const e = estado.get(Number(tr.dataset.id));
+        e.comprar = Math.max(Number(ev.target.value) || 0, 0);
+        e.manual = true;
         actualizarFila(tr);
         actualizarResumen();
         actualizarTotal();
@@ -493,6 +521,10 @@
         const insumo = porId.get(Number(tr.dataset.id));
         if (ev.target.closest(".btn-pedidos")) abrirPedidos(insumo);
         if (ev.target.closest(".btn-registrar")) abrirRegistrarCompra([insumo]);
+        if (ev.target.closest(".btn-auto")) {
+            estado.get(insumo.id).manual = false;
+            actualizarTodo();
+        }
     });
 
     document.getElementById("chkTodos").addEventListener("change", (ev) => {
@@ -520,15 +552,15 @@
         const numero = Number(select.dataset.numero);
         if (select.value) prioridad.set(numero, select.value);
         else prioridad.delete(numero);
+        actualizarTodo();          // recalcula los "A comprar" automáticos
         renderModalPedidos();
-        actualizarTodo();
     });
 
     document.getElementById("btnAjustarComprar").addEventListener("click", () => {
         if (!insumoEnModal) return;
-        estado.get(insumoEnModal.id).comprar = unidadesParaNoPostergados(insumoEnModal);
-        renderModalPedidos();
+        estado.get(insumoEnModal.id).manual = false;
         actualizarTodo();
+        renderModalPedidos();
     });
 
     document.getElementById("btnRestablecerPrioridades").addEventListener("click", () => {
