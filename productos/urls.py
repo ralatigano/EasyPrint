@@ -6,6 +6,8 @@ from .views import (
     insumos, guardar_insumo, borrar_insumo, info_insumo, importar_insumos_excel, exportar_insumos_excel, borrar_todos_insumos,
     recalcular_precios_productos, resolver_tier_producto, obtener_tiempos_producto,
     guardar_tiempos_producto,
+    proveedores, obtener_proveedor, guardar_proveedor, borrar_proveedor,
+    faltantes, registrar_compra, lista_compra_excel,
 )
 
 urlpatterns = [
@@ -64,4 +66,17 @@ urlpatterns = [
          name='importarInsumos'),
     path('exportarInsumos/', exportar_insumos_excel,
          name='exportarInsumos'),
+    # Faltantes de insumos: vista consolidada, lista de compra y registro de compra
+    path('insumos/faltantes/', faltantes, name='faltantes'),
+    path('insumos/faltantes/listaCompra/', lista_compra_excel,
+         name='lista_compra_excel'),
+    path('insumos/registrarCompra/', registrar_compra,
+         name='registrar_compra'),
+    # Proveedores
+    path('proveedores/', proveedores, name='proveedores'),
+    path('guardarProveedor/', guardar_proveedor, name='guardar_proveedor'),
+    path('borrarProveedor/<int:proveedor_id>',
+         borrar_proveedor, name='borrar_proveedor'),
+    path('obtenerProveedor/<int:proveedor_id>/',
+         obtener_proveedor, name='obtener_proveedor'),
 ]

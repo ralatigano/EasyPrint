@@ -20,6 +20,41 @@ class Categoria(models.Model):
         verbose_name_plural = "Categorías"
 
 
+class Proveedor(models.Model):
+    nombre = models.CharField(max_length=100)
+    telefono = models.CharField(max_length=30, blank=True, default='')
+    # No todos los teléfonos tienen WhatsApp: se marca a mano en lugar de
+    # asumirlo, y recién ahí se arma el enlace wa.me.
+    telefono_whatsapp = models.BooleanField(default=False)
+    email = models.EmailField(blank=True, default='')
+    web = models.CharField(max_length=200, blank=True, default='')
+
+    class Meta:
+        ordering = ['nombre']
+        constraints = [
+            models.UniqueConstraint(
+                Lower('nombre'),
+                name='uniq_proveedor_nombre_ci',
+            ),
+        ]
+
+    def __str__(self):
+        return self.nombre
+
+    @property
+    def whatsapp_numero(self):
+        """Solo dígitos (formato que exige wa.me), o '' si no aplica."""
+        if not self.telefono_whatsapp:
+            return ''
+        return ''.join(c for c in self.telefono if c.isdigit())
+
+    @property
+    def web_url(self):
+        if not self.web:
+            return ''
+        return self.web if self.web.startswith(('http://', 'https://')) else f'https://{self.web}'
+
+
 class Insumo(models.Model):
     nombre = models.CharField(max_length=100)
     unidad_medida = models.CharField(max_length=20)  # "resma", "rollo", etc.
@@ -29,6 +64,9 @@ class Insumo(models.Model):
     factor_conversion = models.PositiveIntegerField(default=1)
 
     stock = models.FloatField(default=0)  # stock en unidad_medida
+    proveedor = models.ForeignKey(
+        Proveedor, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='insumos')
     precio = models.DecimalField(
         max_digits=10, decimal_places=2, default=0)
     activo = models.BooleanField(default=True)
@@ -192,6 +230,20 @@ class FaltanteInsumo(models.Model):
     cantidad_faltante = models.FloatField()
     registrado_en = models.DateTimeField(auto_now_add=True)
     resuelto = models.BooleanField(default=False)
+
+    # Por qué se cerró el faltante. Distinguirlo permite reabrir solo los que se
+    # cerraron por terminar el pedido (si el pedido vuelve a abrirse), y saber
+    # cuánto material del pedido nunca se cubrió al borrarlo.
+    MOTIVO_STOCK = 'stock'      # llegó el material (compra o carga de stock)
+    MOTIVO_PEDIDO = 'pedido'    # el pedido se marcó como terminado
+    MOTIVOS_CIERRE = [
+        (MOTIVO_STOCK, 'Cubierto con stock'),
+        (MOTIVO_PEDIDO, 'Pedido terminado'),
+    ]
+    # Los faltantes resueltos antes de existir este campo quedan en '' y se
+    # tratan como cubiertos con stock (era la única forma de cerrarlos).
+    motivo_cierre = models.CharField(
+        max_length=10, choices=MOTIVOS_CIERRE, blank=True, default='')
 
     def __str__(self):
         return f"{self.insumo.nombre} - Faltan {self.cantidad_faltante:.2f} ({self.pedido.numero})"

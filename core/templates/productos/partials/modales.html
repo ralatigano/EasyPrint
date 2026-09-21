@@ -1,3 +1,4 @@
+{% load l10n %}
 <!-- ------------------------------------------------------------------------------Modales categorias------------------------------------------------------------------------------ -->
 
 <!-- Modal Editar Categoria -->
@@ -63,6 +64,15 @@
                     <input type="text" id="precio_unitario" name="precio_unitario" class="form-control"
                     title="Costo por cada unidad de medida. Ej: precio de la resma o de una caja del insumo">
                     
+                    <label for="proveedor_insumo" class="fw-bold">Proveedor:</label>
+                    <select id="proveedor_insumo" name="proveedor" class="form-select mb-2"
+                    title="Proveedor habitual. Permite agrupar la lista de compra de faltantes.">
+                        <option value="">Sin proveedor</option>
+                        {% for pr in proveedores %}
+                        <option value="{{ pr.id|unlocalize }}">{{ pr.nombre }}</option>
+                        {% endfor %}
+                    </select>
+
                     <label for="activo" class="fw-bold">Activo:</label>
                     <div class="form-check" title="Determina si el insumo está habilitado para ser usado en composiciones o pedidos">
                         <input class="form-check-input" type="checkbox" id="activo" name="activo" checked>
@@ -189,4 +199,43 @@
     </div>
     </div>
 </div>
+</div>
+
+<!-- ------------------------------------------------------------------------------Modal proveedores------------------------------------------------------------------------------ -->
+<div class="modal fade" id="editarProveedorModal" tabindex="-1" aria-labelledby="editarProveedorModalLabel" data-bs-backdrop="static" aria-hidden="true">
+    <form action="/productos/guardarProveedor/" method="POST">
+        {% csrf_token %}
+        <input type="hidden" id="proveedor_id" name="id">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="editarProveedorModalLabel">Nuevo proveedor</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <label for="proveedor_nombre" class="fw-bold">Nombre:</label>
+                    <input type="text" id="proveedor_nombre" name="nombre" required class="form-control mb-2">
+
+                    <label for="proveedor_telefono" class="fw-bold">Teléfono:</label>
+                    <input type="text" id="proveedor_telefono" name="telefono" class="form-control"
+                    title="Si tiene WhatsApp, cargalo en formato internacional sin espacios ni signos. Ej: 5493511234567">
+                    <div class="form-check mb-1">
+                        <input class="form-check-input" type="checkbox" id="proveedor_whatsapp" name="telefono_whatsapp">
+                        <label class="form-check-label" for="proveedor_whatsapp">Este número tiene WhatsApp</label>
+                    </div>
+                    <small class="text-muted d-block mb-2">Para WhatsApp usá el formato internacional: 54 9 + característica sin 0 + número sin 15 (ej: 5493511234567).</small>
+
+                    <label for="proveedor_email" class="fw-bold">Correo:</label>
+                    <input type="email" id="proveedor_email" name="email" class="form-control mb-2">
+
+                    <label for="proveedor_web" class="fw-bold">Página web:</label>
+                    <input type="text" id="proveedor_web" name="web" class="form-control" placeholder="www.ejemplo.com.ar">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-dark btn-fuente" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-dark btn-fuente">Guardar</button>
+                </div>
+            </div>
+        </div>
+    </form>
 </div>

@@ -72,8 +72,8 @@ sin símbolo de moneda; ver `core/static/productos/js/Insumos.js`). Aun así
 - `stock_real()` = `stock * factor_conversion` → unidad de uso.
 
 En la UI el usuario ingresa/ve el **stock real** (unidades de uso). El backend
-divide por el factor para guardar `stock`. Ver `guardar_insumo` y
-`procesar_reposicion_insumo_por_edicion` en `productos/views.py`.
+divide por el factor para guardar `stock`. Ver `guardar_insumo` en
+`productos/views.py` y `reemplazar_stock` en `productos/stock.py`.
 
 `precio` es el costo por unidad de compra. Al editar un insumo se recalcula el
 precio de todos los productos no tercerizados que lo usan
@@ -92,6 +92,27 @@ insumos usa `floatformat:"0"` y el endpoint `info_insumo` devuelve
 Unicidad de insumos: constraint `UniqueConstraint(Lower('nombre'))` — no puede
 haber dos insumos con el mismo nombre ignorando mayúsculas. La importación por
 Excel busca con `nombre__iexact` para no crear duplicados.
+
+## Faltantes de insumos (`productos/stock.py`)
+
+Toda la lógica de stock/faltantes vive en `productos/stock.py`; las vistas de
+pedidos y productos solo la llaman.
+
+- Al confirmar un pedido, `descontar_producto` reserva insumos; si no alcanzan,
+  el stock queda en 0 y se crea un `FaltanteInsumo` (en unidad de uso).
+- Invariante: stock > 0 ⇒ sin faltantes abiertos. Todo ingreso de material
+  (`aplicar_ingreso`: compra, edición, importación) cubre primero los faltantes.
+- **Prioridad**: fecha de entrega más cercana primero (sin fecha al final),
+  luego orden de registro. `Faltantes.js` simula con el mismo orden: si se
+  cambia uno, cambiar el otro. Al registrar una compra se puede alterar por
+  pedido (`priorizados` primero, `postergados` al final, sin excluirlos).
+- `FaltanteInsumo.motivo_cierre`: `'stock'` (llegó material; legacy `''` se
+  trata igual) o `'pedido'` (el pedido pasó a Terminado). Solo los `'pedido'` se
+  reactivan si el pedido vuelve a abrirse (`aplicar_cambio_estado`).
+- `reponer_pedido` (borrar/cancelar) devuelve solo lo realmente descontado:
+  necesario − lo que nunca se cubrió. Un pedido terminado no devuelve nada.
+- Vista `/productos/insumos/faltantes/` (+ lista de compra en Excel y
+  "Registrar compra"). `Proveedor` se vincula a `Insumo.proveedor`.
 
 ## Flujo guardar insumo desde la UI
 

@@ -14,8 +14,16 @@
     <div class="titulo">
         <h1>Insumos</h1>
     </div>
-    {% if es_gerencia %}
     <div class="grupo-botones">
+        <a href="{% url 'faltantes' %}" class="btn {% if insumos_en_falta %}btn-warning{% else %}btn-dark{% endif %} btn-xs btn-fuente"
+           title="Insumos que faltan para completar los pedidos cargados">
+            <i class="fa-solid fa-cart-shopping"></i> Faltantes{% if insumos_en_falta %} ({{ insumos_en_falta }}){% endif %}
+        </a>
+    {% if es_gerencia %}
+        <a href="{% url 'proveedores' %}" class="btn btn-dark btn-xs btn-fuente">
+            <i class="fa-solid fa-truck"></i> Proveedores
+        </a>
+
         <button type="button"
                 class="btn btn-dark btn-fuente btn-xs"
                 data-bs-toggle="modal"
@@ -38,8 +46,8 @@
             {% csrf_token %}
             <input type="file" name="excel_file" id="excelFileInput" class="btn btn-dark btn-xs btn-fuente">
         </form>
-    </div>
     {% endif %}
+    </div>
 {% endblock %}
 <!--------------------------------------------------------------------------- Block content --------------------------------------------------------------------------->
 {% block content %}
@@ -54,6 +62,7 @@
                         <th class="centered">Unidad medida</th>
                         <th class="centered">Stock</th>
                         <th class="centered">Stock real</th>
+                        <th class="centered">Proveedor</th>
                         <th class="centered">Acciones</th>
                     </tr>
                 </thead>
@@ -65,6 +74,7 @@
                         <td>{{i.unidad_medida}}</td>
                         <td>{{ i.stock|floatformat:"-2" }}</td>
                         <td>{{ i.stock_real|floatformat:"0" }}</td>
+                        <td>{{ i.proveedor.nombre|default:"—" }}</td>
                         <td>
                             <button type="button" class="btn btn-dark btn-xs" data-bs-toggle="modal" data-bs-target="#crearEditarInsumoModal" data-id="{{ i.id|unlocalize }}" onclick=""><i class="fa-solid fa-pencil sm"></i></button>
                             {% if es_gerencia %}

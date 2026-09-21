@@ -4,7 +4,11 @@ from django.views.decorators.csrf import csrf_exempt
 from django.db import transaction
 from .models import Pedido, ViajeCadete
 from presupuestos.models import Presupuesto, DetalleSugerido
-from productos.models import ProductoCotizado, ComponenteProducto, FaltanteInsumo
+from productos.models import ProductoCotizado
+from productos.stock import (
+    ESTADOS_FINALES, aplicar_cambio_estado, cerrar_faltantes_pedido,
+    descontar_producto, reponer_pedido,
+)
 from clientes.models import Cliente
 from django.contrib.auth.models import User
 from django.contrib import messages
@@ -184,30 +188,23 @@ def cambiar_estado(request):
                 request, 'Este pedido fue cancelado y no puede modificarse. Si necesitás reactivarlo, deberás crear uno nuevo.')
             return redirect('/pedidos/v2')
 
+        estado_anterior = pedido.estado
         pedido.estado = nuevo_estado
         pedido.save()
 
-        productos = ProductoCotizado.objects.filter(
-            presupuesto=pedido.presupuesto)
-
-        # Resolver faltantes si el pedido está en estado final
-        if nuevo_estado in ['Para retirar', 'Entregado']:
-            for p in productos:
-                if not p.producto.tercerizado:
-                    actualizar_stock_insumos(
-                        p.producto, p.cantidad, modo='resolver', pedido=pedido)
+        # Terminar un pedido cierra sus faltantes; reabrirlo los reactiva.
+        aviso = aplicar_cambio_estado(pedido, estado_anterior)
 
         # Reponer insumos si el pedido se cancela
-        elif nuevo_estado == 'Cancelado':
-            for p in productos:
-                if not p.producto.tercerizado:
-                    actualizar_stock_insumos(
-                        p.producto, p.cantidad, modo='reponer', pedido=pedido)
+        if nuevo_estado == 'Cancelado':
+            reponer_pedido(pedido)
             pedido.cancelado_bloqueado = True  # marca irreversible
             pedido.save()
 
         messages.success(
             request, 'El estado del pedido se ha cambiado exitosamente.')
+        if aviso:
+            messages.warning(request, aviso)
 
     except Exception as e:
         messages.error(request, f'Hubo un error al editar el pedido: {str(e)}')
@@ -229,6 +226,7 @@ def cambiar_estado_bulk(request):
 
         actualizados = 0
         saltados = 0
+        avisos = []
 
         for numero in ids:
             try:
@@ -236,17 +234,14 @@ def cambiar_estado_bulk(request):
                 if pedido.estado == 'Cancelado' and getattr(pedido, 'cancelado_bloqueado', False):
                     saltados += 1
                     continue
+                estado_anterior = pedido.estado
                 pedido.estado = nuevo_estado
                 pedido.save()
-                productos = ProductoCotizado.objects.filter(presupuesto=pedido.presupuesto)
-                if nuevo_estado in ['Para retirar', 'Entregado']:
-                    for p in productos:
-                        if not p.producto.tercerizado:
-                            actualizar_stock_insumos(p.producto, p.cantidad, modo='resolver', pedido=pedido)
-                elif nuevo_estado == 'Cancelado':
-                    for p in productos:
-                        if not p.producto.tercerizado:
-                            actualizar_stock_insumos(p.producto, p.cantidad, modo='reponer', pedido=pedido)
+                aviso = aplicar_cambio_estado(pedido, estado_anterior)
+                if aviso:
+                    avisos.append(aviso)
+                if nuevo_estado == 'Cancelado':
+                    reponer_pedido(pedido)
                     pedido.cancelado_bloqueado = True
                     pedido.save()
                 actualizados += 1
@@ -258,6 +253,8 @@ def cambiar_estado_bulk(request):
             if saltados:
                 msg += f" {saltados} no se pudieron modificar (cancelados o no encontrados)."
             messages.success(request, msg)
+            for aviso in avisos:
+                messages.warning(request, aviso)
         else:
             messages.error(request, "No se pudo actualizar ningún pedido.")
 
@@ -443,10 +440,12 @@ def confirmar_pedido(request):
         # Segunda pasada: actualizar insumos
         for p in Prods:
             if not p.insumo.tercerizado:
-                actualizar_stock_insumos(
-                    p.insumo, p.cantidad, modo='descontar',
-                    request=request, pedido=pedido
-                )
+                for adv in descontar_producto(p.insumo, p.cantidad, pedido=pedido):
+                    messages.error(request, adv)
+
+        # Un pedido que se carga ya terminado no debe dejar faltantes abiertos.
+        if pedido.estado in ESTADOS_FINALES:
+            cerrar_faltantes_pedido(pedido)
 
         messages.success(
             request, f'El pedido {n_pedido} se ha registrado exitosamente.')
@@ -551,14 +550,8 @@ def get_productos_info(request):
 def eliminar_pedido(request, pedido_id):
     try:
         pedido = Pedido.objects.get(numero=pedido_id)
-        productos = ProductoCotizado.objects.filter(
-            presupuesto=pedido.presupuesto)
-
-        for p in productos:
-            if not p.insumo.tercerizado:
-                actualizar_stock_insumos(
-                    p.insumo, p.cantidad, modo='reponer')
-
+        # Devuelve solo el material que realmente se había descontado.
+        reponer_pedido(pedido)
         pedido.delete()
         messages.success(
             request, f'El pedido {pedido_id} se ha borrado y los insumos se han restaurado correctamente.')
@@ -566,72 +559,6 @@ def eliminar_pedido(request, pedido_id):
         messages.error(
             request, f'No se ha podido borrar el pedido. Error({e})')
     return redirect('/pedidos/v2')
-
-
-def actualizar_stock_insumos(producto, cantidad, modo='descontar', request=None, pedido=None):
-    advertencias = []
-    componentes = ComponenteProducto.objects.filter(
-        producto=producto, alternativo=False)
-
-    for comp in componentes:
-        insumo = comp.insumo
-        cantidad_necesaria = comp.cantidad * cantidad  # en unidad de composición
-        stock_real = insumo.stock_real()
-
-        if modo == 'descontar':
-            if stock_real >= cantidad_necesaria:
-                nuevo_stock = stock_real - cantidad_necesaria
-            else:
-                faltante = cantidad_necesaria - stock_real
-                nuevo_stock = 0
-                advertencias.append(
-                    f'Necesitarás comprar {faltante:.2f} {insumo.unidad_composicion} de {insumo.nombre} para completar este pedido.'
-                )
-
-                # Registro del faltante
-                FaltanteInsumo.objects.create(
-                    insumo=insumo,
-                    cantidad_faltante=faltante,
-                    pedido=pedido
-                )
-
-            insumo.stock = nuevo_stock / insumo.factor_conversion
-            insumo.save()
-
-        elif modo == 'reponer':
-
-            cantidad_disponible = cantidad_necesaria  # en unidad de composición
-
-            faltantes = FaltanteInsumo.objects.filter(
-                insumo=insumo, resuelto=False).order_by('registrado_en')
-
-            for f in faltantes:
-                if cantidad_disponible <= 0:
-                    break
-
-                if cantidad_disponible >= f.cantidad_faltante:
-                    cantidad_disponible -= f.cantidad_faltante
-                    f.resuelto = True
-                    f.save()
-                else:
-                    f.cantidad_faltante -= cantidad_disponible
-                    cantidad_disponible = 0
-                    f.save()
-
-            # Solo si sobra después de cubrir faltantes, se actualiza el stock
-            if cantidad_disponible > 0:
-                insumo.stock += cantidad_disponible / insumo.factor_conversion
-                insumo.save()
-            elif modo == 'resolver':
-                faltantes = FaltanteInsumo.objects.filter(
-                    insumo=insumo, pedido=pedido, resuelto=False)
-                for f in faltantes:
-                    f.resuelto = True
-                    f.save()
-    # Feedback al usuario
-    if request and advertencias:
-        for adv in advertencias:
-            messages.error(request, adv)
 
 
 @login_required

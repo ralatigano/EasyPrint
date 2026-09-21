@@ -30,6 +30,14 @@
             <strong>${_esc(d.nombre)}</strong>? 
             Todos los productos asociados perderán su categoría.`,
 
+        proveedor: (d) => {
+            const aviso = d.cantidad_insumos
+                ? ` Los <strong>${d.cantidad_insumos}</strong> insumo(s) asociados quedarán sin proveedor.`
+                : '';
+            return `¿Está seguro que desea eliminar el proveedor
+                    <strong>${_esc(d.nombre)}</strong>?${aviso}`;
+        },
+
         pedido: (d) =>{
             const p = d.pedido;  // ← los datos están en d.pedido, no en d directamente
             const ref = p.cliente || 'cliente desconocido';

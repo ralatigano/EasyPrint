@@ -26,10 +26,11 @@ const initDataTable = async () => {
       columnDefs: [
         { responsivePriority: 1, targets: 0 }, // Nombre
         { responsivePriority: 2, targets: 4 }, // Stock real
-        { responsivePriority: 3, targets: 5 }, // Editar/Borrar
+        { responsivePriority: 3, targets: 6 }, // Editar/Borrar
         { responsivePriority: 4, targets: 1 }, // PU
         { responsivePriority: 5, targets: 2 }, // Unidad medida
         { responsivePriority: 6, targets: 3 }, // Stock
+        { responsivePriority: 7, targets: 5 }, // Proveedor
       ],
       drawCallback: function(settings) {
         $('#Insumos tbody tr').each(function(index) {
@@ -123,6 +124,7 @@ document.addEventListener("DOMContentLoaded", function () {
             }
             document.getElementById("precio_unitario").value = formatearNumeroLocal(data.precio_unitario ?? 0);
             document.getElementById("activo").checked = !!data.activo;
+            document.getElementById("proveedor_insumo").value = data.proveedor ?? "";
             modalTitle.textContent = `Editar insumo: ${data.nombre}`;
 
             if (data.ultima_modificacion && data.modificado_por) {
@@ -199,7 +201,7 @@ document.querySelector('form[action="/productos/guardarInsumo/"]')?.addEventList
 });
 
 // Importación con feedback visual
-document.getElementById('excelFileInput').addEventListener('change', async function () {
+document.getElementById('excelFileInput')?.addEventListener('change', async function () {
   if (!this.files.length) return;
 
   const form = document.getElementById('formCargaAuto');
