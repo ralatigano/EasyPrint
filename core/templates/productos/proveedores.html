@@ -1,0 +1,85 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% load l10n %}
+<!--------------------------------------------------------------------------- Block head --------------------------------------------------------------------------->
+{% block head %}
+<link rel="stylesheet" href="{% static 'productos/css/Insumos.css' %}">
+{% endblock %}
+<!--------------------------------------------------------------------------- Block title --------------------------------------------------------------------------->
+{% block title %}Proveedores{% endblock %}
+<!--------------------------------------------------------------------------- Block header --------------------------------------------------------------------------->
+{% block header %}
+<div class="container">
+    <div class="titulo">
+        <h1>Proveedores</h1>
+    </div>
+    <div class="grupo-botones">
+        <button type="button" class="btn btn-dark btn-xs btn-fuente" data-bs-toggle="modal" data-bs-target="#editarProveedorModal" data-id="">
+            <i class="fa-solid fa-square-plus"></i> Nuevo proveedor
+        </button>
+        <a href="{% url 'insumos' %}" class="btn btn-dark btn-xs btn-fuente">
+            <i class="fa-solid fa-arrow-left"></i> Volver a Stock
+        </a>
+    </div>
+</div>
+{% endblock %}
+<!--------------------------------------------------------------------------- Block content --------------------------------------------------------------------------->
+{% block content %}
+<div class="row">
+    <div class="col-sm-12 col-md-12 col-lg-12 col-xl-12">
+        <div class="tabla-scroll">
+            <table id="Proveedores" class="table table-hover">
+                <thead>
+                    <tr>
+                        <th class="centered">Nombre</th>
+                        <th class="centered">Teléfono</th>
+                        <th class="centered">Correo</th>
+                        <th class="centered">Página web</th>
+                        <th class="centered">Insumos</th>
+                        <th class="centered">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for p in proveedores %}
+                    <tr>
+                        <td>{{ p.nombre }}</td>
+                        <td>
+                            {% if p.whatsapp_numero %}
+                                <a href="https://wa.me/{{ p.whatsapp_numero }}" target="_blank" rel="noopener" title="Abrir chat de WhatsApp">
+                                    <i class="fa-brands fa-whatsapp"></i> {{ p.telefono }}
+                                </a>
+                            {% elif p.telefono %}
+                                <a href="tel:{{ p.telefono }}">{{ p.telefono }}</a>
+                            {% else %}—{% endif %}
+                        </td>
+                        <td>{% if p.email %}<a href="mailto:{{ p.email }}">{{ p.email }}</a>{% else %}—{% endif %}</td>
+                        <td>{% if p.web %}<a href="{{ p.web_url }}" target="_blank" rel="noopener">{{ p.web }}</a>{% else %}—{% endif %}</td>
+                        <td>{{ p.cantidad_insumos }}</td>
+                        <td>
+                            <button type="button" class="btn btn-dark btn-xs" data-bs-toggle="modal" data-bs-target="#editarProveedorModal" data-id="{{ p.id|unlocalize }}" title="Editar proveedor">
+                                <i class="fa-solid fa-pencil sm"></i>
+                            </button>
+                            <a href="/productos/borrarProveedor/{{ p.id|unlocalize }}"
+                               class="btn btn-dark btn-xs btnEliminacion"
+                               data-tipo="proveedor"
+                               data-fetch-url="/productos/obtenerProveedor/{{ p.id|unlocalize }}/"
+                               title="Eliminar proveedor">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </a>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+<!--------------------------------------------------------------------------- Block modal --------------------------------------------------------------------------->
+{% block modal %}
+{% include 'productos/partials/modales.html' %}
+{% endblock %}
+<!--------------------------------------------------------------------------- Block scripts --------------------------------------------------------------------------->
+{% block scripts %}
+<script src="{% static 'productos/js/Proveedores.js' %}"></script>
+{% endblock %}

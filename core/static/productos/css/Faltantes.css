@@ -1,0 +1,34 @@
+.faltantes-resumen {
+  position: sticky;
+  top: 0.5rem;
+  z-index: 5;
+}
+
+#Faltantes .input-comprar {
+  width: 6rem;
+  display: inline-block;
+}
+
+#Faltantes .cubre {
+  min-width: 9rem;
+}
+
+#Faltantes .cubre .progress {
+  height: 0.4rem;
+}
+
+#Faltantes tr.fila-seleccionada > td {
+  background-color: rgba(13, 110, 253, 0.08);
+}
+
+.contacto-proveedor .btn {
+  margin: 0 0.25rem 0.25rem 0;
+}
+
+#Faltantes tfoot .fila-total th {
+  border-top: 2px solid #343a40;
+}
+
+#modalPedidosInsumo .select-prioridad {
+  min-width: 7.5rem;
+}

@@ -1,7 +1,13 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.http.response import JsonResponse, FileResponse
-from .models import Producto, Categoria, Insumo, ComponenteProducto, FaltanteInsumo
+from .models import Producto, Categoria, Insumo, ComponenteProducto, FaltanteInsumo, Proveedor
+from .stock import reemplazar_stock, aplicar_ingreso, ordenar_por_prioridad
+from django.db import transaction
+from django.db.models import Count
+from collections import defaultdict
+import json
+import openpyxl.styles
 from .functions import *
 from django.contrib import messages
 import openpyxl
@@ -550,7 +556,7 @@ def insumos(request):
     autorizado = request.session.get('autorizado')
     usuario_nombre = request.session.get('usuario_nombre')
     img = request.session.get('img')
-    insumos = Insumo.objects.all()
+    insumos = Insumo.objects.select_related('proveedor')
     if request.user.is_superuser or request.user.groups.filter(name='Gerencia').exists():
         autorizado = True
         # es_gerencia = request.user.is_superuser or request.user.groups.filter(
@@ -559,6 +565,9 @@ def insumos(request):
         'usuario': usuario_nombre,
         'img': img,
         'insumos': insumos,
+        'proveedores': Proveedor.objects.all(),
+        'insumos_en_falta': FaltanteInsumo.objects.filter(
+            resuelto=False).values('insumo').distinct().count(),
         'autorizado': autorizado,
         # 'es_gerencia': es_gerencia
     }
@@ -655,6 +664,9 @@ def guardar_insumo(request):
         insumo.factor_conversion = data.get("factor_conversion") or 1
         insumo.precio = parse_ar(data.get("precio_unitario")) or 0
         insumo.activo = data.get("activo") == "on"
+        proveedor_id = data.get("proveedor")
+        insumo.proveedor = Proveedor.objects.filter(
+            pk=proveedor_id).first() if proveedor_id else None
 
         # El usuario ingresa el "stock real": las unidades de uso que efectivamente
         # cuenta (ej: hojas). El stock interno (en unidad de compra) se deriva
@@ -663,9 +675,8 @@ def guardar_insumo(request):
         factor = float(insumo.factor_conversion or 1) or 1
 
         if id_insumo and id_insumo != "0":
-            mensaje_reposicion = procesar_reposicion_insumo_por_edicion(request,
-                                                                        insumo, stock_real_ingresado)
-            insumo.save()
+            mensaje_reposicion = reemplazar_stock(
+                insumo, stock_real_ingresado, request.user)
             _recalcular_precios_productos_con_insumo(insumo)
             return JsonResponse({"ok": True, "mensaje": mensaje, "info_reposicion": mensaje_reposicion})
 
@@ -695,6 +706,7 @@ def info_insumo(request, insumo_id):
             "ultima_modificacion": insumo.ultima_modificacion.isoformat() if insumo.ultima_modificacion else None,
             "modificado_por": insumo.modificado_por.get_full_name() if insumo.modificado_por else None,
             "activo": insumo.activo,
+            "proveedor": insumo.proveedor_id,
         }
 
         return JsonResponse(data)
@@ -805,12 +817,33 @@ def importar_insumos_excel(request):
                     # mantiene compatibilidad con planillas viejas que traían 'stock'
                     # (ya expresado en unidad de compra).
                     factor = float(insumo.factor_conversion or 1) or 1
+                    nuevo_stock_real = None
                     if val('stock_real') is not None:
-                        insumo.stock = float(val('stock_real')) / factor
+                        nuevo_stock_real = float(val('stock_real'))
                     elif val('stock') is not None:
-                        insumo.stock = float(val('stock'))
+                        nuevo_stock_real = float(val('stock')) * factor
 
-                    insumo.save()
+                    # Proveedor por nombre (sin distinguir mayúsculas); si no
+                    # existe se crea con solo el nombre.
+                    if val('proveedor') is not None:
+                        proveedor = Proveedor.objects.filter(
+                            nombre__iexact=val('proveedor')).first()
+                        if proveedor is None:
+                            proveedor = Proveedor.objects.create(
+                                nombre=val('proveedor'))
+                            log.append(
+                                f"Fila {idx}: se creó el proveedor '{proveedor.nombre}' "
+                                f"(completá sus datos de contacto en Proveedores).")
+                        insumo.proveedor = proveedor
+
+                    if creado or nuevo_stock_real is None:
+                        if nuevo_stock_real is not None:
+                            insumo.stock = nuevo_stock_real / factor
+                        insumo.save()
+                    else:
+                        # Igual que la edición manual: el stock contado compensa
+                        # primero los faltantes abiertos de los pedidos.
+                        reemplazar_stock(insumo, nuevo_stock_real, request.user)
 
                     # Si cambió el costo unitario (precio o factor), recalcular el
                     # precio de los productos no tercerizados que usan este insumo.
@@ -862,10 +895,10 @@ def exportar_insumos_excel(request):
     # 'stock_real' = unidades de uso que se cuentan (ej: hojas). Al reimportar,
     # la app deriva el stock en unidad de compra dividiendo por el factor.
     columnas = ["nombre", "unidad_medida", "unidad_composicion",
-                "factor_conversion", "stock_real", "precio"]
+                "factor_conversion", "stock_real", "precio", "proveedor"]
     ws.append(columnas)
 
-    for insumo in Insumo.objects.all():
+    for insumo in Insumo.objects.select_related('proveedor'):
         ws.append([
             insumo.nombre,
             insumo.unidad_medida,
@@ -873,6 +906,7 @@ def exportar_insumos_excel(request):
             insumo.factor_conversion,
             insumo.stock_real(),
             insumo.precio,
+            insumo.proveedor.nombre if insumo.proveedor else "",
         ])
 
     response = HttpResponse(
@@ -896,49 +930,289 @@ def borrar_todos_insumos(request):
     return redirect('insumos')
 
 
+# -------------------------PROVEEDORES----------------------------------
+
+
 @login_required
-def procesar_reposicion_insumo_por_edicion(request, insumo, nuevo_stock_real):
-    """
-    Reemplaza el stock del insumo por el nuevo valor ingresado por el usuario.
-    El valor recibido es el "stock real" (unidades de uso, ej: hojas).
-    Compensa faltantes si corresponde. Devuelve mensaje para el usuario.
-    """
-    nuevo_stock_real = float(nuevo_stock_real)
-    factor = float(insumo.factor_conversion) or 1
+@solo_gerencia
+def proveedores(request):
+    data = {
+        'usuario': request.session.get('usuario_nombre'),
+        'autorizado': request.session.get('autorizado'),
+        'img': request.session.get('img'),
+        'proveedores': Proveedor.objects.annotate(cantidad_insumos=Count('insumos')),
+    }
+    return render(request, 'productos/proveedores.html', data)
 
-    faltantes = FaltanteInsumo.objects.filter(
-        insumo=insumo, resuelto=False).order_by('registrado_en')
-    faltante_total = sum(f.cantidad_faltante for f in faltantes)
 
-    if nuevo_stock_real >= faltante_total:
-        # Resolver todos los faltantes
-        for f in faltantes:
-            f.resuelto = True
-            f.save()
-        stock_final = nuevo_stock_real - faltante_total
-        insumo.stock = stock_final / factor
-        insumo.ultima_modificacion = timezone.now()
-        insumo.modificado_por = request.user
-        insumo.save()
-        return f"Se ha actualizado el stock de {insumo.nombre} a {nuevo_stock_real:.2f} {insumo.unidad_composicion}. Se resolvieron todos los faltantes. Stock disponible: {stock_final:.2f} {insumo.unidad_composicion}."
+@login_required
+def obtener_proveedor(request, proveedor_id):
+    proveedor = Proveedor.objects.filter(pk=proveedor_id).first()
+    if proveedor is None:
+        return JsonResponse({'error': 'Proveedor no encontrado'}, status=404)
+    return JsonResponse({
+        'id': proveedor.id,
+        'nombre': proveedor.nombre,
+        'telefono': proveedor.telefono,
+        'telefono_whatsapp': proveedor.telefono_whatsapp,
+        'email': proveedor.email,
+        'web': proveedor.web,
+        'cantidad_insumos': proveedor.insumos.count(),
+    })
+
+
+@login_required
+@solo_gerencia
+def guardar_proveedor(request):
+    if request.method != 'POST':
+        return redirect('proveedores')
+
+    proveedor_id = request.POST.get('id')
+    nombre = (request.POST.get('nombre') or '').strip()
+    if not nombre:
+        messages.error(request, 'El proveedor debe tener un nombre.')
+        return redirect('proveedores')
+
+    duplicado = Proveedor.objects.filter(nombre__iexact=nombre)
+    if proveedor_id:
+        duplicado = duplicado.exclude(pk=proveedor_id)
+    if duplicado.exists():
+        messages.error(
+            request, f'Ya existe un proveedor llamado "{duplicado.first().nombre}".')
+        return redirect('proveedores')
+
+    if proveedor_id:
+        proveedor = Proveedor.objects.filter(pk=proveedor_id).first()
+        if proveedor is None:
+            messages.error(request, 'El proveedor no existe.')
+            return redirect('proveedores')
     else:
-        # Menguar los faltantes
-        restante = nuevo_stock_real
-        for f in faltantes:
-            if restante <= 0:
-                break
-            if restante >= f.cantidad_faltante:
-                restante -= f.cantidad_faltante
-                f.resuelto = True
-                f.save()
-            else:
-                f.cantidad_faltante -= restante
-                restante = 0
-                f.save()
-        insumo.stock = 0
-        insumo.ultima_modificacion = timezone.now()
-        insumo.modificado_por = request.user
-        insumo.save()
-        faltante_restante = sum(f.cantidad_faltante for f in FaltanteInsumo.objects.filter(
-            insumo=insumo, resuelto=False))
-        return f"Se ha actualizado el stock de {insumo.nombre} a {nuevo_stock_real:.2f} {insumo.unidad_composicion}. Aún faltan {faltante_restante:.2f} {insumo.unidad_composicion} para compensar los pedidos pendientes."
+        proveedor = Proveedor()
+
+    proveedor.nombre = nombre
+    proveedor.telefono = (request.POST.get('telefono') or '').strip()
+    proveedor.telefono_whatsapp = request.POST.get('telefono_whatsapp') == 'on'
+    proveedor.email = (request.POST.get('email') or '').strip()
+    proveedor.web = (request.POST.get('web') or '').strip()
+    proveedor.save()
+
+    accion = 'actualizado' if proveedor_id else 'creado'
+    messages.success(request, f'Proveedor "{nombre}" {accion} con éxito.')
+    return redirect('proveedores')
+
+
+@login_required
+@solo_gerencia
+def borrar_proveedor(request, proveedor_id):
+    try:
+        proveedor = Proveedor.objects.get(pk=proveedor_id)
+        nombre = proveedor.nombre
+        proveedor.delete()
+        messages.success(
+            request, f'El proveedor {nombre} se ha borrado correctamente.')
+    except Exception as e:
+        messages.error(
+            request, f'No se ha podido borrar el proveedor. Error({e})')
+    return redirect('proveedores')
+
+
+# -------------------------FALTANTES----------------------------------
+
+
+def _proveedor_dict(proveedor):
+    if proveedor is None:
+        return None
+    return {
+        'id': proveedor.id,
+        'nombre': proveedor.nombre,
+        'telefono': proveedor.telefono,
+        'whatsapp': proveedor.whatsapp_numero,
+        'email': proveedor.email,
+        'web': proveedor.web_url,
+    }
+
+
+def _datos_faltantes():
+    """
+    Faltantes abiertos agrupados por insumo. Dentro de cada insumo, los pedidos
+    vienen en orden de prioridad (el mismo con que se cubren al ingresar
+    material), con la cantidad que le falta a cada uno en unidad de uso.
+    """
+    faltantes = ordenar_por_prioridad(
+        FaltanteInsumo.objects.filter(resuelto=False).select_related(
+            'insumo', 'insumo__proveedor', 'pedido', 'pedido__cliente'))
+
+    insumos = {}
+    for f in faltantes:
+        ins = f.insumo
+        fila = insumos.get(ins.id)
+        if fila is None:
+            fila = insumos[ins.id] = {
+                'id': ins.id,
+                'nombre': ins.nombre,
+                'unidad_uso': ins.unidad_composicion,
+                'unidad_compra': ins.unidad_medida,
+                'factor': float(ins.factor_conversion or 1) or 1,
+                'precio': float(ins.precio or 0),
+                'stock_real': ins.stock_real(),
+                'proveedor': _proveedor_dict(ins.proveedor),
+                'faltante': 0,
+                'pedidos': {},
+            }
+        fila['faltante'] += f.cantidad_faltante
+
+        pedido = f.pedido
+        clave = pedido.numero if pedido else 'sin-pedido'
+        entrada = fila['pedidos'].get(clave)
+        if entrada is None:
+            entrada = fila['pedidos'][clave] = {
+                'numero': pedido.numero if pedido else None,
+                'cliente': (pedido.cliente.nombre if pedido and pedido.cliente else ''),
+                'fecha_entrega': (pedido.fecha_entrega.strftime('%d/%m/%Y')
+                                  if pedido and pedido.fecha_entrega else ''),
+                'estado': pedido.estado if pedido else '',
+                'cantidad': 0,
+            }
+        entrada['cantidad'] += f.cantidad_faltante
+
+    resultado = []
+    for fila in insumos.values():
+        fila['pedidos'] = list(fila['pedidos'].values())
+        resultado.append(fila)
+    resultado.sort(key=lambda x: x['nombre'].lower())
+    return resultado
+
+
+@login_required
+def faltantes(request):
+    data = {
+        'usuario': request.session.get('usuario_nombre'),
+        'autorizado': request.session.get('autorizado'),
+        'img': request.session.get('img'),
+        'faltantes': _datos_faltantes(),
+        'hoy': timezone.localdate().strftime('%d/%m/%Y'),
+    }
+    return render(request, 'productos/faltantes.html', data)
+
+
+def _items_compra(request, raw=None):
+    """[(insumo, unidades_de_compra)] desde {'items': [{id, unidades}]} (JSON o form)."""
+    if raw is None:
+        if request.POST.get('items'):
+            raw = json.loads(request.POST['items'])
+        else:
+            raw = json.loads(request.body or '{}').get('items', [])
+    items = []
+    for item in raw:
+        unidades = float(parse_ar(item.get('unidades')))
+        insumo = Insumo.objects.filter(pk=item.get('id')).select_related(
+            'proveedor').first()
+        if insumo is not None and unidades > 0:
+            items.append((insumo, unidades))
+    return items
+
+
+def _cantidad_legible(valor):
+    """1.0 -> '1'; 2.5 -> '2,5' (formato AR, sin decimales de más)."""
+    texto = format_ar(valor)
+    return texto[:-3] if texto.endswith(',00') else texto.rstrip('0')
+
+
+@login_required
+def registrar_compra(request):
+    """Ingresa la compra: cubre faltantes por prioridad y el resto va a stock."""
+    if request.method != 'POST':
+        return JsonResponse({'ok': False, 'mensaje': 'Método no permitido'}, status=405)
+    try:
+        cuerpo = json.loads(request.body or '{}')
+        items = _items_compra(request, cuerpo.get('items', []))
+        # Prioridades elegidas a mano en la vista de faltantes (números de pedido).
+        priorizados = [int(n) for n in cuerpo.get('priorizados', [])]
+        postergados = [int(n) for n in cuerpo.get('postergados', [])]
+        if not items:
+            return JsonResponse({'ok': False, 'mensaje': 'No se indicó ninguna cantidad a ingresar.'})
+
+        partes = []
+        pedidos_cubiertos = set()
+        with transaction.atomic():
+            for insumo, unidades in items:
+                factor = float(insumo.factor_conversion or 1) or 1
+                resultado = aplicar_ingreso(
+                    insumo, unidades * factor, request.user,
+                    priorizados=priorizados, postergados=postergados)
+                pedidos_cubiertos.update(
+                    p for p in resultado['pedidos_cubiertos'] if p)
+                partes.append(
+                    f"{_cantidad_legible(unidades)} {insumo.unidad_medida} de {insumo.nombre}")
+
+        mensaje = 'Compra registrada: ' + '; '.join(partes) + '.'
+        # Pedidos que ya no tienen ningún faltante abierto (en ningún insumo).
+        destrabados = sorted(n for n in pedidos_cubiertos if not FaltanteInsumo.objects.filter(
+            pedido_id=n, resuelto=False).exists())
+        if destrabados:
+            mensaje += (' Pedidos con todos sus insumos cubiertos: '
+                        + ', '.join(str(n) for n in destrabados) + '.')
+        # La vista recarga la página: el mensaje se muestra como los demás.
+        messages.success(request, mensaje)
+        return JsonResponse({'ok': True, 'mensaje': mensaje})
+    except Exception as e:
+        return JsonResponse({'ok': False, 'mensaje': f'No se pudo registrar la compra ({e}).'})
+
+
+@login_required
+def lista_compra_excel(request):
+    """Excel de la lista de compra: una hoja con todo y, si hay varios
+    proveedores, una hoja más por cada uno."""
+    if request.method != 'POST':
+        return redirect('faltantes')
+    items = _items_compra(request)
+    items.sort(key=lambda x: (
+        x[0].proveedor.nombre.lower() if x[0].proveedor else '~',
+        x[0].nombre.lower()))
+
+    negrita = openpyxl.styles.Font(bold=True)
+
+    def llenar_hoja(ws, filas):
+        ws.append(['Proveedor', 'Insumo', 'Cantidad', 'Unidad',
+                   'Precio unitario', 'Subtotal'])
+        for c in ws[1]:
+            c.font = negrita
+        total = 0
+        for insumo, unidades in filas:
+            precio = float(insumo.precio or 0)
+            total += precio * unidades
+            ws.append([
+                insumo.proveedor.nombre if insumo.proveedor else 'Sin proveedor',
+                insumo.nombre, unidades, insumo.unidad_medida,
+                precio, precio * unidades,
+            ])
+        ws.append(['', '', '', '', 'Total estimado', total])
+        ws.cell(row=ws.max_row, column=5).font = negrita
+        ws.cell(row=ws.max_row, column=6).font = negrita
+        for fila in ws.iter_rows(min_row=2, min_col=5, max_col=6):
+            for c in fila:
+                c.number_format = '"$" #,##0.00'
+        for letra, ancho in zip('ABCDEF', (24, 40, 10, 14, 16, 16)):
+            ws.column_dimensions[letra].width = ancho
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = 'Lista de compra'
+    llenar_hoja(ws, items)
+
+    por_proveedor = defaultdict(list)
+    for insumo, unidades in items:
+        nombre = insumo.proveedor.nombre if insumo.proveedor else 'Sin proveedor'
+        por_proveedor[nombre].append((insumo, unidades))
+    if len(por_proveedor) > 1:
+        for nombre, filas in por_proveedor.items():
+            # Excel limita el nombre de hoja a 31 caracteres y prohíbe algunos símbolos.
+            titulo = re.sub(r'[\\/*?:\[\]]', '', nombre)[:31] or 'Proveedor'
+            llenar_hoja(wb.create_sheet(titulo), filas)
+
+    response = HttpResponse(
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    fecha = timezone.localdate().strftime('%Y-%m-%d')
+    response["Content-Disposition"] = f'attachment; filename="lista_compra_{fecha}.xlsx"'
+    wb.save(response)
+    return response

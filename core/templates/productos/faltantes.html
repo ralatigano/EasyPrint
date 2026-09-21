@@ -1,0 +1,214 @@
+{% extends 'core/base.html' %}
+{% load static %}
+<!--------------------------------------------------------------------------- Block head --------------------------------------------------------------------------->
+{% block head %}
+<link rel="stylesheet" href="{% static 'productos/css/Insumos.css' %}">
+<link rel="stylesheet" href="{% static 'productos/css/Faltantes.css' %}">
+{% endblock %}
+<!--------------------------------------------------------------------------- Block title --------------------------------------------------------------------------->
+{% block title %}Faltantes{% endblock %}
+<!--------------------------------------------------------------------------- Block header --------------------------------------------------------------------------->
+{% block header %}
+<div class="container">
+    <div class="titulo">
+        <h1>Faltantes de insumos</h1>
+    </div>
+    <div class="grupo-botones">
+        <a href="{% url 'insumos' %}" class="btn btn-dark btn-xs btn-fuente">
+            <i class="fa-solid fa-arrow-left"></i> Volver a Stock
+        </a>
+        {% if es_gerencia %}
+        <a href="{% url 'proveedores' %}" class="btn btn-dark btn-xs btn-fuente">
+            <i class="fa-solid fa-truck"></i> Proveedores
+        </a>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+<!--------------------------------------------------------------------------- Block content --------------------------------------------------------------------------->
+{% block content %}
+{% if faltantes %}
+<p class="text-muted small mb-2">
+    Cada fila suma lo que falta de un insumo en todos los pedidos. En <strong>A comprar</strong> podés
+    cambiar la cantidad para ver cuántos pedidos se cubren. Los pedidos se cubren por orden de
+    prioridad: primero la fecha de entrega más cercana. Desde el botón de pedidos de cada insumo
+    podés <strong>priorizar</strong> o <strong>postergar</strong> un pedido para decidir cuáles cubrir.
+</p>
+
+<!-- Resumen de la selección -->
+<div class="card mb-3 faltantes-resumen">
+    <div class="card-body py-2 d-flex flex-wrap align-items-center gap-3">
+        <div class="flex-grow-1">
+            <div><strong id="resumenSeleccion">Ningún insumo seleccionado</strong></div>
+            <div class="small" id="resumenPedidos"></div>
+            <div class="small d-none" id="resumenPrioridades">
+                <span id="resumenPrioridadesTexto"></span>
+                <button type="button" class="btn btn-link btn-sm p-0 ms-1 align-baseline" id="btnRestablecerPrioridades">Volver al orden por fecha</button>
+            </div>
+        </div>
+        <div class="d-flex flex-wrap gap-2 align-items-center">
+            <select id="filtroProveedor" class="form-select form-select-sm w-auto" title="Muestra y selecciona solo los insumos de un proveedor">
+                <option value="">Todos los proveedores</option>
+            </select>
+            <button type="button" class="btn btn-dark btn-xs btn-fuente" id="btnListaCompra" disabled>
+                <i class="fa-solid fa-list-check"></i> Armar lista de compra
+            </button>
+            <button type="button" class="btn btn-dark btn-xs btn-fuente" id="btnRegistrarSeleccion" disabled>
+                <i class="fa-solid fa-box-open"></i> Registrar compra
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="table-responsive">
+    <table id="Faltantes" class="table table-hover align-middle">
+        <thead>
+            <tr>
+                <th class="centered"><input type="checkbox" class="form-check-input" id="chkTodos" title="Seleccionar todos"></th>
+                <th class="centered">Insumo</th>
+                <th class="centered">Proveedor</th>
+                <th class="centered">Faltante</th>
+                <th class="centered" title="Unidades de compra necesarias para cubrir todo el faltante">Sugerido</th>
+                <th class="centered" title="Unidades de compra: editá para simular una compra parcial">A comprar</th>
+                <th class="centered">Cubre</th>
+                <th class="centered">Costo est.</th>
+                <th class="centered">Acciones</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+        <tfoot>
+            <tr class="fila-total">
+                <th colspan="7" class="text-end" id="totalEtiqueta">Total:</th>
+                <th class="text-end text-nowrap" id="totalMonto"></th>
+                <th></th>
+            </tr>
+        </tfoot>
+    </table>
+</div>
+{% else %}
+<div class="card">
+    <div class="card-body text-center py-5">
+        <i class="fa-solid fa-circle-check fa-2x text-success mb-2"></i>
+        <p class="mb-0">No hay faltantes de insumos: el stock alcanza para todos los pedidos cargados.</p>
+    </div>
+</div>
+{% endif %}
+
+{{ faltantes|json_script:"datos-faltantes" }}
+{{ hoy|json_script:"fecha-hoy" }}
+
+<!-- Formulario oculto para descargar la lista de compra en Excel -->
+<form id="formListaExcel" action="{% url 'lista_compra_excel' %}" method="POST" class="d-none">
+    {% csrf_token %}
+    <input type="hidden" name="items" id="formListaExcelItems">
+</form>
+{% endblock %}
+<!--------------------------------------------------------------------------- Block modal --------------------------------------------------------------------------->
+{% block modal %}
+<!-- Modal: pedidos que requieren un insumo -->
+<div class="modal fade" id="modalPedidosInsumo" tabindex="-1" aria-labelledby="modalPedidosInsumoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="modalPedidosInsumoLabel">Pedidos</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <p class="small text-muted mb-2" id="modalPedidosInsumoAyuda"></p>
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Pedido</th>
+                                <th>Cliente</th>
+                                <th>Entrega</th>
+                                <th>Estado</th>
+                                <th class="text-end">Falta</th>
+                                <th>Con la compra</th>
+                                <th>Prioridad</th>
+                                <th>También le falta</th>
+                            </tr>
+                        </thead>
+                        <tbody id="modalPedidosInsumoBody"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-dark btn-fuente" id="btnAjustarComprar"
+                        title="Pone en 'A comprar' lo justo para cubrir los pedidos que no están postergados">
+                    <i class="fa-solid fa-calculator"></i> <span id="btnAjustarComprarTexto">Ajustar "A comprar"</span>
+                </button>
+                <button type="button" class="btn btn-dark btn-fuente" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: lista de compra -->
+<div class="modal fade" id="modalListaCompra" tabindex="-1" aria-labelledby="modalListaCompraLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="modalListaCompraLabel">Lista de compra</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <textarea id="textoListaCompra" class="form-control font-monospace" rows="12" readonly></textarea>
+                <div id="contactosProveedores" class="mt-3"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-dark btn-fuente" id="btnCopiarLista">
+                    <i class="fa-regular fa-copy"></i> Copiar
+                </button>
+                <button type="button" class="btn btn-dark btn-fuente" id="btnExcelLista">
+                    <i class="fa-solid fa-file-excel"></i> Descargar Excel
+                </button>
+                <button type="button" class="btn btn-dark btn-fuente" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: registrar compra -->
+<div class="modal fade" id="modalRegistrarCompra" tabindex="-1" aria-labelledby="modalRegistrarCompraLabel" data-bs-backdrop="static" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="modalRegistrarCompraLabel">Registrar compra</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <p class="small text-muted">
+                    Indicá lo que efectivamente llegó, en unidades de compra. Primero se cubren los faltantes
+                    de los pedidos (por fecha de entrega) y lo que sobre se suma al stock.
+                </p>
+                <p class="small fw-bold d-none" id="registrarCompraPrioridades"></p>
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Insumo</th>
+                                <th style="width: 9rem;">Cantidad</th>
+                                <th>Unidad</th>
+                                <th>Equivale a</th>
+                            </tr>
+                        </thead>
+                        <tbody id="registrarCompraBody"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-dark btn-fuente" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-dark btn-fuente" id="btnConfirmarCompra">
+                    <i class="fa-solid fa-check"></i> Registrar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+<!--------------------------------------------------------------------------- Block scripts --------------------------------------------------------------------------->
+{% block scripts %}
+<script src="{% static 'productos/js/Faltantes.js' %}"></script>
+{% endblock %}

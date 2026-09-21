@@ -369,3 +369,30 @@ Versión v3.6.1
 
     -Dashboard
         *Al editar un objetivo, el monto y las fechas ahora se precargan correctamente en el formulario (antes aparecían vacíos y había que volver a cargarlos).
+
+****************** 21/9/2026 ******************
+Versión v3.7.0
+
+    -Stock: faltantes de insumos (nueva vista)
+        *Desde Stock, el botón "Faltantes" abre una vista que suma lo que falta de cada insumo en todos los pedidos: faltante total en unidades de uso, unidades de compra sugeridas y costo estimado.
+        *En la columna "A comprar" se puede cambiar la cantidad para simular una compra parcial: cada fila indica cuántos pedidos se cubren y el resumen de arriba muestra cuántos pedidos quedan completos con lo seleccionado (un pedido solo se destraba si se cubren todos sus insumos).
+        *Los pedidos se cubren por prioridad: primero la fecha de entrega más cercana. Se usa el mismo orden al simular y al registrar la compra, así la simulación coincide con lo que después pasa.
+        *El botón con la cantidad de pedidos abre un modal con cada pedido que necesita el insumo, cuánto le falta, si la compra lo cubre y qué otros insumos le faltan.
+        *En ese modal se puede "Priorizar" o "Postergar" cada pedido para decidir cuáles se cubren con una compra parcial (por ejemplo, resolver A y C y dejar B para después). La elección vale para el pedido en todos sus insumos, se respeta al registrar la compra, y un botón ajusta "A comprar" a lo justo para los pedidos no postergados. Si sobra material, igual cubre a los postergados.
+        *El filtro por proveedor muestra solo sus insumos y los deja seleccionados.
+        *Una fila de total al pie de la tabla suma el costo de lo que está visible, y aclara cuándo corresponde a un proveedor, a una búsqueda o solo a los seleccionados.
+        *Con los insumos seleccionados se arma la lista de compra: se copia como texto, se descarga en Excel (con una hoja por proveedor) o se le envía a cada proveedor por WhatsApp o correo.
+        *"Registrar compra" ingresa lo que llegó: primero cubre los faltantes de los pedidos y lo que sobra se suma al stock.
+        *La alerta de faltantes ya no lista cada faltante de cada pedido: muestra un resumen con un enlace a la vista nueva.
+
+    -Proveedores (nuevo)
+        *Nueva vista de Proveedores (acceso desde Stock) con nombre, teléfono, correo y página web. El teléfono se muestra como enlace de WhatsApp solo si se marca que tiene WhatsApp.
+        *Cada insumo puede tener un proveedor habitual (en el modal del insumo y en el Excel de importación/exportación, columna "proveedor").
+
+    -Pedidos
+        *Al pasar un pedido a "Terminado (falta pago)" o "Terminado y pagado" se cierran sus faltantes y dejan de alertar. Si el pedido vuelve a abrirse, los faltantes se reactivan y se avisa para corregir el stock si ya se tiene el material. Los faltantes de pedidos que ya estaban terminados se cierran al actualizar.
+        *Al borrar un pedido que había quedado con faltante, solo se devuelve al stock el material que realmente se había descontado. Un pedido terminado ya usó su material, así que al borrarlo no devuelve stock.
+        *Se corrige el cierre de faltantes al cambiar de estado, que nunca se ejecutaba porque buscaba estados que no existen.
+
+    -Stock
+        *Actualizar el stock por importación de Excel ahora compensa los faltantes de los pedidos, igual que la edición manual.
