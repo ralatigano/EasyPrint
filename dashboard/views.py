@@ -7,7 +7,7 @@ from datetime import timedelta
 import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment
 from openpyxl.utils import get_column_letter
-from core.decorators import solo_gerencia
+from core.decorators import solo_dashboard
 from pedidos.models import Pedido
 from presupuestos.models import Presupuesto
 from productos.models import ProductoCotizado
@@ -17,7 +17,7 @@ from .metrics import panel_horas
 
 
 @login_required
-@solo_gerencia
+@solo_dashboard
 def dashboard(request):
 
     hoy = timezone.now().date()
@@ -180,7 +180,7 @@ def dashboard(request):
     return render(request, 'dashboard/dashboard.html', context)
 
 
-@solo_gerencia
+@solo_dashboard
 @login_required
 def guardar_objetivo(request):
 
@@ -208,7 +208,7 @@ def guardar_objetivo(request):
     return redirect('/dashboard/')
 
 
-@solo_gerencia
+@solo_dashboard
 @login_required
 def eliminar_objetivo(request, pk):
 
@@ -217,7 +217,7 @@ def eliminar_objetivo(request, pk):
     return redirect('/dashboard/')
 
 
-@solo_gerencia
+@solo_dashboard
 @login_required
 def exportar_excel(request, tipo):
 

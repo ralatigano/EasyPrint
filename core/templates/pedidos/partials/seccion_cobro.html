@@ -1,0 +1,38 @@
+{% comment %}
+Qué hacer con el dinero al cambiar de estado. Se incluye en el modal de cambio
+de estado individual y en el masivo; Pedidos_v2.js (configurarSeccionCobro)
+decide qué parte mostrar según el estado elegido y el saldo/cobrado del pedido.
+{% endcomment %}
+<div class="cobro-seccion d-none mt-3 pt-3 border-top">
+    <div class="cobro-pagado d-none">
+        <p class="mb-2 cobro-texto-pagado"></p>
+        <div class="form-check">
+            <input class="form-check-input" type="radio" name="cobro_accion" value="registrar" id="{{ prefijo }}AccionRegistrar">
+            <label class="form-check-label" for="{{ prefijo }}AccionRegistrar">Registrar el cobro del saldo</label>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input" type="radio" name="cobro_accion" value="omitir" id="{{ prefijo }}AccionOmitir">
+            <label class="form-check-label" for="{{ prefijo }}AccionOmitir">No registrar cobro (descuento o ajuste)</label>
+        </div>
+    </div>
+    <div class="cobro-cancelado d-none">
+        <p class="mb-2 cobro-texto-cancelado"></p>
+        <div class="form-check">
+            <input class="form-check-input" type="radio" name="cobro_accion" value="retener" id="{{ prefijo }}AccionRetener">
+            <label class="form-check-label" for="{{ prefijo }}AccionRetener">Retener lo cobrado (queda como ingreso)</label>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input" type="radio" name="cobro_accion" value="devolver" id="{{ prefijo }}AccionDevolver">
+            <label class="form-check-label" for="{{ prefijo }}AccionDevolver">Devolver todo lo cobrado al cliente</label>
+        </div>
+    </div>
+    <div class="cobro-medio-wrap mt-2">
+        <label class="form-label fw-bold mb-1" for="{{ prefijo }}CobroMedio">Medio de pago</label>
+        <select name="cobro_medio" id="{{ prefijo }}CobroMedio" class="form-select">
+            <option value="">Elegir medio…</option>
+            {% for valor, etiqueta in Medios %}
+                <option value="{{ valor }}">{{ etiqueta }}</option>
+            {% endfor %}
+        </select>
+    </div>
+</div>

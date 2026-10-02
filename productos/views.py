@@ -16,6 +16,7 @@ from django.http import HttpResponse, Http404
 from django.utils import timezone
 from core.utils import format_ar, parse_ar, parse_decimal_flexible
 from core.decorators import solo_gerencia
+from core.roles import es_gestion
 from core import costos
 from decimal import Decimal, InvalidOperation
 import re
@@ -35,7 +36,7 @@ def productos(request):
     usuario_nombre = request.session.get('usuario_nombre')
     img = request.session.get('img')
     prods = Producto.objects.all()
-    if request.user.is_superuser or request.user.groups.filter(name='Gerencia').exists():
+    if es_gestion(request.user):
         autorizado = True
     data = {
         'usuario': usuario_nombre,
@@ -641,7 +642,7 @@ def insumos(request):
     usuario_nombre = request.session.get('usuario_nombre')
     img = request.session.get('img')
     insumos = Insumo.objects.select_related('proveedor')
-    if request.user.is_superuser or request.user.groups.filter(name='Gerencia').exists():
+    if es_gestion(request.user):
         autorizado = True
         # es_gerencia = request.user.is_superuser or request.user.groups.filter(
         #    name='Gerencia').exists()

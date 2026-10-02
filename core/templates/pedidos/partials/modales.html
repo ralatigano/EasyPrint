@@ -123,6 +123,7 @@
                                 {% else %}badge-no-iniciado{% endif %}">{{ estado }}</button>
                         {% endfor %}
                     </div>
+                    {% include 'pedidos/partials/seccion_cobro.html' with prefijo='estado' %}
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-dark btn-fuente" data-bs-dismiss="modal">Cancelar</button>
@@ -185,24 +186,49 @@
     </form>
 </div>
 
-<!-- Modal Agregar nueva senia -->
-<div class="modal fade" id="agregarSeniaModal" tabindex="-1" aria-labelledby="agregarSeniaModalLabel" data-bs-backdrop="static" aria-hidden="true">   
-    <form action="/pedidos/agregarSenia" method="POST">
+<!-- Modal Registrar pago -->
+<div class="modal fade" id="registrarPagoModal" tabindex="-1" aria-labelledby="registrarPagoModalLabel" data-bs-backdrop="static" aria-hidden="true">
+    <form action="{% url 'registrar_pago' %}" method="POST" id="registrarPagoForm">
         {% csrf_token %}
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h1 class="modal-title-senia fs-5" id="agregarSeniaModalLabel">Modal title</h1>
+                    <h1 class="modal-title fs-5" id="registrarPagoModalLabel">Registrar pago</h1>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <input type="text" id="cambiarPedido_senia" name="cambiarPedido_senia" readonly="true" hidden>
-                    <label for="senia" style="font-weight: bold">Ingresa el monto de la seña $ (formato #.##):</label>
-                    <input type="text" id="senia" name="senia">
+                    <input type="hidden" name="pedido" id="pagoPedido">
+                    <p class="text-muted mb-3" id="pagoInfo"></p>
+                    <div class="mb-3">
+                        <label for="pagoMonto" class="form-label fw-bold">Monto $</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="pagoMonto" name="monto" inputmode="decimal" placeholder="Ej: 15.000,00" required>
+                            <button type="button" class="btn btn-outline-secondary" id="btnPagoSaldo">Todo el saldo</button>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="pagoMedio" class="form-label fw-bold">Medio de pago</label>
+                        <select class="form-select" id="pagoMedio" name="medio" required>
+                            <option value="">Elegir medio…</option>
+                            {% for valor, etiqueta in Medios %}
+                                <option value="{{ valor }}">{{ etiqueta }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="row g-2">
+                        <div class="col-5">
+                            <label for="pagoFecha" class="form-label fw-bold">Fecha</label>
+                            <input type="date" class="form-control" id="pagoFecha" name="fecha" value="{{ hoy|date:'Y-m-d' }}" max="{{ hoy|date:'Y-m-d' }}">
+                        </div>
+                        <div class="col-7">
+                            <label for="pagoNota" class="form-label fw-bold">Nota <span class="fw-normal text-muted">(opcional)</span></label>
+                            <input type="text" class="form-control" id="pagoNota" name="nota" maxlength="255">
+                        </div>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-dark btn-fuente" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-dark btn-fuente">Guardar cambios</a></button> 
+                    <button type="submit" class="btn btn-dark btn-fuente">Registrar pago</button>
                 </div>
             </div>
         </div>
@@ -220,12 +246,15 @@
             <div class="modal-body">
                 <p class="text-muted" id="bulkEstadoInfo"></p>
                 <label for="bulkEstadoSelect" style="font-weight: bold">Nuevo estado:</label>
+                <form id="bulkEstadoForm" onsubmit="return false;">
                 <select id="bulkEstadoSelect" class="form-control select">
                     <option value="">Elegir un estado</option>
                     {% for estado in Estados %}
                         <option value="{{ estado }}">{{ estado }}</option>
                     {% endfor %}
                 </select>
+                {% include 'pedidos/partials/seccion_cobro.html' with prefijo='bulk' %}
+                </form>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-dark btn-fuente" data-bs-dismiss="modal">Cancelar</button>

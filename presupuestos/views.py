@@ -99,6 +99,9 @@ def generar_grafico(request):
         alto_elemento = float(request.POST.get("altoElemento"))
         separacion = float(request.POST.get("separacionElementos"))
         cantidad_deseada = int(request.POST.get("cantidadElementos"))
+        partir = request.POST.get("partir") == "1"
+        solapamiento = parse_decimal_flexible(request.POST.get("solapamiento"))
+        solapamiento = 5.0 if solapamiento is None else float(solapamiento)
     except Exception as e:
         print("❌ Error al parsear datos:", e)
         return JsonResponse({"error": "Datos inválidos"}, status=400)
@@ -111,7 +114,10 @@ def generar_grafico(request):
         alto_elemento=alto_elemento,
         separacion=separacion,
         cantidad_deseada=cantidad_deseada,
-        algoritmo=algoritmo
+        algoritmo=algoritmo,
+        partir=partir,
+        solapamiento=solapamiento,
+        direccion=request.POST.get("direccion", "largo"),
     )
     if resultado.get("tipo") == "X":
         return JsonResponse(resultado, status=400)
