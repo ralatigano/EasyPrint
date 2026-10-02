@@ -95,7 +95,7 @@ function buildDetailHtml(tr) {
                     <span class="detail-metric-value">$ ${formatMonto(d.total)}</span>
                 </div>
                 <div class="detail-metric">
-                    <span class="detail-metric-label">Seña abonada</span>
+                    <span class="detail-metric-label">Cobrado</span>
                     <span class="detail-metric-value">$ ${formatMonto(d.senia)}</span>
                 </div>
                 <div class="detail-metric">
@@ -127,9 +127,9 @@ function buildDetailHtml(tr) {
                         <i class="fa-solid fa-pencil"></i> Editar observación
                     </button>
                     <button type="button" class="btn btn-dark btn-xs" ${dis}
-                            data-bs-toggle="modal" data-bs-target="#agregarSeniaModal"
+                            data-bs-toggle="modal" data-bs-target="#registrarPagoModal"
                             data-bs-whatever="${escAttr(d.numero)}">
-                        <i class="fa-solid fa-dollar-sign"></i> Registrar seña
+                        <i class="fa-solid fa-dollar-sign"></i> Registrar pago
                     </button>
                     <button type="button" class="btn btn-dark btn-xs"
                             data-bs-toggle="modal" data-bs-target="#cambiarClienteModal"
@@ -189,12 +189,14 @@ cambiarEstadoModal.addEventListener('show.bs.modal', event => {
         pill.classList.toggle('selected', activo);
         if (activo) hidden.value = estadoActual;
     });
+    configurarCobroEstadoIndividual();
 });
 
 // Selección de estado por pill.
 cambiarEstadoModal.querySelectorAll('.estado-option').forEach(pill => {
     pill.addEventListener('click', function () {
         document.getElementById('estado').value = this.dataset.estado;
+        configurarCobroEstadoIndividual();
         cambiarEstadoModal.querySelectorAll('.estado-option')
             .forEach(p => p.classList.toggle('selected', p === this));
     });
@@ -238,13 +240,105 @@ agregarDescripcionModal.addEventListener('show.bs.modal', event => {
     document.getElementById('descripcion').value = descripcion;
 });
 
-const agregarSeniaModal = document.getElementById('agregarSeniaModal');
-agregarSeniaModal.addEventListener('show.bs.modal', event => {
-    const button = event.relatedTarget;
-    const recipient = button.getAttribute('data-bs-whatever');
-    agregarSeniaModal.querySelector('.modal-title-senia').textContent = `Agregar seña para el pedido: ${recipient}`;
-    agregarSeniaModal.querySelector('.modal-body input').value = recipient;
+// ── Cobros ────────────────────────────────────────────────────────────────────
+
+function filaPedido(numero) {
+    return document.querySelector(`#Pedidos tr.main-row[data-numero="${CSS.escape(String(numero))}"]`);
+}
+
+/**
+ * Muestra en `cont` (seccion_cobro.html) qué hacer con el dinero según el
+ * estado elegido. `saldo`/`cobrado` son totales (de un pedido o de la
+ * selección en el cambio masivo). Si no hay nada que decidir, la oculta.
+ */
+function configurarSeccionCobro(cont, estado, saldo, cobrado, sufijo = '') {
+    const seccion = cont.querySelector('.cobro-seccion');
+    const pagado = seccion.querySelector('.cobro-pagado');
+    const cancelado = seccion.querySelector('.cobro-cancelado');
+    const radio = v => seccion.querySelector(`input[name="cobro_accion"][value="${v}"]`);
+    seccion.querySelectorAll('input[name="cobro_accion"]').forEach(r => { r.checked = false; });
+    seccion.querySelector('select[name="cobro_medio"]').value = '';
+    pagado.classList.add('d-none');
+    cancelado.classList.add('d-none');
+
+    let visible = false;
+    if (estado === 'Terminado y pagado' && saldo > 0.005) {
+        seccion.querySelector('.cobro-texto-pagado').textContent =
+            `Saldo pendiente${sufijo}: $ ${formatMonto(saldo)}.`;
+        radio('registrar').checked = true;
+        pagado.classList.remove('d-none');
+        visible = true;
+    } else if (estado === 'Cancelado' && cobrado > 0.005) {
+        seccion.querySelector('.cobro-texto-cancelado').textContent =
+            `Cobrado hasta ahora${sufijo}: $ ${formatMonto(cobrado)}. ¿Qué pasa con ese dinero?`;
+        radio('retener').checked = true;
+        cancelado.classList.remove('d-none');
+        visible = true;
+    }
+    seccion.classList.toggle('d-none', !visible);
+    actualizarMedioCobro(cont);
+}
+
+// El medio solo se pide si efectivamente se mueve dinero.
+function actualizarMedioCobro(cont) {
+    const seccion = cont.querySelector('.cobro-seccion');
+    const accion = seccion.querySelector('input[name="cobro_accion"]:checked')?.value;
+    const pide = !seccion.classList.contains('d-none') && (accion === 'registrar' || accion === 'devolver');
+    seccion.querySelector('.cobro-medio-wrap').classList.toggle('d-none', !pide);
+    return pide;
+}
+
+// Devuelve {accion, medio} o null si falta el medio (y avisa).
+function leerSeccionCobro(cont) {
+    const seccion = cont.querySelector('.cobro-seccion');
+    if (seccion.classList.contains('d-none')) return { accion: '', medio: '' };
+    const accion = seccion.querySelector('input[name="cobro_accion"]:checked')?.value || '';
+    const medio = seccion.querySelector('select[name="cobro_medio"]').value;
+    if (actualizarMedioCobro(cont) && !medio) {
+        alert('Elegí el medio de pago.');
+        return null;
+    }
+    return { accion, medio };
+}
+
+document.querySelectorAll('.cobro-seccion').forEach(seccion => {
+    seccion.addEventListener('change', e => {
+        if (e.target.name === 'cobro_accion') actualizarMedioCobro(seccion.parentElement);
+    });
 });
+
+const registrarPagoModal = document.getElementById('registrarPagoModal');
+registrarPagoModal.addEventListener('show.bs.modal', event => {
+    const numero = event.relatedTarget.getAttribute('data-bs-whatever');
+    const fila = filaPedido(numero);
+    const saldo = parseFloat(fila?.dataset.saldo) || 0;
+    document.getElementById('pagoPedido').value = numero;
+    document.getElementById('registrarPagoModalLabel').textContent = `Registrar pago — pedido ${numero}`;
+    document.getElementById('pagoInfo').textContent =
+        `Total $ ${formatMonto(fila?.dataset.total)} · Cobrado $ ${formatMonto(fila?.dataset.senia)} · Saldo $ ${formatMonto(saldo)}`;
+    document.getElementById('pagoMonto').value = '';
+    document.getElementById('pagoMedio').value = '';
+    document.getElementById('pagoNota').value = '';
+    document.getElementById('btnPagoSaldo').dataset.saldo = saldo;
+    document.getElementById('btnPagoSaldo').disabled = saldo <= 0;
+});
+document.getElementById('btnPagoSaldo').addEventListener('click', function () {
+    document.getElementById('pagoMonto').value = formatearNumeroLocal(this.dataset.saldo);
+});
+document.getElementById('registrarPagoForm').addEventListener('submit', function (e) {
+    if (parsearNumeroLocal(document.getElementById('pagoMonto').value) <= 0) {
+        e.preventDefault();
+        alert('Ingresá un monto mayor a cero.');
+    }
+});
+
+function configurarCobroEstadoIndividual() {
+    const numero = document.getElementById('cambiarPedido_estado').value;
+    const fila = filaPedido(numero);
+    configurarSeccionCobro(
+        cambiarEstadoModal, document.getElementById('estado').value,
+        parseFloat(fila?.dataset.saldo) || 0, parseFloat(fila?.dataset.senia) || 0);
+}
 
 (function () {
     const formularioEstado = document.querySelector('#cambiarEstadoModal form');
@@ -254,6 +348,10 @@ agregarSeniaModal.addEventListener('show.bs.modal', event => {
             if (!selectEstado.value) {
                 e.preventDefault();
                 alert('Elegí un estado para el pedido.');
+                return;
+            }
+            if (!leerSeccionCobro(cambiarEstadoModal)) {
+                e.preventDefault();
                 return;
             }
             if (selectEstado.value === 'Cancelado') {
@@ -495,6 +593,7 @@ document.getElementById('bulkEstadoModal').addEventListener('show.bs.modal', fun
     document.getElementById('bulkEstadoInfo').textContent =
         `Se cambiará el estado de ${n} pedido${n > 1 ? 's' : ''}.`;
     document.getElementById('bulkEstadoSelect').value = '';
+    configurarCobroBulk();
 });
 
 document.getElementById('bulkEncargadoModal').addEventListener('show.bs.modal', function () {
@@ -530,9 +629,26 @@ async function enviarBulk(url, payload) {
     if (data.redirect_url) window.location.href = data.redirect_url;
 }
 
+function configurarCobroBulk() {
+    let saldo = 0, cobrado = 0;
+    selectedIds.forEach(numero => {
+        const fila = filaPedido(numero);
+        if (!fila || fila.dataset.esCancelado === 'true') return;
+        saldo += Math.max(parseFloat(fila.dataset.saldo) || 0, 0);
+        cobrado += Math.max(parseFloat(fila.dataset.senia) || 0, 0);
+    });
+    configurarSeccionCobro(
+        document.getElementById('bulkEstadoForm'),
+        document.getElementById('bulkEstadoSelect').value,
+        saldo, cobrado, ' (suma de los pedidos seleccionados)');
+}
+document.getElementById('bulkEstadoSelect').addEventListener('change', configurarCobroBulk);
+
 document.getElementById('btnConfirmarBulkEstado').addEventListener('click', async function () {
     const estado = document.getElementById('bulkEstadoSelect').value;
     if (!estado) { alert('Por favor seleccioná un estado.'); return; }
+    const cobro = leerSeccionCobro(document.getElementById('bulkEstadoForm'));
+    if (!cobro) return;
     if (estado === 'Cancelado') {
         const ok = confirm(
             `⚠️ Atención: estás por cancelar ${selectedIds.size} pedido(s).\n\nEsta acción es irreversible.\n\n¿Deseás continuar?`
@@ -540,7 +656,9 @@ document.getElementById('btnConfirmarBulkEstado').addEventListener('click', asyn
         if (!ok) return;
     }
     bootstrap.Modal.getInstance(document.getElementById('bulkEstadoModal')).hide();
-    await enviarBulk('/pedidos/cambiarEstadoBulk', { ids: [...selectedIds], estado });
+    await enviarBulk('/pedidos/cambiarEstadoBulk', {
+        ids: [...selectedIds], estado, cobro_accion: cobro.accion, cobro_medio: cobro.medio,
+    });
 });
 
 document.getElementById('btnConfirmarBulkEncargado').addEventListener('click', async function () {

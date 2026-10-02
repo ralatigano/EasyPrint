@@ -8,16 +8,22 @@ from django.utils import timezone
 
 class Pedido(models.Model):
 
+    PAGADO = 'Terminado y pagado'
+    CANCELADO = 'Cancelado'
     ESTADOS = [('No iniciado', 'No iniciado'),
                ('En proceso', 'En proceso'),
                ('Terminado (falta pago)', 'Terminado (falta pago)'),
-               ('Terminado y pagado', 'Terminado y pagado'),
+               (PAGADO, PAGADO),
+               # Irreversible: marca `bloqueado_cancelado` (ver pedidos/estados.py).
+               (CANCELADO, CANCELADO),
                ]
 
     numero = models.IntegerField(primary_key=True)
     producto = models.TextField(blank=True, null=True)
     descripcion = models.CharField(max_length=200)
     precio = models.FloatField()
+    # `senia` = total cobrado y `saldo` = precio - cobrado. Se recalculan desde
+    # los movimientos de caja (caja/services.py); no escribirlos a mano.
     senia = models.FloatField(null=True, blank=True)
     saldo = models.FloatField(null=True, blank=True)
     estado = models.TextField(choices=ESTADOS,

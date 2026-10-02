@@ -11,7 +11,8 @@ from django.contrib.auth.models import User, Group
 from .models import Usuario, AliasPago, ConfiguracionPresupuesto
 from datetime import datetime
 from .forms import RegistroUsuarioForm
-from core.decorators import solo_gerencia
+from core.decorators import solo_gerencia, solo_usuarios
+from core.roles import es_gestion
 from django.views.decorators.http import require_POST, require_GET
 
 # Create your views here.
@@ -22,8 +23,7 @@ from django.views.decorators.http import require_POST, require_GET
 def iniciar_sesion(request):
     if request.user.is_authenticated:
         usuario = User.objects.get(username=request.user)
-        autorizado = usuario.is_superuser or usuario.groups.filter(
-            name='Gerencia').exists()
+        autorizado = es_gestion(usuario)
         usuario_model = Usuario.objects.get(user=usuario)
         request.session['vendedor'] = usuario.id
         request.session['autorizado'] = autorizado
@@ -38,8 +38,7 @@ def iniciar_sesion(request):
             user = authenticate(username=username, password=password)
             if user is not None:
                 login(request, user)
-                autorizado = user.is_superuser or user.groups.filter(
-                    name='Gerencia').exists()
+                autorizado = es_gestion(user)
                 usuario_model = Usuario.objects.get(user=user)
                 request.session['vendedor'] = usuario_model.id
                 request.session['autorizado'] = autorizado
@@ -55,7 +54,7 @@ def iniciar_sesion(request):
 
 
 @login_required
-@solo_gerencia
+@solo_usuarios
 def registrar_usuario(request):
     autorizado = request.session.get('autorizado')
     usuario_nombre = request.session.get('usuario_nombre')
@@ -225,6 +224,7 @@ def obtener_usuarios(request):
 
 
 @login_required
+@solo_usuarios
 def usuario_info(request, user_id):
     try:
         usuario = User.objects.get(id=user_id)
@@ -247,7 +247,7 @@ def usuario_info(request, user_id):
 
 
 @login_required
-@solo_gerencia
+@solo_usuarios
 def usuarios(request):
     autorizado = request.session.get('autorizado')
     usuario_nombre = request.session.get('usuario_nombre')
@@ -291,7 +291,7 @@ def info_grupos(request):
 
 
 @login_required
-@solo_gerencia
+@solo_usuarios
 def crear_editar_usuario(request):
     user_id = request.POST.get('user_id')
     es_nuevo = (not user_id or user_id == '0')
@@ -390,7 +390,7 @@ def crear_editar_usuario(request):
 
 
 @login_required
-@solo_gerencia
+@solo_usuarios
 def borrar_usuario(request, usuario_id):
     try:
         usu = User.objects.filter(id=usuario_id)

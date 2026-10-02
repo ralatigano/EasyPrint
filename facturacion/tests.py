@@ -433,7 +433,7 @@ class ConfigMonotributoViewTests(TestCase):
         from django.contrib.auth.models import Group, User
 
         self.gerente = User.objects.create_user("gerente", password="x")
-        self.gerente.groups.add(Group.objects.create(name="Gerencia"))
+        self.gerente.groups.add(Group.objects.get_or_create(name="Gerencia")[0])
         self.raso = User.objects.create_user("raso", password="x")
 
     def _login_gerencia(self):

@@ -24,12 +24,54 @@ Ejecutar desde `EasyPrint/` (ajustar la ruta del python del venv):
 ## Apps
 
 - **core**: base compartida — layout, `utils.py` (formateo/parseo de números),
-  `decorators.py` (`@solo_gerencia`), context processors, home.
+  `decorators.py` (`@solo_gerencia`, `@solo_dashboard`), `roles.py`, context
+  processors, home.
 - **productos**: `Insumo`, `Producto`, `ComponenteProducto` (M2M producto↔insumo
   con cantidad), categorías, y toda la ABM de insumos/productos + import/export Excel.
 - **presupuestos**, **pedidos**: cotizaciones y pedidos; consumen stock de insumos
   y registran `FaltanteInsumo` cuando no alcanza.
 - **clientes**, **dashboard**: ABM de clientes y tablero de métricas.
+
+## Roles (`core/roles.py`)
+
+Grupos de Django: **Gerencia** (todo), **Administración** (gestión: ABMs,
+configuración, caja; sin Dashboard, Usuaries ni exportar caja) y **Ventas**.
+Los permisos están en el dict `PERMISOS` de `core/roles.py` (permiso → grupos):
+para mover un permiso entre roles, tocar solo ahí. Vistas: `@solo_gerencia`
+(= permiso `gestion`), `@solo_dashboard`, `@solo_usuarios` o
+`@requiere_permiso('x')`. Templates: `es_gerencia` (= gestión, incluye
+Administración) y `puede.<permiso>`. No consultar `groups.filter(name=...)` a mano.
+
+## Caja: cobros de pedidos (app `caja`)
+
+- `caja.Movimiento`: cada seña / pago / devolución con fecha, medio (efectivo,
+  transferencia, tarjeta; `sin_especificar` solo para históricos) y usuario.
+  `monto` con signo (devolución < 0).
+- `Pedido.senia` = **total cobrado** y `Pedido.saldo` = precio − cobrado; se
+  recalculan desde los movimientos (`caja/services.py`). No escribirlos a mano:
+  todo cobro pasa por `registrar_movimiento` / `registrar_saldo` / `devolver_cobrado`.
+- Cambios de estado (individual y masivo) pasan por `pedidos/estados.py`
+  (`cambiar_estado_pedido`): → "Terminado y pagado" puede registrar el saldo;
+  → "Cancelado" repone stock, retiene o devuelve lo cobrado y marca
+  `bloqueado_cancelado` (irreversible).
+- Vista `/caja/` (permiso `caja`): totales por medio y movimientos por período.
+  Por ahora solo ingresos; egresos (compras, alquiler, servicios) no se registran.
+
+## Cotizador: gráfico y "Partir diseño" (`presupuestos/functions.py`)
+
+- Tipos: A (hojas), B (m² en rollo), C (metros lineales), D (sin gráfico). Un
+  rollo es un alto de `ALTO_ROLLO` (100000, "Según cálculo"). El consumo en
+  rollo es ancho del producto × largo ocupado × 1,1 (sin márgenes laterales:
+  `Producto.ancho` = ancho imprimible).
+- **Partir diseño** (solo B/C, botón tijera junto al gráfico): `calcular_franjas`
+  corta un solo lado (franjas, nunca grilla) en la menor cantidad (≥ 2) de
+  franjas iguales que entren a lo ancho, con `solapamiento` cm (5 por defecto)
+  entre vecinas. Con varias copias, `_filas_mixtas` parte solo las que hace
+  falta: las que entran enteras (lado cortado a lo ancho) no se parten ni suman
+  solapamiento; minimiza filas y, a igualdad, copias partidas. No elige entre
+  direcciones ni contra "sin partir": muestra el resultado y el consumo sin
+  partir para que el usuario decida. Regenerar alterna a cortar el otro lado solo si eso cambia el
+  resultado y mejora lo de sin partir (desde "corto" siempre vuelve a "largo").
 
 ## Convención de números — formato argentino (IMPORTANTE)
 

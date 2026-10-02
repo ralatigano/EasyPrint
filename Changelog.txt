@@ -396,3 +396,35 @@ Versión v3.7.0
 
     -Stock
         *Actualizar el stock por importación de Excel ahora compensa los faltantes de los pedidos, igual que la edición manual.
+
+****************** 2/10/2026 ******************
+Versión v3.8.0
+
+    -Roles
+        *Nuevo rol "Administración": puede hacer lo mismo que Gerencia (stock, productos, configuración, control de caja, etc.) salvo ver el Dashboard, administrar Usuaries y exportar la caja. Se asigna desde Usuaries como cualquier otro grupo.
+        *Los permisos de cada rol quedan definidos en un solo lugar, para poder ajustar más adelante qué ve Administración sin tocar cada pantalla.
+
+    -Navegación
+        *El menú superior agrupa las secciones en menús desplegables (se abren al pasar el mouse en computadora y con un toque en el celular): "Inventario" (Stock, Faltantes, Productos), "Pedidos" (Pedidos, Calendario de entregas, Viajes Cadete) y "Gestión" (Dashboard, Control de caja, Comprobantes, Usuaries; cada uno según el rol).
+
+    -Control de caja (nuevo)
+        *Cada cobro de un pedido queda registrado con su fecha, monto, medio de pago (efectivo, transferencia o tarjeta) y quién lo cargó.
+        *Al confirmar un pedido se indica el medio de pago de la seña.
+        *"Registrar seña" pasa a ser "Registrar pago": monto, medio, fecha y nota. Si el pago completa el total de un pedido "Terminado (falta pago)", el pedido pasa solo a "Terminado y pagado".
+        *Al pasar un pedido a "Terminado y pagado" con saldo pendiente, se ofrece registrar el cobro de ese saldo (también en el cambio de estado masivo).
+        *Nueva vista Gestión → Control de caja: totales por medio de pago y listado de movimientos, con filtros por fechas, medio, tipo y búsqueda. Exportar a Excel y eliminar un cobro mal cargado son solo para Gerencia.
+        *Por ahora se registran solo los ingresos; los egresos (compras, alquiler, servicios) quedan para más adelante.
+        *Los cobros anteriores se cargan como "Sin especificar": la seña con la fecha del pedido y, en los pedidos "Terminado y pagado" que seguían con saldo, ese saldo con la fecha de su última modificación. Por eso el "cobrado" del Dashboard puede subir en esos pedidos.
+
+    -Pedidos
+        *Se corrige la carga de señas: un monto como "15.000" se guardaba como 15.
+        *Ahora se puede cancelar un pedido (el estado "Cancelado" no aparecía como opción). Al cancelar se devuelve el material al stock, se elige si lo cobrado se retiene o se devuelve al cliente (y por qué medio), y el pedido queda bloqueado. Los cancelados dejan de contar en el Dashboard y en la capacidad de producción.
+
+    -Cotizador: partir el diseño (vinilos, lonas y DTF)
+        *En los cálculos por m² y por metro lineal, el botón de tijera junto al gráfico parte el diseño en franjas para aprovechar el ancho del material. Siempre se corta un solo lado; el otro queda entero.
+        *Las franjas comparten un solapamiento para armar el diseño al colocarlo (5 cm por defecto, editable junto al gráfico).
+        *El resultado muestra cuánto material hace falta partido y cuánto sin partir, para que quien cotiza elija.
+        *Con varias unidades, solo se parten los diseños que hace falta: los que entran enteros no se cortan ni suman solapamiento.
+        *El botón de regenerar propone cortar por el otro lado del diseño cuando eso cambia el resultado.
+        *El gráfico rotula cada pieza con su diseño y número de franja (ej.: "D3 1/2") y marca las zonas de solapamiento. El detalle del presupuesto indica cómo se parte la impresión.
+        *Si un diseño no entra en el ancho del material, el cotizador lo avisa (antes calculaba 0 m²) y sugiere partirlo.

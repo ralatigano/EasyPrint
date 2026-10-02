@@ -317,6 +317,25 @@ function parsearNumeroLocal(str) {
     return isNaN(numero) ? 0 : numero;
 }
 
+// Parser para números CHICOS (horas, ratios, %): a diferencia de
+// parsearNumeroLocal (dinero, donde el punto es separador de miles), acá un punto
+// solo se interpreta como decimal. Equivalente JS de parse_decimal_flexible.
+//  - coma y punto juntos ("1.234,5") -> AR: punto miles, coma decimal
+//  - solo coma ("0,32") -> coma decimal
+//  - solo punto ("0.32") -> punto decimal
+function parsearDecimalFlexible(str) {
+    if (str === null || str === undefined || str === "") return 0;
+    let limpio = String(str).replace(/[^\d,.\-]/g, "");
+    if (!limpio) return 0;
+    if (limpio.includes(",") && limpio.includes(".")) {
+        limpio = limpio.replace(/\./g, "").replace(",", ".");
+    } else if (limpio.includes(",")) {
+        limpio = limpio.replace(",", ".");
+    }
+    const numero = Number(limpio);
+    return isNaN(numero) ? 0 : numero;
+}
+
 // ── Show/hide contraseña ──────────────────────────────────────────────────
 document.addEventListener('click', e => {
     const btn = e.target.closest('.toggle-password');

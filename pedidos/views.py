@@ -21,11 +21,18 @@ import json
 from openpyxl import Workbook
 from core.utils import format_ar, parse_ar
 from core.decorators import solo_gerencia
+from caja import services as caja
+from caja.models import Movimiento
+from .estados import PedidoBloqueado, cambiar_estado_pedido
 
 # Create your views here.
 app_name = 'pedidos'
 
 # Vista con la lista de pedidos
+
+
+def _medios_activos():
+    return [(m.value, m.label) for m in Movimiento.MEDIOS_ACTIVOS]
 
 
 def _pedidos_context(request):
@@ -34,6 +41,8 @@ def _pedidos_context(request):
         'Clientes': Cliente.objects.all().order_by("nombre"),
         'Sugerencias': DetalleSugerido.objects.order_by('-frecuencia'),
         'Estados': [e[0] for e in Pedido.ESTADOS],
+        'Medios': _medios_activos(),
+        'hoy': timezone.localdate(),
         'usuario': request.session.get('usuario_nombre'),
         'img': request.session.get('img'),
         'autorizado': request.session.get('autorizado'),
@@ -68,7 +77,8 @@ def completar_pedido(request):
     vendedor = request.session.get('vendedor')
     img = request.session.get('img')
     n_ped = armar_numero_pedido()
-    estados = [e[0] for e in Pedido.ESTADOS]
+    # Un pedido no se crea cancelado.
+    estados = [e[0] for e in Pedido.ESTADOS if e[0] != Pedido.CANCELADO]
     t = 0
     d = 0
     t_d = 0
@@ -103,7 +113,8 @@ def completar_pedido(request):
         'descuento': d,
         'total_neto': t_d,
         'clientes': lista_clientes,
-        'Estados': estados
+        'Estados': estados,
+        'Medios': _medios_activos(),
     }
     # request.session.pop('cliente_input', None)
     return render(request, 'pedidos/completar_pedido.html', data)
@@ -116,35 +127,21 @@ def cambiar_estado(request):
     nuevo_estado = request.POST.get('estado')
     n_pedido = request.POST.get('cambiarPedido_estado')
 
-    if nuevo_estado == 'Elegir un estado':
+    if not nuevo_estado or nuevo_estado == 'Elegir un estado':
         return redirect('/pedidos/v2')
 
     try:
         pedido = Pedido.objects.get(numero=n_pedido)
-        # Si el pedido ya fue cancelado y está bloqueado, no se puede modificar
-        if pedido.estado == 'Cancelado' and getattr(pedido, 'cancelado_bloqueado', False):
-            messages.error(
-                request, 'Este pedido fue cancelado y no puede modificarse. Si necesitás reactivarlo, deberás crear uno nuevo.')
-            return redirect('/pedidos/v2')
-
-        estado_anterior = pedido.estado
-        pedido.estado = nuevo_estado
-        pedido.save()
-
-        # Terminar un pedido cierra sus faltantes; reabrirlo los reactiva.
-        aviso = aplicar_cambio_estado(pedido, estado_anterior)
-
-        # Reponer insumos si el pedido se cancela
-        if nuevo_estado == 'Cancelado':
-            reponer_pedido(pedido)
-            pedido.cancelado_bloqueado = True  # marca irreversible
-            pedido.save()
-
+        avisos = cambiar_estado_pedido(
+            pedido, nuevo_estado, usuario=request.user,
+            accion=request.POST.get('cobro_accion'),
+            medio=request.POST.get('cobro_medio'))
         messages.success(
             request, 'El estado del pedido se ha cambiado exitosamente.')
-        if aviso:
+        for aviso in avisos:
             messages.warning(request, aviso)
-
+    except (PedidoBloqueado, caja.CobroInvalido) as e:
+        messages.error(request, str(e))
     except Exception as e:
         messages.error(request, f'Hubo un error al editar el pedido: {str(e)}')
 
@@ -153,6 +150,8 @@ def cambiar_estado(request):
 
 @login_required
 def cambiar_estado_bulk(request):
+    """Cambio de estado masivo. Para 'Terminado y pagado' y 'Cancelado' recibe
+    también `cobro_accion`/`cobro_medio`, que se aplican a todos los pedidos."""
     if request.method != "POST":
         return JsonResponse({"error": "Método no permitido"}, status=405)
     try:
@@ -170,22 +169,15 @@ def cambiar_estado_bulk(request):
         for numero in ids:
             try:
                 pedido = Pedido.objects.get(numero=numero)
-                if pedido.estado == 'Cancelado' and getattr(pedido, 'cancelado_bloqueado', False):
-                    saltados += 1
-                    continue
-                estado_anterior = pedido.estado
-                pedido.estado = nuevo_estado
-                pedido.save()
-                aviso = aplicar_cambio_estado(pedido, estado_anterior)
-                if aviso:
-                    avisos.append(aviso)
-                if nuevo_estado == 'Cancelado':
-                    reponer_pedido(pedido)
-                    pedido.cancelado_bloqueado = True
-                    pedido.save()
+                avisos += cambiar_estado_pedido(
+                    pedido, nuevo_estado, usuario=request.user,
+                    accion=data.get("cobro_accion"), medio=data.get("cobro_medio"))
                 actualizados += 1
-            except Pedido.DoesNotExist:
+            except (Pedido.DoesNotExist, PedidoBloqueado):
                 saltados += 1
+            except caja.CobroInvalido as e:
+                messages.error(request, str(e))
+                return JsonResponse({"redirect_url": reverse("pedidos_v2")})
 
         if actualizados:
             msg = f"{actualizados} pedido(s) actualizados al estado '{nuevo_estado}'."
@@ -294,20 +286,42 @@ def agregar_descripcion(request):
 
 
 @login_required
-def agregar_senia(request):
-    if request.POST['senia'] != '':
-        n_pedido = request.POST['cambiarPedido_senia']
-        try:
-            pedido = Pedido.objects.get(numero=n_pedido)
-            nuev_senia = float(request.POST['senia'].replace(',', '.'))
-            pedido.senia = pedido.senia + nuev_senia
-            pedido.saldo = round(pedido.precio - pedido.senia, 2)
-            pedido.save()
-            messages.success(
-                request, f'La seña del pedido {n_pedido} se ha actualizado exitosamente.')
-        except Exception as e:
-            messages.error(
-                request, 'Hubo un error al editar el pedido. ' + str(e))
+@transaction.atomic
+def registrar_pago(request):
+    """Registra un cobro (seña o pago parcial) con su medio de pago."""
+    if request.method != 'POST':
+        return redirect('/pedidos/v2')
+    n_pedido = request.POST.get('pedido')
+    try:
+        pedido = Pedido.objects.get(numero=n_pedido)
+        if pedido.bloqueado_cancelado:
+            raise PedidoBloqueado(
+                f'El pedido {n_pedido} fue cancelado: no se le pueden registrar pagos.')
+        monto = parse_ar(request.POST.get('monto'))
+        fecha = None
+        if request.POST.get('fecha'):
+            fecha = datetime.strptime(request.POST['fecha'], '%Y-%m-%d').date()
+        tipo = (Movimiento.Tipo.PAGO if pedido.estado in ESTADOS_FINALES
+                else Movimiento.Tipo.SENIA)
+        caja.registrar_movimiento(
+            pedido, monto, request.POST.get('medio'), tipo,
+            usuario=request.user, fecha=fecha, nota=request.POST.get('nota', ''))
+        messages.success(
+            request, f'Se registró un pago de $ {format_ar(monto)} en el pedido {n_pedido}.')
+        if pedido.saldo < 0:
+            messages.warning(
+                request, f'El pedido {n_pedido} quedó con saldo a favor del cliente '
+                         f'($ {format_ar(-pedido.saldo)}).')
+        # Si con este pago se completó el total, el pedido terminado pasa a pagado.
+        if pedido.saldo <= 0 and pedido.estado == 'Terminado (falta pago)':
+            cambiar_estado_pedido(pedido, Pedido.PAGADO, usuario=request.user)
+            messages.info(request, f'El pedido {n_pedido} pasó a "Terminado y pagado".')
+    except Pedido.DoesNotExist:
+        messages.error(request, f'No existe el pedido {n_pedido}.')
+    except (PedidoBloqueado, caja.CobroInvalido) as e:
+        messages.error(request, str(e))
+    except ValueError:
+        messages.error(request, 'La fecha del pago no es válida.')
     return redirect('/pedidos/v2')
 
 # Vista que recibe el POST de la plantilla para completar el pedido desde la nueva cotización.
@@ -325,7 +339,7 @@ def confirmar_pedido(request):
     n_pedido = request.POST['n_pedido']
     precio = parse_ar(request.POST['total_neto'])
     senia = parse_ar(request.POST['senia'])
-    saldo = round(precio - senia, 2)
+    medio_senia = request.POST.get('medio_senia')
     fecha_entrega = datetime.strptime(
         request.POST['fecha_entrega'], "%Y-%m-%d").date()
     url = '/pedidos/v2' if editando_presup else '/presupuestos/guardarPresupuesto'
@@ -368,13 +382,21 @@ def confirmar_pedido(request):
             producto=', '.join(list_p),
             descripcion=request.POST['info_adic'],
             precio=precio,
-            senia=senia,
-            saldo=saldo,
+            senia=0,
+            saldo=precio,
             estado=request.POST['estado'],
             presupuesto=request.POST['n_presupuesto'],
             cliente=client_obj,
             fecha_entrega=fecha_entrega,
         )
+
+        # Cobros: la seña y, si se carga ya pagado, el resto del total.
+        if senia > 0:
+            caja.registrar_movimiento(
+                pedido, senia, medio_senia, Movimiento.Tipo.SENIA,
+                usuario=request.user)
+        if pedido.estado == Pedido.PAGADO:
+            caja.registrar_saldo(pedido, caja.validar_medio(medio_senia), request.user)
 
         # Segunda pasada: actualizar insumos
         for p in Prods:
@@ -389,6 +411,9 @@ def confirmar_pedido(request):
         messages.success(
             request, f'El pedido {n_pedido} se ha registrado exitosamente.')
 
+    except caja.CobroInvalido as e:
+        transaction.set_rollback(True)
+        messages.error(request, f'No se registró el pedido: {e}')
     except Exception as e:
         transaction.set_rollback(True)
         messages.error(

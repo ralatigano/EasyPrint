@@ -267,7 +267,7 @@
                     data-cliente-ref="{{ p.cliente.referencia }}"
                     data-descripcion="{{ p.descripcion|default:'' }}"
                     data-estado="{{ p.estado }}"
-                    data-es-cancelado="{% if p.cancelado_bloqueado %}true{% else %}false{% endif %}">
+                    data-es-cancelado="{% if p.bloqueado_cancelado %}true{% else %}false{% endif %}">
 
                     <!-- Checkbox -->
                     <td class="text-center align-middle">

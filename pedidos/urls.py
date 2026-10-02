@@ -1,7 +1,7 @@
 from django.urls import path
 from .views import (
     pedidos, pedidos_v2, cambiar_estado, cambiar_enc, agregar_descripcion, cambiar_cliente_pedido,
-    agregar_senia, completar_pedido, confirmar_pedido, get_productos_info,
+    registrar_pago, completar_pedido, confirmar_pedido, get_productos_info,
     eliminar_pedido, preparar_completar_pedido,
     viajes_cadete, guardar_viaje_cadete, borrar_viaje_cadete, info_viaje_cadete, actualizar_estado_viajes, exportar_viajes_cadete,
     cambiar_estado_bulk, cambiar_enc_bulk,
@@ -22,7 +22,7 @@ urlpatterns = [
     path('cambiarEstado', cambiar_estado, name='cambiarEstado'),
     path('cambiarEncargado', cambiar_enc, name='cambiarEncargado'),
     path('agregarDescripcion', agregar_descripcion, name='agregar_descripcion'),
-    path('agregarSenia', agregar_senia, name='agregar_senia'),
+    path('registrarPago', registrar_pago, name='registrar_pago'),
     path('eliminarPedido/<int:pedido_id>',
          eliminar_pedido, name='eliminarPedido'),
     path('cambiarClientePedido',

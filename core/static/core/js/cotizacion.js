@@ -330,12 +330,36 @@ function obtenerDimensionesProducto(productoId) {
  * it logs an error message to the console.
  */
 
-function generarGrafico() {
+// Partir el diseño en franjas (tipos B y C, materiales en rollo). El backend
+// calcula las franjas; acá solo se guarda qué pidió el usuario.
+const particion = {
+  activo: false,
+  direccion: "largo",   // lado del diseño que se corta: "largo" | "corto"
+  solapamiento: 5,      // cm compartidos entre franjas vecinas
+  alternativa: null,    // {direccion, valor} si cortar por el otro lado cambia el resultado
+  resultado: null,      // data.particion de la última respuesta (para el detalle)
+};
+const ALGORITMOS_PACKING = ["Skyline", "MaxRects"];
+let algoritmoActual = 0;
+
+function tipoCalculoActual() {
+  return document.querySelector('input[name="tipoProducto"]:checked').value;
+}
+
+function esTipoRollo(tipo) {
+  return tipo === "B" || tipo === "C";
+}
+
+function generarGrafico(opciones = {}) {
   const csrfToken = getCookie("csrftoken");
-  const algoritmosPacking = ["Skyline", "MaxRects"];
-  const algoritmoIndex = parseInt(document.getElementById("btn-regenerar")?.dataset.algoritmo || "0");
-  const algoritmoNombre = algoritmosPacking[algoritmoIndex];
-  const tipoCalculo = document.querySelector('input[name="tipoProducto"]:checked').value;
+  // Regenerar sin opciones pasa al siguiente algoritmo; partir/solapamiento lo mantienen.
+  const algoritmoIndex = opciones.mantenerAlgoritmo
+    ? algoritmoActual
+    : parseInt(document.getElementById("btn-regenerar")?.dataset.algoritmo || "0");
+  algoritmoActual = algoritmoIndex;
+  const algoritmoNombre = ALGORITMOS_PACKING[algoritmoIndex];
+  const tipoCalculo = tipoCalculoActual();
+  const partir = particion.activo && esTipoRollo(tipoCalculo);
 
   const formData = new FormData();
   formData.append("tipo", tipoCalculo);
@@ -347,6 +371,11 @@ function generarGrafico() {
   const valorSeparacion = document.getElementById("separacionElementos").value || "0";
   formData.append("separacionElementos", valorSeparacion);
   formData.append("algoritmo", algoritmoNombre);
+  if (partir) {
+    formData.append("partir", "1");
+    formData.append("solapamiento", particion.solapamiento);
+    formData.append("direccion", particion.direccion);
+  }
 
   fetch("/presupuestos/generarGrafico/", {
     method: "POST",
@@ -356,12 +385,25 @@ function generarGrafico() {
     .then(res => res.json())
     .then(async data => {
       const graficoContainer = document.getElementById("graficoCotizacion");
+      document.getElementById("seccionGrafico").style.display = "block";
+      particion.resultado = data.particion || null;
+      particion.alternativa = data.particion?.alternativa || null;
+
+      // Error (ej.: el diseño no entra en el ancho): se muestra el motivo y,
+      // en rollos, los controles para poder partir el diseño.
+      if (!data.grafico_url) {
+        graficoContainer.innerHTML = `
+          <p class="mt-2 fw-semibold text-danger" id="mensajeGrafico">${data.mensaje || "Revisá las medidas y la cantidad."}</p>`;
+        mostrarBotonesGrafico(algoritmoIndex);
+        actualizarBotonGrafico("ABC");
+        return;
+      }
+
       graficoContainer.innerHTML = `
         <img src="${data.grafico_url}" class="img-fluid mb-3">
         <p class="mt-2 fw-semibold text-secondary" id="mensajeGrafico">${data.mensaje}</p>
         <input type="hidden" id="resultadoGraficoValor" value="${data.valor_grafico}" />
       `;
-      document.getElementById("seccionGrafico").style.display = "block";
 
       mostrarBotonesGrafico(algoritmoIndex);
       actualizarBotonGrafico(data.tipo);
@@ -385,6 +427,39 @@ function generarGrafico() {
     });
 }
 
+function formatearDecimal(n) {
+  return Number(n).toLocaleString("es-AR", { maximumFractionDigits: 2 });
+}
+
+function togglePartir() {
+  particion.activo = !particion.activo;
+  particion.direccion = "largo";
+  generarGrafico({ mantenerAlgoritmo: true });
+}
+
+// Con el diseño partido, regenerar propone cortar por la otra dimensión
+// (si eso cambia el resultado); si no, alterna el algoritmo como siempre.
+function regenerarGrafico() {
+  if (particion.activo && particion.alternativa) {
+    particion.direccion = particion.alternativa.direccion;
+    generarGrafico({ mantenerAlgoritmo: true });
+  } else {
+    generarGrafico();
+  }
+}
+
+// "2,5" o "2.5" (el input es de texto para aceptar la coma decimal).
+function cambiarSolapamiento(input) {
+  if (input.value.trim() === "") {
+    input.value = formatearDecimal(particion.solapamiento);
+    return;
+  }
+  const valor = parsearDecimalFlexible(input.value);
+  if (valor < 0) return;
+  particion.solapamiento = valor;
+  generarGrafico({ mantenerAlgoritmo: true });
+}
+
 
 /**
  * Displays buttons related to the graph functionality.
@@ -398,19 +473,42 @@ function generarGrafico() {
  */
 
 function mostrarBotonesGrafico(indexActual = 0) {
-  const algoritmosPacking = ["Skyline", "MaxRects"];
-  const siguienteIndex = (indexActual + 1) % algoritmosPacking.length;
+  const siguienteIndex = (indexActual + 1) % ALGORITMOS_PACKING.length;
+  const rollo = esTipoRollo(tipoCalculoActual());
+  const partido = particion.activo && rollo;
+  const tituloRegenerar = partido && particion.alternativa
+    ? `Cortar el diseño por el lado ${particion.alternativa.direccion === "largo" ? "más largo" : "más corto"}`
+    : "Probar otro acomodo";
+
+  const botonPartir = rollo ? `
+    <button id="btnPartirDiseno" class="btn btn-grafico ${partido ? "btn-success" : "btn-dark"}"
+            onclick="togglePartir()" title="${partido ? "Volver al diseño entero" : "Partir el diseño en franjas para aprovechar el ancho"}">
+      <i class="fa-solid fa-scissors"></i>
+    </button>` : "";
+
+  const panelPartir = partido ? `
+    <div class="d-flex align-items-center gap-2 small">
+      <label for="inputSolapamiento" class="mb-0 text-nowrap">Solapamiento (cm)</label>
+      <input type="text" inputmode="decimal" id="inputSolapamiento" class="form-control form-control-sm" style="width: 80px"
+             value="${formatearDecimal(particion.solapamiento)}" onchange="cambiarSolapamiento(this)">
+    </div>` : "";
 
   const botonesHTML = `
-    <button id="btnDescargarGrafico" class="btn btn-grafico btn-dark" onclick="descargarGrafico()">
-      <i class="fa-solid fa-download"></i>
-    </button>
-    <button id="btnBorrarGrafico" class="btn btn-grafico btn-dark" onclick="borrarGrafico()">
-      <i class="fa-solid fa-trash-can" type="button"></i>
-    </button>
-    <button id="btn-regenerar" class="btn btn-grafico btn-dark" data-algoritmo="${siguienteIndex}" onclick="generarGrafico()">
-      <i class="fa-solid fa-arrows-rotate"></i>
-    </button>
+    <div class="d-flex flex-column gap-2">
+      <div class="d-flex gap-3">
+        <button id="btnDescargarGrafico" class="btn btn-grafico btn-dark" onclick="descargarGrafico()" title="Descargar gráfico">
+          <i class="fa-solid fa-download"></i>
+        </button>
+        <button id="btnBorrarGrafico" class="btn btn-grafico btn-dark" onclick="borrarGrafico()" title="Borrar gráfico">
+          <i class="fa-solid fa-trash-can" type="button"></i>
+        </button>
+        <button id="btn-regenerar" class="btn btn-grafico btn-dark" data-algoritmo="${siguienteIndex}" onclick="regenerarGrafico()" title="${tituloRegenerar}">
+          <i class="fa-solid fa-arrows-rotate"></i>
+        </button>
+        ${botonPartir}
+      </div>
+      ${panelPartir}
+    </div>
   `;
 
   document.getElementById("botonesGrafico").innerHTML = botonesHTML;
@@ -428,6 +526,11 @@ function borrarGrafico() {
   // Limpiar estado de tier resuelto
   resolvedProductoId = null;
   resolvedProductoNombre = null;
+  // Al borrar (o cambiar medidas) se vuelve al diseño entero; el solapamiento se recuerda.
+  particion.activo = false;
+  particion.direccion = "largo";
+  particion.alternativa = null;
+  particion.resultado = null;
 
   fetch('/presupuestos/borrarImagenGenerada', {
     method: 'POST',
@@ -440,6 +543,7 @@ function borrarGrafico() {
     .then(data => {
       const graficoContenedor = document.getElementById("graficoCotizacion");
       graficoContenedor.innerHTML = "";
+      document.getElementById("botonesGrafico").innerHTML = "";
       actualizarBotonGrafico("ABC");
     })
     .catch(error => {
@@ -569,6 +673,11 @@ function mostrarModalResultado(data) {
   detalleFinal += `${data.producto_final}\n\n`;
 
   detalleFinal += `Dimensiones: ${anchoElem} × ${altoElem} cm\n`;
+  const franjas = particion.activo ? particion.resultado : null;
+  if (franjas && franjas.partidas > 0) {
+    const cuales = franjas.partidas === franjas.copias ? "" : ` (${franjas.partidas} de ${franjas.copias} diseños)`;
+    detalleFinal += `Impresión partida${cuales} en ${franjas.n} franjas de ${formatearNumeroLocal(franjas.lado_entero)} × ${formatearNumeroLocal(franjas.largo_franja)} cm (solapamiento ${formatearNumeroLocal(franjas.solapamiento)} cm)\n`;
+  }
   //detalleFinal += `Dimensiones de la hoja/pliego: ${anchoHoja} × ${altoHoja} cm\n`;
   detalleFinal += `Cantidad de hojas/m2: ${pliegos}`;
 
