@@ -23,7 +23,8 @@
                     <p>Detalle: <span id="detalle_prev"></span></p>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-dark"><a href="/presupuestos/agregarProducto" style="text-decoration: none;"> Agregar </a></button>
+                    <button type="button" class="btn btn-dark"><a id="btnAgregarProducto" href="/presupuestos/agregarProducto" style="text-decoration: none;"> Agregar </a></button>
+                    <button type="button" class="btn btn-outline-primary" onclick="agregarYCotizarOtro()" title="Agrega este producto y deja el cotizador cargado con los mismos datos para cotizar una variante">Agregar y cotizar otro</button>
                     <button type="button" class="btn btn-outline-dark" onclick="descartarProducto()">Descartar</button>
                 </div>
             </div>

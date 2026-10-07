@@ -428,3 +428,16 @@ Versión v3.8.0
         *El botón de regenerar propone cortar por el otro lado del diseño cuando eso cambia el resultado.
         *El gráfico rotula cada pieza con su diseño y número de franja (ej.: "D3 1/2") y marca las zonas de solapamiento. El detalle del presupuesto indica cómo se parte la impresión.
         *Si un diseño no entra en el ancho del material, el cotizador lo avisa (antes calculaba 0 m²) y sugiere partirlo.
+
+****************** 7/10/2026 ******************
+Versión v3.8.1
+
+    -General
+        *La rueda del mouse sobre un campo numérico con el cursor adentro ya no cambia el número: ahora scrollea la página como en el resto de la pantalla.
+
+    -Cotizador
+        *Nuevo botón "Agregar y cotizar otro" en el resultado de la cotización: agrega el producto y deja el cotizador cargado con los mismos datos (tipo de cálculo, categoría, producto, medidas, cantidad, descuento, etc.) para cotizar rápido una variante cambiando solo la cantidad o una medida.
+        *Se corrige un error que impedía generar el gráfico ("Dibujito") en los cálculos por hojas, m² y metro lineal.
+
+    -Pedidos
+        *Se corrige el error al cambiar el cliente de un pedido cuando el cliente tiene cargado un negocio (ej.: "Apu | Kwik-E-Mart").

@@ -25,6 +25,7 @@ _RANGO_RE = re.compile(r'^(.*?)\s*\[(\d+)[-]([\d]+|INF)\]\s*$')
 import json
 from core.decorators import solo_gerencia
 from core.models import AliasPago, ConfiguracionPresupuesto
+from core.utils import parse_decimal_flexible
 from django.db.models import Max
 from django.db import models
 

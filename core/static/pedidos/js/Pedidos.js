@@ -484,7 +484,13 @@ document.getElementById('btnConfirmarBulkEncargado').addEventListener('click', a
 cambiarClienteModal.addEventListener('show.bs.modal', function (event) {
     const button = event.relatedTarget;
     const info = button.getAttribute('data-bs-whatever');
-    const [clienteId, clienteRef, pedidoNumero, presupuestoNumero] = info.split('|');
+    // Formato: <id>|<referencia>|<pedido>|<presupuesto>. La referencia puede
+    // traer '|' ("nombre | negocio"), así que los números se toman del final.
+    const partes = info.split('|');
+    const presupuestoNumero = partes.pop();
+    const pedidoNumero = partes.pop();
+    const clienteId = partes.shift();
+    const clienteRef = partes.join('|');
 
     document.getElementById('pedidoNumero').value = pedidoNumero;
     document.getElementById('presupuestoNumero').value = presupuestoNumero;

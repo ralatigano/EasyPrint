@@ -351,3 +351,14 @@ document.addEventListener('click', e => {
         icon.classList.replace('fa-eye-slash', 'fa-eye');
     }
 });
+// ── Rueda del mouse en inputs numéricos ──────────────────────────────────
+// Con el foco en un <input type="number">, la rueda suma/resta al valor en vez
+// de scrollear la página (y el usuario lo cambia sin darse cuenta). Se le quita
+// el foco antes de que el navegador procese la rueda: la página scrollea y el
+// valor queda intacto. Delegado en document para cubrir inputs creados por JS.
+document.addEventListener('wheel', e => {
+    const el = e.target;
+    if (el instanceof HTMLInputElement && el.type === 'number' && el === document.activeElement) {
+        el.blur();
+    }
+}, { passive: true });

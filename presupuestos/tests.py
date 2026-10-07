@@ -90,3 +90,28 @@ class PartirDisenoTests(TestCase):
         r = self._partir_en(200, 120, 400, 1, "corto")
         self.assertEqual(r["particion"]["partidas"], 0)
         self.assertIn("No hace falta partir", r["mensaje"])
+
+
+class GenerarGraficoViewTests(TestCase):
+    """Regresión: la vista usaba parse_decimal_flexible sin importarlo y todo
+    pedido de "Dibujito" terminaba en error."""
+
+    def setUp(self):
+        import tempfile
+        from django.contrib.auth.models import User
+        from django.test import override_settings
+        # Antes de cambiar MEDIA_ROOT: el post_save de User copia la imagen por defecto.
+        self.client.force_login(User.objects.create_user('vendedor', password='x'))
+        self._media = override_settings(MEDIA_ROOT=tempfile.mkdtemp())
+        self._media.enable()
+        self.addCleanup(self._media.disable)
+
+    def test_genera_grafico_tipo_a(self):
+        resp = self.client.post('/presupuestos/generarGrafico/', {
+            'tipo': 'A', 'algoritmo': 'Skyline',
+            'anchoHoja': '31', 'altoHoja': '45',
+            'anchoElemento': '9', 'altoElemento': '5',
+            'separacionElementos': '0.3', 'cantidadElementos': '100',
+        })
+        self.assertEqual(resp.status_code, 200)
+        self.assertTrue(resp.json().get('grafico_url'))
