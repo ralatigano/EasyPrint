@@ -789,7 +789,11 @@ def cambiar_cliente_pedido(request):
     presupuesto_numero = request.POST.get('presupuestoNumero')
     cliente_input = request.POST.get('nuevoCliente', '').strip()
 
-    if not pedido_numero or not presupuesto_numero:
+    # Los números llegan como texto: validarlos para no romper con un 500 si el
+    # front los arma mal (ej.: una referencia "nombre | negocio" corría los campos).
+    pedido_numero = (pedido_numero or '').strip()
+    presupuesto_numero = (presupuesto_numero or '').strip()
+    if not pedido_numero.isdigit():
         messages.error(request, "Datos incompletos para cambiar el cliente.")
         return redirect('/pedidos/v2')
 
@@ -805,7 +809,10 @@ def cambiar_cliente_pedido(request):
         messages.error(request, "No se encontró el pedido.")
         return redirect('/pedidos/v2')
 
-    # Actualizar presupuesto asociado
+    # Actualizar presupuesto asociado (un pedido puede no tenerlo: llega "None")
+    if not presupuesto_numero.isdigit():
+        messages.success(request, "Cliente actualizado correctamente.")
+        return redirect('/pedidos/v2')
     try:
         presupuesto = Presupuesto.objects.get(numero=presupuesto_numero)
         presupuesto.cliente = cliente

@@ -48,7 +48,7 @@ let tiemposCtx = {
 document.addEventListener("DOMContentLoaded", () => {
     aplicarDefaultTipoCalculo();
     inicializarSelect2();
-    cargarCategoriasDesdeBackend();
+    restaurarCotizacionAnterior(cargarCategoriasDesdeBackend());
 });
 
 /**
@@ -205,7 +205,7 @@ document.querySelectorAll('input[name="tipoProducto"]').forEach(radio => {
  */
 
 function cargarCategoriasDesdeBackend() {
-  fetch("/productos/obtenerCategorias")
+  return fetch("/productos/obtenerCategorias")
     .then(response => {
       if (!response.ok) throw new Error("Error al obtener categorías");
       return response.json();
@@ -271,7 +271,7 @@ $("#selectCategoria").on("change", function () {
  * @param {number} categoriaId - Id de la categoría a cargar.
  */
 function cargarProductosPorCategoria(categoriaId) {
-  fetch(`/productos/productosPorCategoria/${categoriaId}`)
+  return fetch(`/productos/productosPorCategoria/${categoriaId}`)
     .then(res => res.json())
     .then(productos => {
       const select = document.getElementById("selectProducto");
@@ -492,7 +492,7 @@ function toggleAjusteTiempos(activo) {
 }
 
 function obtenerDimensionesProducto(productoId) {
-  fetch(`/productos/obtenerDimensiones/${productoId}`)
+  return fetch(`/productos/obtenerDimensiones/${productoId}`)
     .then(res => res.json())
     .then(data => {
       const inputAncho = document.getElementById("inputAnchoHoja");
@@ -940,6 +940,97 @@ function descartarProducto() {
         }
       }
   });
+}
+
+// ── "Agregar y cotizar otro" ─────────────────────────────────────────────────
+// Agregar navega a /presupuestos/agregarProducto, que vuelve al cotizador (o al
+// presupuesto en edición, que usa la misma vista) con el formulario vacío. Para
+// cotizar variantes de lo mismo (otra medida u otra cantidad) se guarda el
+// formulario antes de agregar y se restaura al volver.
+const COTIZAR_OTRO_KEY = "cotizarOtro";
+// Si agregar falla y se vuelve más tarde al cotizador, no restaurar datos viejos.
+const COTIZAR_OTRO_VIGENCIA_MS = 2 * 60 * 1000;
+const CAMPOS_COTIZAR_OTRO = [
+  "cantidadElementos", "inputAnchoElemento", "inputAltoElemento", "separacionElementos",
+  "inputTiempo", "inputDescuento", "inputProductoFinal", "inputInfoAdic",
+];
+
+function agregarYCotizarOtro() {
+  const estado = {
+    guardado: Date.now(),
+    tipo: tipoCalculoActual(),
+    categoria: document.getElementById("selectCategoria").value,
+    // El del dropdown (representante de la familia): el tier se vuelve a
+    // resolver al generar el dibujo con la nueva cantidad.
+    producto: document.getElementById("selectProducto").value,
+    empaquetado: document.getElementById("checkEmpaquetado").checked,
+    solapamiento: particion.solapamiento,
+    campos: Object.fromEntries(
+      CAMPOS_COTIZAR_OTRO.map(id => [id, document.getElementById(id).value])
+    ),
+  };
+  try {
+    sessionStorage.setItem(COTIZAR_OTRO_KEY, JSON.stringify(estado));
+  } catch (e) {
+    console.warn("No se pudo guardar la cotización para repetirla:", e);
+  }
+  window.location.href = document.getElementById("btnAgregarProducto").href;
+}
+
+function seleccionarOpcion(selectId, valor) {
+  const select = document.getElementById(selectId);
+  select.value = valor;
+  if (window.jQuery && $.fn.select2) $(`#${selectId}`).trigger("change.select2");
+}
+
+/**
+ * Si se viene de "Agregar y cotizar otro", vuelve a cargar el formulario con
+ * los datos de la cotización anterior. Encadena las mismas cargas que haría el
+ * usuario (categorías → productos → dimensiones) sin disparar los `change`,
+ * para no resetear lo que se está restaurando.
+ * @param {Promise} cargaCategorias - Promesa de cargarCategoriasDesdeBackend().
+ */
+async function restaurarCotizacionAnterior(cargaCategorias) {
+  let estado = null;
+  try {
+    estado = JSON.parse(sessionStorage.getItem(COTIZAR_OTRO_KEY));
+    sessionStorage.removeItem(COTIZAR_OTRO_KEY);
+  } catch (e) {
+    return;
+  }
+  if (!estado || Date.now() - estado.guardado > COTIZAR_OTRO_VIGENCIA_MS) return;
+
+  const radio = document.querySelector(`input[name="tipoProducto"][value="${estado.tipo}"]`);
+  if (radio) {
+    radio.checked = true;
+    actualizarVisibilidadPorTipo();
+  }
+
+  await cargaCategorias;
+  if (estado.categoria) {
+    seleccionarOpcion("selectCategoria", estado.categoria);
+    await cargarProductosPorCategoria(estado.categoria);
+    if (estado.producto) {
+      seleccionarOpcion("selectProducto", estado.producto);
+      if (estado.tipo !== "D") await obtenerDimensionesProducto(estado.producto);
+    }
+  }
+
+  Object.entries(estado.campos || {}).forEach(([id, valor]) => {
+    const el = document.getElementById(id);
+    if (el) el.value = valor;
+  });
+  document.getElementById("checkEmpaquetado").checked = !!estado.empaquetado;
+  if (estado.solapamiento != null) particion.solapamiento = estado.solapamiento;
+  // Igual que al elegir el producto a mano: el tiempo se vuelve a sugerir para
+  // la nueva cotización (en A/B/C queda pendiente hasta generar el dibujo).
+  precargarTiempoEstimado(true);
+
+  // Lo habitual es cambiar la cantidad o una medida: dejar el foco ahí.
+  document.getElementById("bloqueDimensiones").scrollIntoView({ block: "center", behavior: "instant" });
+  const cantidad = document.getElementById("cantidadElementos");
+  cantidad.focus({ preventScroll: true });
+  cantidad.select();
 }
 
 // function guardarPresupuesto() {
