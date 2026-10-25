@@ -5,9 +5,12 @@ const precioInput = document.getElementById('precio_editar');
 const descuentoInput = document.getElementById('descuento_editar');
 const tiempoInput = document.getElementById('tiempo_editar');
 const empaquetadoCheckbox = document.getElementById('empaquetado_editar');
-const precioArbCheckbox = document.getElementById('precio_arb_checkbox');
+const precioManualCheckbox = document.getElementById('precio_manual');
 const nuevoPrecioSpan = document.getElementById('nuevo_precio_calculado');
 const idInput = document.getElementById('id_producto_editar');
+
+const _TOOLTIP_PRECIO_MANUAL =
+  'Precio puesto a mano por el usuario. No se aplican cálculos.';
 
 document.addEventListener('DOMContentLoaded', function () {
     const modal = document.getElementById('editarProductoPresupuestoModal');
@@ -19,6 +22,22 @@ document.addEventListener('DOMContentLoaded', function () {
 
     cargarProductoCotizado(productoId); // ← delegás todo
     });
+
+    // Listeners una sola vez: antes se registraban dentro de inicializarEditor,
+    // así que cada apertura del modal sumaba otro handler sobre los mismos campos.
+    tiempoInput.addEventListener('input', actualizarVista);
+    descuentoInput.addEventListener('input', actualizarVista);
+    empaquetadoCheckbox.addEventListener('change', actualizarVista);
+    precioManualCheckbox.addEventListener('change', function () {
+        aplicarModoPrecioManual(this.checked);
+        actualizarVista();
+    });
+    precioInput.addEventListener('input', () => {
+        if (CotizacionEditor.esPrecioManual) {
+            actualizarVista(); // actualiza el span y el tooltip
+        }
+    });
+
     const nuevoPrecioSpan = document.getElementById('nuevo_precio_calculado');
     const tooltip = new bootstrap.Tooltip(nuevoPrecioSpan, {
         title: generarResumenTooltip(),
@@ -41,7 +60,7 @@ const CotizacionEditor = {
   tiempoOriginal: 0,
   descuentoOriginal: 0,
   empaquetadoOriginal: false,
-  esPrecioArbitrario: false,
+  esPrecioManual: false,
   // Snapshots para el semáforo (Fase 4)
   cantidad: 0,
   precioSugerido: 0,
@@ -75,7 +94,10 @@ function mostrarModal(data) {
   descuentoInput.value = _arNum(data.descuento || 0);
   tiempoInput.value = _arNum(data.tiempo_estimado || 0);
   empaquetadoCheckbox.checked = data.empaquetado || false;
-  precioArbCheckbox.checked = data.precio_arbitrario || false;
+  precioManualCheckbox.checked = Boolean(data.precio_manual);
+  // Tildar por código no dispara el evento 'change': aplicar el modo a mano,
+  // si no el precio de un ítem ya fijado a mano queda bloqueado.
+  aplicarModoPrecioManual(precioManualCheckbox.checked);
 
   nuevoPrecioSpan.textContent = `$ ${formatearNumeroLocal(data.precio)}`;
 
@@ -91,45 +113,39 @@ function inicializarEditor(data) {
   CotizacionEditor.tiempoOriginal = parseFloat(data.tiempo_estimado) || 0;
   CotizacionEditor.empaquetadoOriginal = Boolean(data.empaquetado);
   CotizacionEditor.descuentoOriginal = parseFloat(data.descuento) || 0;
-  CotizacionEditor.esPrecioArbitrario = Boolean(data.precio_arbitrario);
+  CotizacionEditor.esPrecioManual = Boolean(data.precio_manual);
   CotizacionEditor.cantidad = parseFloat(data.cantidad) || 0;
   CotizacionEditor.precioSugerido = parseFloat(data.precio_sugerido) || 0;
   CotizacionEditor.pisoAbsoluto = parseFloat(data.piso_absoluto) || 0;
   CotizacionEditor.pisoAbsorcion = parseFloat(data.piso_absorcion) || 0;
 
-  tiempoInput.addEventListener('input', actualizarVista);
-  descuentoInput.addEventListener('input', actualizarVista);
-  empaquetadoCheckbox.addEventListener('change', actualizarVista);
-
   nuevoPrecioSpan.textContent = `$ ${formatearNumeroLocal(data.resultado)}`;
-  nuevoPrecioSpan.setAttribute('title', 'Precio cotizado originalmente con descuento aplicado.');
-
-  precioArbCheckbox.addEventListener('change', function () {
-    CotizacionEditor.esPrecioArbitrario = this.checked;
-      if (this.checked) {
-        precioInput.removeAttribute('readonly');
-        // Quitar el "$" y dejar el número en formato AR: así se edita sin romper
-        // el parseo (el "$" hacía que el semáforo no calculara).
-        precioInput.value = formatearNumeroLocal(_parsePrecio(precioInput.value));
-      } else {
-        precioInput.setAttribute('readonly', true);
-        precioInput.value = `$ ${formatearNumeroLocal(_parsePrecio(precioInput.value))}`;
-      }
-      actualizarVista();
-    });
-    precioInput.addEventListener('input', () => {
-      if (CotizacionEditor.esPrecioArbitrario) {
-        actualizarVista(); // actualiza el span y el tooltip
-      }
-    });
+  nuevoPrecioSpan.setAttribute('title', CotizacionEditor.esPrecioManual
+    ? _TOOLTIP_PRECIO_MANUAL
+    : 'Precio cotizado originalmente con descuento aplicado.');
 }
 
-// 4. Cálculo reactivo
+/** Pasa el input de precio a editable (precio a mano) o a solo-lectura. */
+function aplicarModoPrecioManual(activo) {
+  CotizacionEditor.esPrecioManual = activo;
+  // Sin el "$": así se edita sin romper el parseo (el "$" hacía que el semáforo
+  // no calculara).
+  const valor = formatearNumeroLocal(_parsePrecio(precioInput.value));
+  if (activo) {
+    precioInput.removeAttribute('readonly');
+    precioInput.value = valor;
+  } else {
+    precioInput.setAttribute('readonly', true);
+    precioInput.value = `$ ${valor}`;
+  }
+}
+
+// 4. Cálculo reactivo (solo para mostrar: el precio que se guarda lo
+//    recalcula el servidor en editar_producto_cotizado)
 function calcularPrecioFinal() {
   const tiempoNuevo = parsearDecimalFlexible(tiempoInput.value);
   const descuentoNuevo = parsearDecimalFlexible(descuentoInput.value);
   const empaquetadoNuevo = empaquetadoCheckbox.checked;
-  const subtotalInput = document.getElementById('subtotal_calculado');
 
   const tiempoOriginal = CotizacionEditor.tiempoOriginal;
   const empaquetadoOriginal = CotizacionEditor.empaquetadoOriginal;
@@ -142,7 +158,6 @@ function calcularPrecioFinal() {
     : 0;
 
   const nuevoBruto = CotizacionEditor.precioBase + deltaManoObra + deltaEmpaquetado;
-  subtotalInput.value = nuevoBruto.toFixed(2);
 
   const precioFinal = nuevoBruto * (1 - descuentoNuevo / 100);
 
@@ -162,19 +177,16 @@ function _arNum(v) {
 
 function actualizarVista() {
   const nuevoPrecioSpan = document.getElementById('nuevo_precio_calculado');
-  const resultadoInput = document.getElementById('resultado_calculado');
 
-  if (CotizacionEditor.esPrecioArbitrario) {
+  if (CotizacionEditor.esPrecioManual) {
     const precioManual = _parsePrecio(precioInput.value);
     nuevoPrecioSpan.textContent = `$ ${formatearNumeroLocal(precioManual)}`;
-    resultadoInput.value = precioManual.toFixed(2);
-    nuevoPrecioSpan.setAttribute('title', 'Precio arbitrario definido por el usuario. No se aplican cálculos.');
+    nuevoPrecioSpan.setAttribute('title', _TOOLTIP_PRECIO_MANUAL);
     actualizarSemaforo(precioManual);
     return;
   }
 
   const nuevoPrecio = calcularPrecioFinal();
-  resultadoInput.value = nuevoPrecio.toFixed(2);
   nuevoPrecioSpan.textContent = `$ ${formatearNumeroLocal(nuevoPrecio)}`;
   nuevoPrecioSpan.setAttribute('title', generarResumenTooltip());
   actualizarSemaforo(nuevoPrecio);
@@ -253,8 +265,8 @@ function actualizarSemaforo(precio) {
 }
 
 function generarResumenTooltip() {
-  if (CotizacionEditor.esPrecioArbitrario) {
-    return 'Precio arbitrario definido por el usuario. No se aplican cálculos.';
+  if (CotizacionEditor.esPrecioManual) {
+    return _TOOLTIP_PRECIO_MANUAL;
   }
 
   const tiempoNuevo = parsearDecimalFlexible(tiempoInput.value);
@@ -288,7 +300,7 @@ function resetEditor() {
   CotizacionEditor.tiempoOriginal = 0;
   CotizacionEditor.empaquetadoOriginal = false;
   CotizacionEditor.descuentoOriginal = 0;
-  CotizacionEditor.esPrecioArbitrario = false;
+  CotizacionEditor.esPrecioManual = false;
   CotizacionEditor.cantidad = 0;
   CotizacionEditor.precioSugerido = 0;
   CotizacionEditor.pisoAbsoluto = 0;
@@ -300,7 +312,9 @@ function resetEditor() {
   descuentoInput.value = '';
   tiempoInput.value = '';
   empaquetadoCheckbox.checked = false;
-  precioArbCheckbox.checked = false;
+  precioManualCheckbox.checked = false;
+  // El ítem anterior pudo dejar el precio editable.
+  precioInput.setAttribute('readonly', true);
   nuevoPrecioSpan.textContent = '$ —';
   nuevoPrecioSpan.setAttribute('title', '');
 

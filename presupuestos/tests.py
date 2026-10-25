@@ -175,7 +175,7 @@ class DobleCalculoCotizacionTests(TestCase):
 
 class SemaforoFase4Tests(TestCase):
     """Fase 4: info_prod_cotizado expone los snapshots para el semáforo, y editar
-    marca precio_manual cuando el precio se fija a mano (precio arbitrario)."""
+    marca `precio_manual` cuando el precio se fija a mano."""
 
     def setUp(self):
         self.user = User.objects.create_superuser("v2", "v2@v.com", "pw12345")
@@ -199,26 +199,45 @@ class SemaforoFase4Tests(TestCase):
         self.assertEqual(j["cantidad"], 10)
         self.assertFalse(j["precio_manual"])
 
-    def test_precio_arbitrario_marca_manual(self):
+    def test_precio_a_mano_marca_el_flag(self):
         self.client.post("/presupuestos/editarProductoCotizado/", {
             "id_producto": self.pc.id, "precio": "5500",
-            "precio_arb_checkbox": "on", "info_adicional": "",
-            "descuento": "0", "tiempo": "1", "subtotal": "5000", "resultado": "5000",
+            "precio_manual": "on", "info_adicional": "",
+            "descuento": "0", "tiempo": "1",
         })
         self.pc.refresh_from_db()
         self.assertTrue(self.pc.precio_manual)
         self.assertEqual(self.pc.resultado, Decimal("5500"))
 
-    def test_precio_arbitrario_formato_ar(self):
-        # El precio arbitrario llega en formato AR (con "$"): parse_ar lo tolera.
+    def test_precio_a_mano_en_formato_ar(self):
+        # El precio puesto a mano llega en formato AR (con "$"): parse_ar lo tolera.
         self.client.post("/presupuestos/editarProductoCotizado/", {
             "id_producto": self.pc.id, "precio": "$ 3.499,00",
-            "precio_arb_checkbox": "on", "info_adicional": "",
-            "descuento": "0", "tiempo": "1", "subtotal": "5000", "resultado": "5000",
+            "precio_manual": "on", "info_adicional": "",
+            "descuento": "0", "tiempo": "1",
         })
         self.pc.refresh_from_db()
         self.assertEqual(self.pc.resultado, Decimal("3499.00"))
         self.assertTrue(self.pc.precio_manual)
+
+    def test_reeditar_un_precio_a_mano_lo_conserva(self):
+        """El modal precarga el check desde `precio_manual` (antes leía una clave
+        inexistente, así que reabrir el ítem perdía el flag)."""
+        self.pc.precio_manual = True
+        self.pc.save()
+        info = self.client.get(
+            f"/presupuestos/infoProductoCotizado/{self.pc.id}/").json()
+        self.assertTrue(info["precio_manual"])
+        # Guardar sin tocar nada: el check viene tildado y el input trae el bruto
+        # ya formateado en AR por el front (formatearNumeroLocal).
+        self.client.post("/presupuestos/editarProductoCotizado/", {
+            "id_producto": self.pc.id, "info_adicional": "Sin apuro",
+            "precio": "5.000,00", "precio_manual": "on",
+            "descuento": "0", "tiempo": "1",
+        })
+        self.pc.refresh_from_db()
+        self.assertTrue(self.pc.precio_manual)
+        self.assertEqual(self.pc.resultado, Decimal("5000"))
 
     def test_precio_calculado_no_marca_manual(self):
         self.pc.precio_manual = True
@@ -230,6 +249,101 @@ class SemaforoFase4Tests(TestCase):
         self.pc.refresh_from_db()
         self.assertFalse(self.pc.precio_manual)
         self.assertEqual(self.pc.resultado, Decimal("4500"))
+
+
+class EditarProductoCotizadoTests(TestCase):
+    """El precio de un producto cotizado se recalcula en el servidor.
+
+    Antes venía en dos hidden que el JS solo poblaba al tocar tiempo, descuento
+    o empaquetado: editar únicamente "información adicional" los mandaba vacíos
+    y el ítem se guardaba en $0 (sin desc_plata, así que el bruto se perdía).
+    """
+
+    def setUp(self):
+        self.user = User.objects.create_superuser("v3", "v3@v.com", "pw12345")
+        self.client.force_login(self.user)
+        Producto.objects.create(nombre="Mano de obra",
+                                precio_proveedor=Decimal("500"))
+        Producto.objects.create(nombre="Empaquetado",
+                                precio_proveedor=Decimal("300"))
+        prod = Producto.objects.create(
+            nombre="Y", precio=Decimal("100"), factor=Decimal("2"))
+        # Ítem coherente: bruto 5.500, 10% de descuento (550) → 4.950.
+        self.pc = ProductoCotizado.objects.create(
+            insumo=prod, cantidad=10, resultado=Decimal("4950"),
+            desc_plata=Decimal("550"), desc_porcentaje=Decimal("10"),
+            t_produccion=Decimal("1"), empaquetado=False,
+            precio_sugerido=Decimal("6000"), piso_absoluto=Decimal("2000"),
+            piso_absorcion=Decimal("4000"))
+
+    def _editar(self, **extra):
+        """POST como lo manda el modal: el precio NO viaja en el formulario."""
+        datos = {
+            "id_producto": self.pc.id,
+            "info_adicional": "",
+            "precio": "$ 5.500,00",   # readonly, solo informativo
+            "descuento": "10",        # precargado con el valor guardado
+            "tiempo": "1",            # precargado con el valor guardado
+        }
+        datos.update(extra)
+        respuesta = self.client.post(
+            "/presupuestos/editarProductoCotizado/", datos)
+        self.pc.refresh_from_db()
+        return respuesta
+
+    def test_solo_info_adicional_conserva_el_precio(self):
+        self._editar(info_adicional="Entregar el martes")
+        self.assertEqual(self.pc.info_adic, "Entregar el martes")
+        self.assertEqual(self.pc.resultado, Decimal("4950.00"))
+        self.assertEqual(self.pc.desc_plata, Decimal("550.00"))
+        self.assertEqual(self.pc.precio_bruto, Decimal("5500.00"))
+
+    def test_resultado_del_formulario_se_ignora(self):
+        # Ni un hidden vacío ni uno con basura pueden mover el precio.
+        self._editar(subtotal="", resultado="")
+        self.assertEqual(self.pc.resultado, Decimal("4950.00"))
+        self._editar(subtotal="0", resultado="0")
+        self.assertEqual(self.pc.resultado, Decimal("4950.00"))
+        self._editar(subtotal="99999", resultado="99999")
+        self.assertEqual(self.pc.resultado, Decimal("4950.00"))
+
+    def test_cambiar_tiempo_suma_mano_de_obra(self):
+        # +2 hs × $500 = +1.000 sobre el bruto (5.500 → 6.500), 10% → 5.850.
+        self._editar(tiempo="3")
+        self.assertEqual(self.pc.t_produccion, Decimal("3.00"))
+        self.assertEqual(self.pc.precio_bruto, Decimal("6500.00"))
+        self.assertEqual(self.pc.desc_plata, Decimal("650.00"))
+        self.assertEqual(self.pc.resultado, Decimal("5850.00"))
+
+    def test_tiempo_en_formato_ar(self):
+        # 1,5 hs: media hora más → +250 sobre el bruto.
+        self._editar(tiempo="1,5")
+        self.assertEqual(self.pc.t_produccion, Decimal("1.50"))
+        self.assertEqual(self.pc.precio_bruto, Decimal("5750.00"))
+
+    def test_empaquetado_suma_su_precio_una_sola_vez(self):
+        self._editar(empaquetado="on")
+        self.assertTrue(self.pc.empaquetado)
+        self.assertEqual(self.pc.precio_bruto, Decimal("5800.00"))
+        # Guardar de nuevo con empaquetado ya activo no lo vuelve a sumar.
+        self._editar(empaquetado="on")
+        self.assertEqual(self.pc.precio_bruto, Decimal("5800.00"))
+        # Y destildarlo lo descuenta.
+        self._editar()
+        self.assertFalse(self.pc.empaquetado)
+        self.assertEqual(self.pc.precio_bruto, Decimal("5500.00"))
+
+    def test_cambiar_descuento_no_toca_el_bruto(self):
+        self._editar(descuento="20")
+        self.assertEqual(self.pc.desc_porcentaje, Decimal("20.00"))
+        self.assertEqual(self.pc.precio_bruto, Decimal("5500.00"))
+        self.assertEqual(self.pc.desc_plata, Decimal("1100.00"))
+        self.assertEqual(self.pc.resultado, Decimal("4400.00"))
+
+    def test_quitar_el_descuento(self):
+        self._editar(descuento="0")
+        self.assertEqual(self.pc.desc_plata, Decimal("0.00"))
+        self.assertEqual(self.pc.resultado, Decimal("5500.00"))
 
 
 class PartirDisenoTests(TestCase):
