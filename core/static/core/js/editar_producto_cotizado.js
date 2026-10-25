@@ -61,7 +61,9 @@ const CotizacionEditor = {
   cantidad: 0,
   precioSugerido: 0,
   pisoAbsoluto: 0,
-  pisoAbsorcion: 0
+  pisoAbsorcion: 0,
+  margenSnap: 1,
+  costoEmpaquetadoSnap: 0
 };
 
 // 1. Entrada principal: se llama al abrir el modal
@@ -109,6 +111,8 @@ function inicializarEditor(data) {
   CotizacionEditor.esPrecioManual = Boolean(data.precio_manual);
   CotizacionEditor.cantidad = parseFloat(data.cantidad) || 0;
   CotizacionEditor.precioSugerido = parseFloat(data.precio_sugerido) || 0;
+  CotizacionEditor.margenSnap = parseFloat(data.margen_snap) || 1;
+  CotizacionEditor.costoEmpaquetadoSnap = parseFloat(data.costo_empaquetado_snap) || 0;
   CotizacionEditor.pisoAbsoluto = parseFloat(data.piso_absoluto) || 0;
   CotizacionEditor.pisoAbsorcion = parseFloat(data.piso_absorcion) || 0;
 
@@ -189,10 +193,37 @@ const _ZONAS_PRECIO = {
   rojo:    { color: '#dc3545', texto: 'Con este precio no cubrís nada.' },
 };
 
+/** Pisos y sugerido con el empaquetado que está tildado AHORA.
+ *
+ * Agregar o quitar el empaquetado cambia el costo variable del ítem, así que
+ * los pisos se mueven con él (es lo mismo que guarda el servidor en
+ * sincronizar_costos_por_empaquetado). Sin esto el semáforo mostraría el precio
+ * nuevo contra los pisos viejos: parecería que ganaste el empaquetado de regalo.
+ */
+function _pisosVigentes() {
+  const { precioSugerido, pisoAbsoluto, pisoAbsorcion, margenSnap,
+          costoEmpaquetadoSnap, empaquetadoOriginal, precioEmpaquetado } = CotizacionEditor;
+  const sinSnapshots = precioSugerido <= 0 && pisoAbsorcion <= 0 && pisoAbsoluto <= 0;
+
+  if (sinSnapshots || empaquetadoCheckbox.checked === empaquetadoOriginal) {
+    return { precioSugerido, pisoAbsoluto, pisoAbsorcion };
+  }
+
+  // Al quitarlo se descuenta lo que se había registrado; al agregarlo, el precio
+  // vigente (el mismo que mueve el precio cobrado).
+  const delta = empaquetadoCheckbox.checked ? precioEmpaquetado : -costoEmpaquetadoSnap;
+  const absorcion = pisoAbsorcion + delta;
+  return {
+    precioSugerido: absorcion * margenSnap,
+    pisoAbsoluto: pisoAbsoluto + delta,
+    pisoAbsorcion: absorcion,
+  };
+}
+
 function actualizarSemaforo(precio) {
   const cont = document.getElementById('semaforoPrecio');
   const headroom = document.getElementById('headroomPrecio');
-  const { precioSugerido, pisoAbsoluto, pisoAbsorcion } = CotizacionEditor;
+  const { precioSugerido, pisoAbsoluto, pisoAbsorcion } = _pisosVigentes();
 
   // Sin snapshots (cotización vieja anterior a la Fase 3) o precio inválido: ocultar.
   if (!isFinite(precio) || (precioSugerido <= 0 && pisoAbsorcion <= 0 && pisoAbsoluto <= 0)) {
@@ -282,6 +313,8 @@ function resetEditor() {
   CotizacionEditor.precioSugerido = 0;
   CotizacionEditor.pisoAbsoluto = 0;
   CotizacionEditor.pisoAbsorcion = 0;
+  CotizacionEditor.margenSnap = 1;
+  CotizacionEditor.costoEmpaquetadoSnap = 0;
 
   // Limpiar campos del DOM
   infoAdicionalInput.value = '';

@@ -732,6 +732,9 @@ def info_prod_cotizado(request, producto_id):
             'piso_absoluto': producto.piso_absoluto,
             'piso_absorcion': producto.piso_absorcion,
             'precio_manual': producto.precio_manual,
+            # El modal mueve los pisos con el empaquetado, igual que el servidor.
+            'margen_snap': producto.margen_snap,
+            'costo_empaquetado_snap': producto.costo_empaquetado_snap,
         }
         return JsonResponse(data)
     except ProductoCotizado.DoesNotExist:
@@ -756,10 +759,52 @@ def bruto_producto_editado(producto, empaquetado):
     if empaquetado == producto.empaquetado:
         return producto.precio_bruto.quantize(CENTAVO)
 
-    precio_empaquetado = Producto.objects.get(
-        nombre="Empaquetado").precio_proveedor
-    delta = precio_empaquetado if empaquetado else -precio_empaquetado
+    delta = precio_empaquetado_vigente()
+    if not empaquetado:
+        delta = -delta
     return (producto.precio_bruto + delta).quantize(CENTAVO)
+
+
+def precio_empaquetado_vigente():
+    return Producto.objects.get(nombre="Empaquetado").precio_proveedor
+
+
+def sincronizar_costos_por_empaquetado(producto, empaquetado):
+    """Mueve los snapshots del método nuevo cuando se agrega o se quita el
+    empaquetado al editar.
+
+    Los snapshots son fotos del momento de cotizar y no se recalculan, pero el
+    empaquetado es un componente del ítem: si se agrega o se quita, el costo
+    variable cambia de verdad. Se mueve solo esa parte — la tasa horaria y el
+    margen siguen siendo los del día que se cotizó — y el sugerido se rearma
+    con el margen de entonces, igual que en `calcular_cotizacion_final`.
+
+    Al quitarlo se descuenta exactamente lo que se había registrado, así que
+    `costo_empaquetado_snap` vuelve a 0 y nunca queda negativo. Al agregarlo se
+    usa el precio vigente, el mismo que mueve el precio cobrado.
+
+    Un ítem cotizado antes de la Fase 3 no tiene snapshots (van todos en 0): no
+    hay nada que sincronizar y hay que dejarlos así, o el semáforo empezaría a
+    comparar contra pisos inventados.
+    """
+    if empaquetado == producto.empaquetado:
+        return
+    sin_snapshots = (producto.precio_sugerido <= 0
+                     and producto.piso_absorcion <= 0
+                     and producto.piso_absoluto <= 0)
+    if sin_snapshots:
+        return
+
+    if empaquetado:
+        delta = precio_empaquetado_vigente()
+    else:
+        delta = -producto.costo_empaquetado_snap
+
+    producto.costo_empaquetado_snap += delta
+    producto.piso_absoluto += delta
+    producto.piso_absorcion += delta
+    producto.precio_sugerido = (
+        producto.piso_absorcion * producto.margen_snap).quantize(CENTAVO)
 
 
 @login_required
@@ -811,8 +856,12 @@ def editar_producto_cotizado(request):
                     request,
                     f'Producto editado correctamente. Precio final: ${producto.resultado:.2f}')
 
-            # Después del cálculo: `bruto_producto_editado` compara el
-            # empaquetado nuevo contra el guardado.
+            # El costo del ítem cambia con el empaquetado aunque el precio esté
+            # puesto a mano: los pisos son costos, no dependen de lo que se cobre.
+            sincronizar_costos_por_empaquetado(producto, empaquetado)
+
+            # Al final: tanto `bruto_producto_editado` como la sincronización de
+            # costos comparan el empaquetado nuevo contra el guardado.
             producto.info_adic = info_adicional
             producto.empaquetado = empaquetado
             producto.save()

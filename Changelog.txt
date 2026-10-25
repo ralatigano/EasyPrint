@@ -441,3 +441,13 @@ Versión v3.8.1
 
     -Pedidos
         *Se corrige el error al cambiar el cliente de un pedido cuando el cliente tiene cargado un negocio (ej.: "Apu | Kwik-E-Mart").
+
+****************** 25/10/2026 ******************
+Versión v3.8.2
+
+    -Cotizador: editar un producto ya cotizado
+        *Se corrige el error que dejaba el producto en $0. Si se abría un producto cotizado y se cambiaba solo la "Información adicional", al guardar el precio se iba a cero y no había forma de recuperarlo. Pasaba tanto en la cotización en curso como en un presupuesto ya guardado.
+        *El precio final ahora lo calcula el sistema al guardar. Antes lo mandaba el navegador y, si no se tocaba ninguno de los campos que lo recalculan, llegaba vacío.
+        *El tilde "Precio arb." pasa a llamarse "Precio manual" y ahora aparece marcado al volver a abrir un producto con el precio puesto a mano. Antes se abría destildado y, al guardar, el producto dejaba de figurar como precio manual.
+        *Se saca el campo "Tiempo producción" del modal: hoy el tiempo no cambia el precio que se cobra (igual que al cotizar), así que un campo que no altera nada solo confunde. El tiempo cargado al cotizar se conserva y se sigue usando para la capacidad de producción y el Dashboard. El campo vuelve cuando se pase a cobrar con la estructura de costos.
+        *Al agregar o quitar el empaquetado ahora también se actualizan los costos del producto, así que el semáforo de precio y el precio sugerido quedan bien. Antes solo se movía el precio de venta y el semáforo seguía comparando contra los costos de cuando se cotizó.

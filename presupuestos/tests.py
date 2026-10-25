@@ -269,12 +269,14 @@ class EditarProductoCotizadoTests(TestCase):
         prod = Producto.objects.create(
             nombre="Y", precio=Decimal("100"), factor=Decimal("2"))
         # Ítem coherente: bruto 5.500, 10% de descuento (550) → 4.950.
+        # Y snapshots coherentes entre sí: sugerido = absorción × margen.
         self.pc = ProductoCotizado.objects.create(
             insumo=prod, cantidad=10, resultado=Decimal("4950"),
             desc_plata=Decimal("550"), desc_porcentaje=Decimal("10"),
             t_produccion=Decimal("1"), empaquetado=False,
             precio_sugerido=Decimal("6000"), piso_absoluto=Decimal("2000"),
-            piso_absorcion=Decimal("4000"))
+            piso_absorcion=Decimal("4000"), margen_snap=Decimal("1.5"),
+            costo_empaquetado_snap=Decimal("0"))
 
     def _editar(self, **extra):
         """POST como lo manda el modal: ni el precio ni el tiempo viajan en el
@@ -339,6 +341,49 @@ class EditarProductoCotizadoTests(TestCase):
         self._editar(descuento="0")
         self.assertEqual(self.pc.desc_plata, Decimal("0.00"))
         self.assertEqual(self.pc.resultado, Decimal("5500.00"))
+
+    def test_empaquetado_mueve_los_pisos_y_el_sugerido(self):
+        """El empaquetado entra en el costo variable (está cargado como
+        tercerizado con factor 1), así que al agregarlo no se mueve solo lo
+        cobrado: también los pisos y el precio sugerido."""
+        self._editar(empaquetado="on")
+        self.assertEqual(self.pc.costo_empaquetado_snap, Decimal("300.00"))
+        self.assertEqual(self.pc.piso_absoluto, Decimal("2300.00"))
+        self.assertEqual(self.pc.piso_absorcion, Decimal("4300.00"))
+        # sugerido = absorción × margen del día que se cotizó (4300 × 1,5).
+        self.assertEqual(self.pc.precio_sugerido, Decimal("6450.00"))
+        self.assertEqual(self.pc.precio_bruto, Decimal("5800.00"))
+
+    def test_quitar_el_empaquetado_devuelve_los_pisos(self):
+        self._editar(empaquetado="on")
+        self._editar()
+        self.assertEqual(self.pc.costo_empaquetado_snap, Decimal("0.00"))
+        self.assertEqual(self.pc.piso_absoluto, Decimal("2000.00"))
+        self.assertEqual(self.pc.piso_absorcion, Decimal("4000.00"))
+        self.assertEqual(self.pc.precio_sugerido, Decimal("6000.00"))
+        self.assertEqual(self.pc.precio_bruto, Decimal("5500.00"))
+
+    def test_empaquetado_sincroniza_aun_con_precio_manual(self):
+        """Los pisos son costos: no dependen de cómo se haya fijado el precio."""
+        self._editar(empaquetado="on", precio_manual="on", precio="$ 9.000,00")
+        self.assertEqual(self.pc.resultado, Decimal("9000.00"))
+        self.assertEqual(self.pc.piso_absoluto, Decimal("2300.00"))
+        self.assertEqual(self.pc.piso_absorcion, Decimal("4300.00"))
+
+    def test_sin_snapshots_no_se_inventan_pisos(self):
+        """Un ítem anterior a la Fase 3 no tiene snapshots: tocar el empaquetado
+        no puede fabricárselos, o el semáforo compararía contra pisos falsos."""
+        self.pc.precio_sugerido = Decimal("0")
+        self.pc.piso_absoluto = Decimal("0")
+        self.pc.piso_absorcion = Decimal("0")
+        self.pc.save()
+        self._editar(empaquetado="on")
+        self.assertEqual(self.pc.piso_absoluto, Decimal("0.00"))
+        self.assertEqual(self.pc.piso_absorcion, Decimal("0.00"))
+        self.assertEqual(self.pc.precio_sugerido, Decimal("0.00"))
+        self.assertEqual(self.pc.costo_empaquetado_snap, Decimal("0.00"))
+        # Pero el precio cobrado sí se mueve, como siempre.
+        self.assertEqual(self.pc.precio_bruto, Decimal("5800.00"))
 
     def test_precio_manual_conserva_el_tiempo(self):
         """Un ítem con precio a mano ocupó el taller igual: no puede
