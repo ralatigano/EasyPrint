@@ -22,10 +22,11 @@ from decimal import Decimal, InvalidOperation
 import re
 
 _RANGO_RE = re.compile(r'^(.*?)\s*\[(\d+)[-]([\d]+|INF)\]\s*$')
+CENTAVO = Decimal('0.01')
 import json
 from core.decorators import solo_gerencia
 from core.models import AliasPago, ConfiguracionPresupuesto
-from core.utils import parse_decimal_flexible
+from core.utils import parse_ar, parse_decimal_flexible
 from django.db.models import Max
 from django.db import models
 
@@ -746,6 +747,32 @@ def info_prod_cotizado(request, producto_id):
         raise Http404("Producto no encontrado")
 
 
+def bruto_producto_editado(producto, tiempo, empaquetado):
+    """Precio bruto de un producto cotizado después de editar tiempo/empaquetado.
+
+    Parte del bruto vigente y le suma solo las diferencias (horas de mano de obra
+    y empaquetado), igual que la vista previa del modal. Vive en el servidor a
+    propósito: el precio no puede depender de que el navegador haya calculado y
+    enviado el número.
+
+    `producto` se lee ANTES de mutarlo: `precio_bruto`, `t_produccion` y
+    `empaquetado` son los valores previos a la edición.
+    """
+    precio_hora = Producto.objects.get(nombre="Mano de obra").precio_proveedor
+    precio_empaquetado = Producto.objects.get(
+        nombre="Empaquetado").precio_proveedor
+
+    delta_mano_obra = (tiempo - producto.t_produccion) * precio_hora
+    if empaquetado == producto.empaquetado:
+        delta_empaquetado = Decimal('0')
+    else:
+        delta_empaquetado = (precio_empaquetado if empaquetado
+                             else -precio_empaquetado)
+
+    bruto = producto.precio_bruto + delta_mano_obra + delta_empaquetado
+    return bruto.quantize(CENTAVO)
+
+
 @login_required
 def editar_producto_cotizado(request):
     editando_presup = request.session.get('editando_presup', False)
@@ -757,39 +784,43 @@ def editar_producto_cotizado(request):
 
             # Inputs del formulario
             info_adicional = request.POST.get('info_adicional', '').strip()
-            precio = request.POST.get('precio')
-            descuento = request.POST.get('descuento')
-            tiempo = request.POST.get('tiempo')
-            subtotal = request.POST.get('subtotal')
-            resultado = request.POST.get('resultado')
             empaquetado = request.POST.get('empaquetado') == 'on'
             precio_arb = request.POST.get('precio_arb_checkbox') == 'on'
-            # Conversión segura
-            precio = float(precio) if precio else 0
-            subtotal = float(subtotal) if subtotal else 0
-            resultado = float(resultado) if resultado else 0
-            descuento = float(descuento) if descuento else 0
-            tiempo = float(tiempo) if tiempo else 0
+            # El precio arbitrario llega del input de texto en formato AR (y
+            # puede traer "$"): parse_ar lo tolera. Con float() directo, el "$"
+            # de la precarga hacía fallar toda la edición.
+            precio = parse_ar(request.POST.get('precio'))
+            descuento = parse_decimal_flexible(
+                request.POST.get('descuento')) or Decimal('0')
+            tiempo = parse_decimal_flexible(
+                request.POST.get('tiempo')) or Decimal('0')
 
             # Lógica de edición
-            producto.info_adic = info_adicional
-            producto.empaquetado = empaquetado
-
             if precio_arb:
                 producto.resultado = precio
                 producto.desc_plata = 0
                 producto.desc_porcentaje = 0
-                producto.t_produccion = 0
                 messages.success(
                     request, f'Producto editado con precio arbitrario: ${precio:.2f}')
             else:
+                # El precio se recalcula ACÁ, no se toma del formulario. Antes
+                # llegaba en dos hidden que el JS solo poblaba al tocar tiempo,
+                # descuento o empaquetado: editar únicamente "información
+                # adicional" los mandaba vacíos y el ítem quedaba en $0, con
+                # desc_plata en 0 y sin forma de recuperar el bruto.
+                bruto = bruto_producto_editado(producto, tiempo, empaquetado)
+                producto.desc_plata = (bruto * descuento / 100).quantize(CENTAVO)
+                producto.resultado = bruto - producto.desc_plata
                 producto.desc_porcentaje = descuento
                 producto.t_produccion = tiempo
-                producto.desc_plata = round(subtotal * descuento / 100, 2)
-                producto.resultado = resultado
                 messages.success(
-                    request, f'Producto editado correctamente. Precio final: ${resultado:.2f}')
+                    request,
+                    f'Producto editado correctamente. Precio final: ${producto.resultado:.2f}')
 
+            # Después del cálculo: `bruto_producto_editado` compara el
+            # empaquetado nuevo contra el guardado.
+            producto.info_adic = info_adicional
+            producto.empaquetado = empaquetado
             producto.save()
 
         except Exception as e:

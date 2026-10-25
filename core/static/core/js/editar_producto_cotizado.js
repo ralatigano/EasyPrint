@@ -110,12 +110,12 @@ function inicializarEditor(data) {
     });
 }
 
-// 4. Cálculo reactivo
+// 4. Cálculo reactivo (solo para mostrar: el precio que se guarda lo
+//    recalcula el servidor en editar_producto_cotizado)
 function calcularPrecioFinal() {
   const tiempoNuevo = parseFloat(tiempoInput.value) || 0;
   const descuentoNuevo = parseFloat(descuentoInput.value) || 0;
   const empaquetadoNuevo = empaquetadoCheckbox.checked;
-  const subtotalInput = document.getElementById('subtotal_calculado');
 
   const tiempoOriginal = CotizacionEditor.tiempoOriginal;
   const empaquetadoOriginal = CotizacionEditor.empaquetadoOriginal;
@@ -128,7 +128,6 @@ function calcularPrecioFinal() {
     : 0;
 
   const nuevoBruto = CotizacionEditor.precioBase + deltaManoObra + deltaEmpaquetado;
-  subtotalInput.value = nuevoBruto.toFixed(2);
 
   const precioFinal = nuevoBruto * (1 - descuentoNuevo / 100);
 
@@ -137,18 +136,15 @@ function calcularPrecioFinal() {
 
 function actualizarVista() {
   const nuevoPrecioSpan = document.getElementById('nuevo_precio_calculado');
-  const resultadoInput = document.getElementById('resultado_calculado');
 
   if (CotizacionEditor.esPrecioArbitrario) {
     const precioManual = parseFloat(precioInput.value) || 0;
     nuevoPrecioSpan.textContent = `$ ${formatearNumeroLocal(precioManual)}`;
-    resultadoInput.value = precioManual.toFixed(2);
     nuevoPrecioSpan.setAttribute('title', 'Precio arbitrario definido por el usuario. No se aplican cálculos.');
     return;
   }
 
   const nuevoPrecio = calcularPrecioFinal();
-  resultadoInput.value = nuevoPrecio.toFixed(2);
   nuevoPrecioSpan.textContent = `$ ${formatearNumeroLocal(nuevoPrecio)}`;
   nuevoPrecioSpan.setAttribute('title', generarResumenTooltip());
   //precioInput.value = nuevoPrecio.toFixed(2);
