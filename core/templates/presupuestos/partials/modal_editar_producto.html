@@ -29,16 +29,16 @@
               </div>
             </div>
 
+            {# El tiempo de producción no se edita acá: mientras viva el andamio
+               (horas_legacy) no mueve el precio cobrado, así que un input que no
+               hace nada solo confunde. Se retoma cuando se cobre con la
+               estructura de costos. Ver PLAN_ESTRUCTURA_COSTOS.md. #}
             <div class="row mb-3">
-              <div class="col-md-4">
+              <div class="col-md-6">
                 <label for="descuento_editar" class="form-label">Descuento (%)</label>
                 <input type="text" inputmode="decimal" class="form-control" id="descuento_editar" name="descuento">
               </div>
-              <div class="col-md-4">
-                <label for="tiempo_editar" class="form-label">Tiempo producción (hs)</label>
-                <input type="text" inputmode="decimal" class="form-control" id="tiempo_editar" name="tiempo">
-              </div>
-              <div class="col-md-4 d-flex align-items-end">
+              <div class="col-md-6 d-flex align-items-end">
                 <div class="form-check">
                   <input type="checkbox" class="form-check-input" id="empaquetado_editar" name="empaquetado">
                   <label class="form-check-label" for="empaquetado_editar">Empaquetado</label>

@@ -738,30 +738,28 @@ def info_prod_cotizado(request, producto_id):
         raise Http404("Producto no encontrado")
 
 
-def bruto_producto_editado(producto, tiempo, empaquetado):
-    """Precio bruto de un producto cotizado después de editar tiempo/empaquetado.
+def bruto_producto_editado(producto, empaquetado):
+    """Precio bruto de un producto cotizado después de editar el empaquetado.
 
-    Parte del bruto vigente y le suma solo las diferencias (horas de mano de obra
-    y empaquetado), igual que la vista previa del modal. Vive en el servidor a
-    propósito: el precio no puede depender de que el navegador haya calculado y
-    enviado el número.
+    Parte del bruto vigente y le suma solo la diferencia, igual que la vista
+    previa del modal. Vive en el servidor a propósito: el precio no puede
+    depender de que el navegador haya calculado y enviado el número.
 
-    `producto` se lee ANTES de mutarlo: `precio_bruto`, `t_produccion` y
-    `empaquetado` son los valores previos a la edición.
+    El tiempo NO entra: mientras el método viejo cobre con `horas_legacy`
+    (Fase 2), las horas del ítem no mueven el precio cobrado, así que editarlas
+    acá tampoco debe moverlo. Por eso el modal ya no ofrece ese campo y
+    `t_produccion` queda como se guardó al cotizar.
+
+    `producto` se lee ANTES de mutarlo: `precio_bruto` y `empaquetado` son los
+    valores previos a la edición.
     """
-    precio_hora = Producto.objects.get(nombre="Mano de obra").precio_proveedor
+    if empaquetado == producto.empaquetado:
+        return producto.precio_bruto.quantize(CENTAVO)
+
     precio_empaquetado = Producto.objects.get(
         nombre="Empaquetado").precio_proveedor
-
-    delta_mano_obra = (tiempo - producto.t_produccion) * precio_hora
-    if empaquetado == producto.empaquetado:
-        delta_empaquetado = Decimal('0')
-    else:
-        delta_empaquetado = (precio_empaquetado if empaquetado
-                             else -precio_empaquetado)
-
-    bruto = producto.precio_bruto + delta_mano_obra + delta_empaquetado
-    return bruto.quantize(CENTAVO)
+    delta = precio_empaquetado if empaquetado else -precio_empaquetado
+    return (producto.precio_bruto + delta).quantize(CENTAVO)
 
 
 @login_required
@@ -780,12 +778,10 @@ def editar_producto_cotizado(request):
             # El precio arbitrario llega del input de texto en formato AR (y
             # puede traer "$"): parse_ar lo tolera.
             precio = parse_ar(request.POST.get('precio'))
-            # descuento y tiempo llegan en formato AR (coma decimal): usar el
-            # parser de decimales chicos (el punto NO es separador de miles acá).
+            # El descuento llega en formato AR (coma decimal): usar el parser de
+            # decimales chicos (el punto NO es separador de miles acá).
             descuento = parse_decimal_flexible(
                 request.POST.get('descuento')) or Decimal('0')
-            tiempo = parse_decimal_flexible(
-                request.POST.get('tiempo')) or Decimal('0')
 
             # Lógica de edición
             if precio_manual:
@@ -805,11 +801,10 @@ def editar_producto_cotizado(request):
                 # descuento o empaquetado: editar únicamente "información
                 # adicional" los mandaba vacíos y el ítem quedaba en $0, con
                 # desc_plata en 0 y sin forma de recuperar el bruto.
-                bruto = bruto_producto_editado(producto, tiempo, empaquetado)
+                bruto = bruto_producto_editado(producto, empaquetado)
                 producto.desc_plata = (bruto * descuento / 100).quantize(CENTAVO)
                 producto.resultado = bruto - producto.desc_plata
                 producto.desc_porcentaje = descuento
-                producto.t_produccion = tiempo
                 # Precio calculado por la fórmula (con su descuento): no es manual.
                 producto.precio_manual = False
                 messages.success(

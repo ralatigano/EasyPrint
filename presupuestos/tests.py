@@ -203,7 +203,7 @@ class SemaforoFase4Tests(TestCase):
         self.client.post("/presupuestos/editarProductoCotizado/", {
             "id_producto": self.pc.id, "precio": "5500",
             "precio_manual": "on", "info_adicional": "",
-            "descuento": "0", "tiempo": "1",
+            "descuento": "0",
         })
         self.pc.refresh_from_db()
         self.assertTrue(self.pc.precio_manual)
@@ -214,7 +214,7 @@ class SemaforoFase4Tests(TestCase):
         self.client.post("/presupuestos/editarProductoCotizado/", {
             "id_producto": self.pc.id, "precio": "$ 3.499,00",
             "precio_manual": "on", "info_adicional": "",
-            "descuento": "0", "tiempo": "1",
+            "descuento": "0",
         })
         self.pc.refresh_from_db()
         self.assertEqual(self.pc.resultado, Decimal("3499.00"))
@@ -233,7 +233,7 @@ class SemaforoFase4Tests(TestCase):
         self.client.post("/presupuestos/editarProductoCotizado/", {
             "id_producto": self.pc.id, "info_adicional": "Sin apuro",
             "precio": "5.000,00", "precio_manual": "on",
-            "descuento": "0", "tiempo": "1",
+            "descuento": "0",
         })
         self.pc.refresh_from_db()
         self.assertTrue(self.pc.precio_manual)
@@ -244,7 +244,7 @@ class SemaforoFase4Tests(TestCase):
         self.pc.save()
         self.client.post("/presupuestos/editarProductoCotizado/", {
             "id_producto": self.pc.id, "precio": "5000", "info_adicional": "",
-            "descuento": "10", "tiempo": "1", "subtotal": "5000", "resultado": "4500",
+            "descuento": "10",
         })
         self.pc.refresh_from_db()
         self.assertFalse(self.pc.precio_manual)
@@ -277,13 +277,13 @@ class EditarProductoCotizadoTests(TestCase):
             piso_absorcion=Decimal("4000"))
 
     def _editar(self, **extra):
-        """POST como lo manda el modal: el precio NO viaja en el formulario."""
+        """POST como lo manda el modal: ni el precio ni el tiempo viajan en el
+        formulario."""
         datos = {
             "id_producto": self.pc.id,
             "info_adicional": "",
             "precio": "$ 5.500,00",   # readonly, solo informativo
             "descuento": "10",        # precargado con el valor guardado
-            "tiempo": "1",            # precargado con el valor guardado
         }
         datos.update(extra)
         respuesta = self.client.post(
@@ -307,19 +307,14 @@ class EditarProductoCotizadoTests(TestCase):
         self._editar(subtotal="99999", resultado="99999")
         self.assertEqual(self.pc.resultado, Decimal("4950.00"))
 
-    def test_cambiar_tiempo_suma_mano_de_obra(self):
-        # +2 hs × $500 = +1.000 sobre el bruto (5.500 → 6.500), 10% → 5.850.
+    def test_el_tiempo_no_se_edita_desde_el_modal(self):
+        """El modal ya no ofrece el campo: mientras el método viejo cobre con
+        `horas_legacy`, las horas no mueven el precio, así que tocarlas acá solo
+        confundiría. Si llegara igual (JS viejo en caché), se ignora."""
         self._editar(tiempo="3")
-        self.assertEqual(self.pc.t_produccion, Decimal("3.00"))
-        self.assertEqual(self.pc.precio_bruto, Decimal("6500.00"))
-        self.assertEqual(self.pc.desc_plata, Decimal("650.00"))
-        self.assertEqual(self.pc.resultado, Decimal("5850.00"))
-
-    def test_tiempo_en_formato_ar(self):
-        # 1,5 hs: media hora más → +250 sobre el bruto.
-        self._editar(tiempo="1,5")
-        self.assertEqual(self.pc.t_produccion, Decimal("1.50"))
-        self.assertEqual(self.pc.precio_bruto, Decimal("5750.00"))
+        self.assertEqual(self.pc.t_produccion, Decimal("1.00"))
+        self.assertEqual(self.pc.precio_bruto, Decimal("5500.00"))
+        self.assertEqual(self.pc.resultado, Decimal("4950.00"))
 
     def test_empaquetado_suma_su_precio_una_sola_vez(self):
         self._editar(empaquetado="on")
@@ -348,7 +343,7 @@ class EditarProductoCotizadoTests(TestCase):
     def test_precio_manual_conserva_el_tiempo(self):
         """Un ítem con precio a mano ocupó el taller igual: no puede
         desaparecer de la contabilidad de horas."""
-        self._editar(precio="$ 3.499,00", precio_manual="on", tiempo="2")
+        self._editar(precio="$ 3.499,00", precio_manual="on")
         self.assertEqual(self.pc.resultado, Decimal("3499.00"))
         self.assertEqual(self.pc.t_produccion, Decimal("1.00"))
 

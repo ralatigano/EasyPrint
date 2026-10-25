@@ -3,7 +3,6 @@ const nombreProductoSpan = document.getElementById('nombre_producto_editar');
 const infoAdicionalInput = document.getElementById('info_adicional_editar');
 const precioInput = document.getElementById('precio_editar');
 const descuentoInput = document.getElementById('descuento_editar');
-const tiempoInput = document.getElementById('tiempo_editar');
 const empaquetadoCheckbox = document.getElementById('empaquetado_editar');
 const precioManualCheckbox = document.getElementById('precio_manual');
 const nuevoPrecioSpan = document.getElementById('nuevo_precio_calculado');
@@ -25,7 +24,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Listeners una sola vez: antes se registraban dentro de inicializarEditor,
     // así que cada apertura del modal sumaba otro handler sobre los mismos campos.
-    tiempoInput.addEventListener('input', actualizarVista);
     descuentoInput.addEventListener('input', actualizarVista);
     empaquetadoCheckbox.addEventListener('change', actualizarVista);
     precioManualCheckbox.addEventListener('change', function () {
@@ -55,9 +53,7 @@ document.addEventListener('DOMContentLoaded', function () {
 // Estado global
 const CotizacionEditor = {
   precioBase: 0,
-  precioHora: 0,
   precioEmpaquetado: 0,
-  tiempoOriginal: 0,
   descuentoOriginal: 0,
   empaquetadoOriginal: false,
   esPrecioManual: false,
@@ -92,7 +88,6 @@ function mostrarModal(data) {
   precioInput.value = `$ ${formatearNumeroLocal(data.precio)}`;
   // Precarga en formato AR (coma decimal), consistente con el resto de los campos.
   descuentoInput.value = _arNum(data.descuento || 0);
-  tiempoInput.value = _arNum(data.tiempo_estimado || 0);
   empaquetadoCheckbox.checked = data.empaquetado || false;
   precioManualCheckbox.checked = Boolean(data.precio_manual);
   // Tildar por código no dispara el evento 'change': aplicar el modo a mano,
@@ -108,9 +103,7 @@ function mostrarModal(data) {
 function inicializarEditor(data) {
   CotizacionEditor.precioBase = parseFloat(data.precio) || 0;
   CotizacionEditor.resultadoOriginal = parseFloat(data.resultado) || 0;
-  CotizacionEditor.precioHora = parseFloat(data.precio_hora) || 0;
   CotizacionEditor.precioEmpaquetado = parseFloat(data.precio_empaquetado) || 0;
-  CotizacionEditor.tiempoOriginal = parseFloat(data.tiempo_estimado) || 0;
   CotizacionEditor.empaquetadoOriginal = Boolean(data.empaquetado);
   CotizacionEditor.descuentoOriginal = parseFloat(data.descuento) || 0;
   CotizacionEditor.esPrecioManual = Boolean(data.precio_manual);
@@ -143,25 +136,16 @@ function aplicarModoPrecioManual(activo) {
 // 4. Cálculo reactivo (solo para mostrar: el precio que se guarda lo
 //    recalcula el servidor en editar_producto_cotizado)
 function calcularPrecioFinal() {
-  const tiempoNuevo = parsearDecimalFlexible(tiempoInput.value);
   const descuentoNuevo = parsearDecimalFlexible(descuentoInput.value);
   const empaquetadoNuevo = empaquetadoCheckbox.checked;
 
-  const tiempoOriginal = CotizacionEditor.tiempoOriginal;
-  const empaquetadoOriginal = CotizacionEditor.empaquetadoOriginal;
-
-  const deltaTiempo = tiempoNuevo - tiempoOriginal;
-  const deltaManoObra = deltaTiempo * CotizacionEditor.precioHora;
-
-  const deltaEmpaquetado = (empaquetadoNuevo !== empaquetadoOriginal)
+  const deltaEmpaquetado = (empaquetadoNuevo !== CotizacionEditor.empaquetadoOriginal)
     ? (empaquetadoNuevo ? CotizacionEditor.precioEmpaquetado : -CotizacionEditor.precioEmpaquetado)
     : 0;
 
-  const nuevoBruto = CotizacionEditor.precioBase + deltaManoObra + deltaEmpaquetado;
+  const nuevoBruto = CotizacionEditor.precioBase + deltaEmpaquetado;
 
-  const precioFinal = nuevoBruto * (1 - descuentoNuevo / 100);
-
-  return precioFinal;
+  return nuevoBruto * (1 - descuentoNuevo / 100);
 }
 
 // Parseo robusto de un precio en formato AR, tolerante a "$" y espacios.
@@ -269,23 +253,18 @@ function generarResumenTooltip() {
     return _TOOLTIP_PRECIO_MANUAL;
   }
 
-  const tiempoNuevo = parsearDecimalFlexible(tiempoInput.value);
   const descuentoNuevo = parsearDecimalFlexible(descuentoInput.value);
   const empaquetadoNuevo = empaquetadoCheckbox.checked;
-
-  const deltaTiempo = tiempoNuevo - CotizacionEditor.tiempoOriginal;
-  const deltaManoObra = deltaTiempo * CotizacionEditor.precioHora;
 
   const deltaEmpaquetado = (empaquetadoNuevo !== CotizacionEditor.empaquetadoOriginal)
     ? (empaquetadoNuevo ? CotizacionEditor.precioEmpaquetado : -CotizacionEditor.precioEmpaquetado)
     : 0;
 
   const precioBase = CotizacionEditor.precioBase;
-  const subtotal = precioBase + deltaManoObra + deltaEmpaquetado;
+  const subtotal = precioBase + deltaEmpaquetado;
   const total = subtotal * (1 - descuentoNuevo / 100);
 
   return `  Base: $${formatearNumeroLocal(precioBase)}
-  Mano de obra (${tiempoNuevo} hs): $${formatearNumeroLocal(deltaManoObra)}
   Empaquetado: $${formatearNumeroLocal(deltaEmpaquetado)}
   Descuento: -${formatearNumeroLocal(descuentoNuevo)}%
   Total: $${formatearNumeroLocal(total)}`;
@@ -295,9 +274,7 @@ function resetEditor() {
   // Limpiar estado interno
   CotizacionEditor.precioBase = 0;
   CotizacionEditor.resultadoOriginal = 0;
-  CotizacionEditor.precioHora = 0;
   CotizacionEditor.precioEmpaquetado = 0;
-  CotizacionEditor.tiempoOriginal = 0;
   CotizacionEditor.empaquetadoOriginal = false;
   CotizacionEditor.descuentoOriginal = 0;
   CotizacionEditor.esPrecioManual = false;
@@ -310,7 +287,6 @@ function resetEditor() {
   infoAdicionalInput.value = '';
   precioInput.value = '';
   descuentoInput.value = '';
-  tiempoInput.value = '';
   empaquetadoCheckbox.checked = false;
   precioManualCheckbox.checked = false;
   // El ítem anterior pudo dejar el precio editable.
