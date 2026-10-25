@@ -345,6 +345,13 @@ class EditarProductoCotizadoTests(TestCase):
         self.assertEqual(self.pc.desc_plata, Decimal("0.00"))
         self.assertEqual(self.pc.resultado, Decimal("5500.00"))
 
+    def test_precio_manual_conserva_el_tiempo(self):
+        """Un ítem con precio a mano ocupó el taller igual: no puede
+        desaparecer de la contabilidad de horas."""
+        self._editar(precio="$ 3.499,00", precio_manual="on", tiempo="2")
+        self.assertEqual(self.pc.resultado, Decimal("3499.00"))
+        self.assertEqual(self.pc.t_produccion, Decimal("1.00"))
+
 
 class PartirDisenoTests(TestCase):
     """Partir el diseño en franjas (tipos B/C): un lado queda entero y cada
