@@ -13,6 +13,12 @@
 .endpoints code { white-space: nowrap; }
 .permiso-si { color: var(--bs-success); }
 .permiso-no { color: var(--bs-secondary-color); }
+.instruccion-caja { border: 1px solid var(--bs-border-color); border-left: 5px solid #B1DE43;
+                    border-radius: 10px; padding: 12px 14px; margin-bottom: 1.25rem; }
+.instruccion-texto { font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+                     font-size: .78rem; white-space: pre-wrap; max-height: 340px;
+                     overflow-y: auto; background: var(--bs-tertiary-bg);
+                     padding: 12px; border-radius: 6px; margin: 0; }
 </style>
 {% endblock %}
 {% block title %}Acceso del agente{% endblock %}
@@ -156,6 +162,38 @@
     </table>
 </div>
 
+<!-- ------------------------------------------------ Instrucción para el agente -->
+<h5 class="mt-4">Instrucción para el agente</h5>
+<p class="small text-muted mb-2">
+    Pegale este texto al agente en su prompt. Define el formato de la descripción,
+    que es lo que después permite cruzar nuestra tabla contra el resumen de cuenta
+    del proveedor. El agente también puede releerlo solo en
+    <code>GET /api/tercerizados/esquema</code>.
+</p>
+
+<div class="instruccion-caja">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <span class="small text-muted">
+            Formato: <code>{{ formato_descripcion }}</code>
+        </span>
+        <button type="button" class="btn btn-dark btn-sm btn-fuente" id="btnCopiarInstruccion">
+            <i class="fa-solid fa-copy"></i> Copiar instrucción
+        </button>
+    </div>
+    <pre id="instruccionAgente" class="instruccion-texto">{{ instruccion_agente }}</pre>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-6">
+        <p class="small mb-1"><strong>Ejemplo: así llega el correo</strong></p>
+        <pre class="token-valor">{{ ejemplo_correo }}</pre>
+    </div>
+    <div class="col-md-6">
+        <p class="small mb-1"><strong>Ejemplo: así lo registra</strong></p>
+        <pre class="token-valor">{{ ejemplo_alta }}</pre>
+    </div>
+</div>
+
 <!-- ------------------------------------------------ Cómo usarla -->
 <h5 class="mt-4">Cómo la usa el agente</h5>
 <div class="endpoints">
@@ -170,7 +208,7 @@
         </thead>
         <tbody>
             <tr><td><code>GET</code></td><td><code>/api/tercerizados/ping</code></td><td>Verificar el token y ver qué permisos tiene.</td></tr>
-            <tr><td><code>GET</code></td><td><code>/api/tercerizados/esquema</code></td><td>Contrato completo de la API.</td></tr>
+            <tr><td><code>GET</code></td><td><code>/api/tercerizados/esquema</code></td><td>Contrato completo de la API, incluida esta instrucción.</td></tr>
             <tr><td><code>GET</code></td><td><code>/api/tercerizados/proveedores</code></td><td>Proveedores cargados (para vincular por nombre o id).</td></tr>
             <tr><td><code>GET</code></td><td><code>/api/tercerizados/pedidos</code></td><td>Listar / buscar pedidos tercerizados.</td></tr>
             <tr><td><code>POST</code></td><td><code>/api/tercerizados/pedidos</code></td><td>Registrar un pedido al llegar la confirmación por correo.</td></tr>
@@ -185,14 +223,61 @@
   -H "Authorization: Bearer EL-TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"proveedor": "Nombre del proveedor",
-       "descripcion": "200 lonas 3x2 con ojalillos",
+       "descripcion": "[FA-A 00005-00078221 · S42352] - 200 lonas 3x2",
        "monto": 145000.50,
        "fecha": "2026-11-08",
        "forma_pago": "cuenta_corriente",
-       "referencia_externa": "&lt;CAF...@mail.gmail.com&gt;"}'</pre>
+       "referencia_externa": "&lt;CAF...@mail.gmail.com&gt;",
+       "pedidos_internos": [412, 419]}'</pre>
     <p class="small text-muted mb-0">
         Los pedidos que entran por API quedan marcados con <i class="fa-solid fa-robot"></i> y
         <em>sin revisar</em> hasta que gerencia los valide desde la pantalla principal.
     </p>
 </div>
+{% endblock %}
+{% block scripts %}
+<script>
+  // Copia la instrucción completa al portapapeles para pegarla en el prompt.
+  document.addEventListener("DOMContentLoaded", () => {
+    const boton = document.getElementById("btnCopiarInstruccion");
+    if (!boton) return;
+    boton.addEventListener("click", async () => {
+      const bloque = document.getElementById("instruccionAgente");
+      const original = boton.innerHTML;
+      const avisar = (html, ms) => {
+        boton.innerHTML = html;
+        setTimeout(() => { boton.innerHTML = original; }, ms);
+      };
+
+      // navigator.clipboard solo existe en contexto seguro (https o
+      // localhost). Si el cotizador se sirve por http plano se usa el camino
+      // viejo, y si tampoco se puede, al menos queda el texto seleccionado.
+      try {
+        await navigator.clipboard.writeText(bloque.innerText);
+        avisar('<i class="fa-solid fa-check"></i> Copiada', 2500);
+        return;
+      } catch (error) {
+        /* sigue abajo */
+      }
+
+      const rango = document.createRange();
+      rango.selectNodeContents(bloque);
+      const seleccion = window.getSelection();
+      seleccion.removeAllRanges();
+      seleccion.addRange(rango);
+      let copiado = false;
+      try {
+        copiado = document.execCommand("copy");
+      } catch (error) {
+        copiado = false;
+      }
+      if (copiado) {
+        seleccion.removeAllRanges();
+        avisar('<i class="fa-solid fa-check"></i> Copiada', 2500);
+      } else {
+        avisar('<i class="fa-solid fa-i-cursor"></i> Seleccionada: Ctrl+C', 4000);
+      }
+    });
+  });
+</script>
 {% endblock %}

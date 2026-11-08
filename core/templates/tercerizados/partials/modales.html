@@ -59,10 +59,13 @@
               </select>
             </div>
             <div class="col-md-4">
-              <label for="pedidoInternoPedido" class="form-label">Pedido del cotizador</label>
-              <input type="number" class="form-control" id="pedidoInternoPedido"
-                     name="pedido_interno" placeholder="Opcional">
-              <div class="form-text">Número de pedido nuestro al que corresponde el gasto.</div>
+              <label for="pedidosInternosPedido" class="form-label">Pedidos del cotizador</label>
+              <input type="text" class="form-control" id="pedidosInternosPedido"
+                     name="pedidos_internos" placeholder="Ej: 412, 419">
+              <div class="form-text">
+                Opcional. Pueden ser varios separados por coma: un mismo encargue
+                al proveedor puede cubrir trabajos de más de un pedido nuestro.
+              </div>
             </div>
             <div class="col-md-8">
               <label for="notaPedido" class="form-label">Nota</label>

@@ -54,10 +54,18 @@ class PedidoTercerizado(models.Model):
     proveedor = models.ForeignKey(
         'productos.Proveedor', on_delete=models.PROTECT,
         related_name='pedidos_tercerizados')
+    # Por convención arranca con los identificadores del proveedor entre
+    # corchetes, para poder conciliar contra su resumen de cuenta:
+    # "[FA-A 00005-00078221 · S42352] - 200 lonas 3x2". Ver
+    # tercerizados/instrucciones.py, que es lo que se le pega al agente.
     descripcion = models.CharField(max_length=200)
-    # Pedido interno al que corresponde el gasto, si aplica.
-    pedido = models.ForeignKey(
-        'pedidos.Pedido', on_delete=models.SET_NULL, null=True, blank=True,
+    # Pedidos nuestros a los que corresponde el gasto, si aplica. Es M2M y no
+    # FK porque un encargue al proveedor puede cubrir VARIOS pedidos nuestros
+    # (la plancha de stickers que junta trabajos de dos clientes para
+    # aprovechar el material), y a la vez un pedido nuestro puede repartirse
+    # en varios proveedores o en varios encargues al mismo proveedor.
+    pedidos = models.ManyToManyField(
+        'pedidos.Pedido', through='TercerizadoPedido', blank=True,
         related_name='tercerizados')
     monto = models.DecimalField(max_digits=12, decimal_places=2, default=CERO)
     forma_pago = models.CharField(
@@ -141,6 +149,36 @@ class PedidoTercerizado(models.Model):
             'pagado': 'Pagado',
             'parcial': 'Pago parcial',
         }[self.estado_pago]
+
+
+class TercerizadoPedido(models.Model):
+    """Vínculo entre un pedido tercerizado y un pedido de EasyPrint.
+
+    Solo relaciona: no reparte el costo. Si hace falta saber cuánto de un
+    encargue compartido le toca a cada pedido nuestro, habrá que agregarlo
+    acá como un monto opcional.
+    """
+
+    tercerizado = models.ForeignKey(
+        PedidoTercerizado, on_delete=models.CASCADE, related_name='vinculos')
+    # Si se borra el pedido nuestro desaparece el vínculo, pero el registro
+    # del gasto con el proveedor queda: la deuda existe igual.
+    pedido = models.ForeignKey(
+        'pedidos.Pedido', on_delete=models.CASCADE,
+        related_name='vinculos_tercerizados')
+
+    class Meta:
+        ordering = ('pedido_id',)
+        verbose_name = 'Vínculo con pedido de EasyPrint'
+        verbose_name_plural = 'Vínculos con pedidos de EasyPrint'
+        constraints = [
+            models.UniqueConstraint(
+                fields=('tercerizado', 'pedido'),
+                name='uniq_tercerizado_pedido'),
+        ]
+
+    def __str__(self):
+        return f'Tercerizado {self.tercerizado_id} <-> pedido {self.pedido_id}'
 
 
 class PagoTercerizado(models.Model):

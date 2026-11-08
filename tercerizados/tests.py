@@ -218,6 +218,85 @@ class SaldosEImputacionTests(BaseTercerizados):
         self.assertTrue(PedidoTercerizado.objects.filter(pk=pedido.pk).exists())
 
 
+class VinculoConPedidosTests(BaseTercerizados):
+    """Los tres casos que tiene que soportar la relación con pedidos de Easy."""
+
+    def setUp(self):
+        super().setUp()
+        from pedidos.models import Pedido
+        self.Pedido = Pedido
+        self.p412 = Pedido.objects.create(
+            numero=412, descripcion='Stickers Cliente Norte', precio=90000,
+            senia=0, saldo=90000)
+        self.p419 = Pedido.objects.create(
+            numero=419, descripcion='Stickers Cliente Sur', precio=70000,
+            senia=0, saldo=70000)
+
+    def test_caso_1_un_pedido_de_easy_en_varios_proveedores(self):
+        a = self.crear(40000, pedidos=[self.p412])
+        b = self.crear(25000, proveedor=self.otro, pedidos=[self.p412])
+        self.assertEqual(
+            set(self.p412.tercerizados.values_list('id', flat=True)),
+            {a.pk, b.pk})
+
+    def test_caso_2_un_pedido_de_easy_en_varios_encargues_al_mismo_proveedor(self):
+        a = self.crear(40000, pedidos=[self.p412])
+        b = self.crear(15000, pedidos=[self.p412])
+        self.assertEqual(self.p412.tercerizados.count(), 2)
+        self.assertEqual(
+            set(self.p412.tercerizados.values_list('id', flat=True)),
+            {a.pk, b.pk})
+
+    def test_caso_3_un_encargue_cubre_varios_pedidos_de_easy(self):
+        """La plancha de stickers con trabajos de dos clientes: es lo que la
+        FK simple no podía representar."""
+        plancha = self.crear(
+            86000, descripcion='Plancha de stickers A3 compartida',
+            pedidos=[self.p412, self.p419])
+        self.assertEqual(
+            sorted(plancha.pedidos.values_list('numero', flat=True)),
+            [412, 419])
+        self.assertIn(plancha, self.p412.tercerizados.all())
+        self.assertIn(plancha, self.p419.tercerizados.all())
+
+    def test_editar_reemplaza_los_vinculos(self):
+        plancha = self.crear(86000, pedidos=[self.p412, self.p419])
+        services.editar_pedido(plancha, pedidos=[self.p419])
+        self.assertEqual(
+            sorted(plancha.pedidos.values_list('numero', flat=True)), [419])
+
+    def test_editar_sin_mencionar_pedidos_no_los_toca(self):
+        plancha = self.crear(86000, pedidos=[self.p412, self.p419])
+        services.editar_pedido(plancha, monto=90000)
+        self.assertEqual(plancha.pedidos.count(), 2)
+
+    def test_desvincular_todo(self):
+        plancha = self.crear(86000, pedidos=[self.p412])
+        services.editar_pedido(plancha, pedidos=[])
+        self.assertEqual(plancha.pedidos.count(), 0)
+
+    def test_no_se_duplica_el_vinculo(self):
+        plancha = self.crear(86000, pedidos=[self.p412])
+        services.editar_pedido(plancha, pedidos=[self.p412, self.p419])
+        self.assertEqual(plancha.vinculos.count(), 2)
+
+    def test_borrar_el_pedido_de_easy_no_borra_el_gasto(self):
+        """Si se borra el pedido nuestro, la deuda con el proveedor sigue."""
+        plancha = self.crear(86000, pedidos=[self.p412, self.p419])
+        self.p412.delete()
+        plancha.refresh_from_db()
+        self.assertEqual(
+            sorted(plancha.pedidos.values_list('numero', flat=True)), [419])
+        self.assertEqual(plancha.saldo, D('86000.00'))
+
+    def test_la_auditoria_registra_los_pedidos_vinculados(self):
+        plancha = self.crear(86000, pedidos=[self.p412, self.p419])
+        registro = RegistroAuditoria.objects.filter(
+            accion='crear', objeto='pedido', objeto_id=plancha.pk).first()
+        self.assertEqual(registro.detalle['despues']['pedidos_internos'],
+                         [412, 419])
+
+
 class AuditoriaTests(BaseTercerizados):
     def test_cada_escritura_deja_rastro(self):
         pedido = self.crear(50000)
@@ -332,6 +411,56 @@ class VistasUITests(BaseTercerizados):
         b.refresh_from_db()
         self.assertEqual(a.saldo, CERO)
         self.assertEqual(b.saldo, D('70000.00'))
+
+    def test_alta_con_varios_pedidos_separados_por_coma(self):
+        from pedidos.models import Pedido
+        Pedido.objects.create(numero=412, descripcion='Norte', precio=1,
+                              senia=0, saldo=1)
+        Pedido.objects.create(numero=419, descripcion='Sur', precio=1,
+                              senia=0, saldo=1)
+        self.client.post(reverse('guardar_tercerizado'), {
+            'pedidoId': '0', 'fecha': '2026-11-08',
+            'proveedor': self.proveedor.pk,
+            'descripcion': '[FA-A 00005-00078221 · S42352] - Plancha A3',
+            'monto': '86.000,00', 'forma_pago': 'cuenta_corriente',
+            'estado': 'pendiente', 'pedidos_internos': '412, 419',
+        })
+        pedido = PedidoTercerizado.objects.get()
+        self.assertEqual(
+            sorted(pedido.pedidos.values_list('numero', flat=True)),
+            [412, 419])
+
+    def test_avisa_si_un_pedido_de_easy_no_existe(self):
+        respuesta = self.client.post(reverse('guardar_tercerizado'), {
+            'pedidoId': '0', 'fecha': '2026-11-08',
+            'proveedor': self.proveedor.pk, 'descripcion': 'Algo',
+            'monto': '1.000,00', 'pedidos_internos': '9999',
+        }, follow=True)
+        # Se guarda igual, pero avisando.
+        self.assertTrue(PedidoTercerizado.objects.exists())
+        self.assertContains(respuesta, '9999')
+
+    def test_buscar_por_identificador_del_proveedor(self):
+        """La convención pone el identificador en la descripción, así que el
+        buscador de la tabla lo encuentra."""
+        self.crear(1000,
+                   descripcion='[FA-A 00005-00078221 · S42352] - Lonas')
+        self.crear(2000, descripcion='[FA-A 00005-00099999] - Otra cosa')
+        respuesta = self.client.get(
+            reverse('control_tercerizados'), {'buscar': 'S42352'})
+        self.assertContains(respuesta, 'S42352')
+        self.assertNotContains(respuesta, '00099999')
+
+    def test_buscar_por_numero_de_pedido_de_easy(self):
+        from pedidos.models import Pedido
+        p = Pedido.objects.create(numero=412, descripcion='Norte', precio=1,
+                                  senia=0, saldo=1)
+        self.crear(1000, descripcion='Plancha compartida', pedidos=[p])
+        self.crear(2000, descripcion='Trabajo suelto')
+        respuesta = self.client.get(
+            reverse('control_tercerizados'), {'buscar': '412'})
+        self.assertContains(respuesta, 'Plancha compartida')
+        self.assertNotContains(respuesta, 'Trabajo suelto')
 
     def test_pendientes_proveedor_devuelve_los_que_deben(self):
         con_saldo = self.crear(45000)
@@ -636,6 +765,87 @@ class ApiAgenteTests(BaseTercerizados):
         self.assertEqual(registro.actor, 'agente-correo')
         self.assertEqual(registro.token, self.token_obj)
 
+    def test_alta_con_varios_pedidos_de_easy(self):
+        from pedidos.models import Pedido
+        Pedido.objects.create(numero=412, descripcion='Norte', precio=1,
+                              senia=0, saldo=1)
+        Pedido.objects.create(numero=419, descripcion='Sur', precio=1,
+                              senia=0, saldo=1)
+        respuesta = self.post_json('/api/tercerizados/pedidos', {
+            'proveedor': self.proveedor.pk,
+            'descripcion': '[FA-A 00005-00078221 · S42352] - Plancha A3',
+            'monto': 86000,
+            'pedidos_internos': [412, 419],
+        })
+        self.assertEqual(respuesta.status_code, 201)
+        self.assertEqual(respuesta.json()['datos']['pedidos_internos'],
+                         [412, 419])
+
+    def test_acepta_pedido_interno_suelto_por_comodidad(self):
+        from pedidos.models import Pedido
+        Pedido.objects.create(numero=412, descripcion='Norte', precio=1,
+                              senia=0, saldo=1)
+        respuesta = self.post_json('/api/tercerizados/pedidos', {
+            'proveedor': self.proveedor.pk, 'descripcion': 'x', 'monto': 10,
+            'pedido_interno': 412,
+        })
+        self.assertEqual(respuesta.status_code, 201)
+        self.assertEqual(respuesta.json()['datos']['pedidos_internos'], [412])
+
+    def test_pedido_de_easy_inexistente_da_error_claro(self):
+        respuesta = self.post_json('/api/tercerizados/pedidos', {
+            'proveedor': self.proveedor.pk, 'descripcion': 'x', 'monto': 10,
+            'pedidos_internos': [9999],
+        })
+        self.assertEqual(respuesta.status_code, 400)
+        self.assertIn('#9999', respuesta.json()['error'])
+
+    def test_editar_los_pedidos_vinculados(self):
+        from pedidos.models import Pedido
+        Pedido.objects.create(numero=412, descripcion='Norte', precio=1,
+                              senia=0, saldo=1)
+        pedido = self.crear(1000)
+        respuesta = self.post_json(
+            f'/api/tercerizados/pedidos/{pedido.pk}',
+            {'pedidos_internos': [412]}, metodo='patch')
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertEqual(respuesta.json()['datos']['pedidos_internos'], [412])
+
+    def test_descripcion_con_el_separador_de_la_convencion(self):
+        descripcion = '[FA-A 00005-00078221 · S42352] - 200 lonas 3x2'
+        respuesta = self.post_json('/api/tercerizados/pedidos', {
+            'proveedor': self.proveedor.pk, 'descripcion': descripcion,
+            'monto': 4946.48,
+        })
+        self.assertEqual(respuesta.status_code, 201)
+        self.assertEqual(PedidoTercerizado.objects.get().descripcion,
+                         descripcion)
+
+    def test_cuerpo_en_latin1_no_se_pierde(self):
+        """El separador "·" no es ASCII: si el cliente manda latin-1, se
+        acepta igual en vez de perder la confirmación del correo."""
+        cuerpo = json.dumps({
+            'proveedor': self.proveedor.pk,
+            'descripcion': '[FA-A 1 · S2] - Lonas ñandú',
+            'monto': 1000,
+        }, ensure_ascii=False).encode('latin-1')
+        respuesta = self.client.post(
+            '/api/tercerizados/pedidos', data=cuerpo,
+            content_type='application/json', **self.cabeceras())
+        self.assertEqual(respuesta.status_code, 201)
+        self.assertIn('ñandú', PedidoTercerizado.objects.get().descripcion)
+
+    def test_el_esquema_trae_la_convencion_de_la_descripcion(self):
+        """El agente puede releer el formato sin depender del copy-paste."""
+        respuesta = self.client.get(
+            '/api/tercerizados/esquema', **self.cabeceras())
+        datos = respuesta.json()['datos']
+        self.assertIn('convencion_descripcion', datos)
+        self.assertIn('FA-A 00005-00078221',
+                      datos['convencion_descripcion']['ejemplo'])
+        self.assertIn('instruccion_completa', datos)
+        self.assertIn('referencia_externa', datos['instruccion_completa'])
+
     def test_el_esquema_se_describe_solo(self):
         respuesta = self.client.get(
             '/api/tercerizados/esquema', **self.cabeceras())
@@ -667,6 +877,14 @@ class TokensUITests(BaseTercerizados):
         token = TokenAgente.objects.get()
         self.assertEqual(len(token.token_hash), 64)
         self.assertEqual(len(token.prefijo), 8)
+
+    def test_la_pantalla_muestra_la_instruccion_para_pegarle_al_agente(self):
+        respuesta = self.client.get(reverse('tercerizados_tokens'))
+        self.assertContains(respuesta, 'Instrucción para el agente')
+        self.assertContains(respuesta, 'Copiar instrucción')
+        # El formato y el ejemplo concreto tienen que estar a la vista.
+        self.assertContains(respuesta, 'FA-A 00005-00078221')
+        self.assertContains(respuesta, 'S42352')
 
     def test_desactivar_token(self):
         token, _ = TokenAgente.generar('ag')

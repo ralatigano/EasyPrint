@@ -40,6 +40,10 @@ from core.utils import parse_ar
 from productos.models import Proveedor
 
 from . import services
+from .instrucciones import (
+    EJEMPLO_ALTA, EJEMPLO_CORREO, EJEMPLO_DESCRIPCION, FORMATO_DESCRIPCION,
+    INSTRUCCION_AGENTE,
+)
 from .models import PagoTercerizado, PedidoTercerizado, TokenAgente
 
 CERO = Decimal('0.00')
@@ -122,9 +126,21 @@ def api(accion, metodos):
 def _cuerpo(request):
     if not request.body:
         return {}
+    # El separador de la convención ("·") no es ASCII, así que un cliente mal
+    # configurado puede mandar el cuerpo en latin-1. Se intenta UTF-8 (lo
+    # correcto) y, si no, se reintenta en latin-1 antes de rechazarlo: es
+    # preferible guardar el registro a perder la confirmación del correo.
     try:
-        datos = json.loads(request.body)
-    except (ValueError, UnicodeDecodeError):
+        texto = request.body.decode('utf-8')
+    except UnicodeDecodeError:
+        try:
+            texto = request.body.decode('latin-1')
+        except UnicodeDecodeError:
+            raise services.ErrorTercerizado(
+                'No pude leer el cuerpo: mandalo codificado en UTF-8.')
+    try:
+        datos = json.loads(texto)
+    except ValueError:
         raise services.ErrorTercerizado('El cuerpo tiene que ser JSON válido.')
     if not isinstance(datos, dict):
         raise services.ErrorTercerizado('El cuerpo tiene que ser un objeto JSON.')
@@ -202,17 +218,36 @@ def _resolver_proveedor(datos, obligatorio=True):
     return proveedor
 
 
-def _resolver_pedido_interno(datos):
-    """`pedido_interno`: número de pedido del cotizador, opcional."""
-    bruto = datos.get('pedido_interno')
-    if bruto in (None, ''):
-        return None
+def _resolver_pedidos_internos(datos):
+    """`pedidos_internos`: lista de números de pedido del cotizador, opcional.
+
+    Es una lista y no un número porque un mismo encargue al proveedor puede
+    cubrir trabajos de varios pedidos nuestros. Se acepta también
+    `pedido_interno` (uno solo) por comodidad del cliente.
+    """
     from pedidos.models import Pedido
-    interno = Pedido.objects.filter(numero=bruto).first()
-    if interno is None:
+
+    if 'pedidos_internos' in datos:
+        bruto = datos.get('pedidos_internos')
+    elif 'pedido_interno' in datos:
+        bruto = datos.get('pedido_interno')
+    else:
+        return None
+
+    if bruto in (None, '', []):
+        return []
+    if not isinstance(bruto, (list, tuple)):
+        bruto = [bruto]
+
+    encontrados = list(Pedido.objects.filter(numero__in=bruto))
+    existentes = {p.numero for p in encontrados}
+    faltan = [n for n in bruto if n not in existentes]
+    if faltan:
         raise services.ErrorTercerizado(
-            f'No existe el pedido interno #{bruto}. Omitilo si no aplica.')
-    return interno
+            'No existen estos pedidos de EasyPrint: '
+            + ', '.join(f'#{n}' for n in faltan)
+            + '. Omitilos si no sabés a qué pedido corresponde.')
+    return encontrados
 
 
 # ---------------------------------------------------------------- Serializar
@@ -231,7 +266,7 @@ def _json_pedido(p):
         'proveedor_id': p.proveedor_id,
         'proveedor': p.proveedor.nombre if p.proveedor_id else None,
         'descripcion': p.descripcion,
-        'pedido_interno': p.pedido_id,
+        'pedidos_internos': sorted(p.pedidos.values_list('numero', flat=True)),
         'monto': _dinero(p.monto),
         'monto_pagado': _dinero(p.monto_pagado),
         'saldo': _dinero(p.saldo),
@@ -297,6 +332,16 @@ def esquema(request):
             'Mandá "referencia_externa" con el Message-ID del correo en el '
             'alta. Si ya existe, la respuesta trae duplicado: true y el '
             'registro existente, sin crear uno nuevo.'),
+        'convencion_descripcion': {
+            'formato': FORMATO_DESCRIPCION,
+            'ejemplo': EJEMPLO_DESCRIPCION,
+            'ejemplo_correo': EJEMPLO_CORREO,
+            'por_que': (
+                'El identificador del proveedor al principio de la '
+                'descripción es lo que permite conciliar la tabla contra su '
+                'resumen de cuenta. Copialo tal cual del correo.'),
+        },
+        'instruccion_completa': INSTRUCCION_AGENTE,
         'endpoints': [
             {'metodo': 'GET', 'ruta': '/api/tercerizados/ping',
              'descripcion': 'Verifica el token y lista sus permisos.'},
@@ -308,14 +353,19 @@ def esquema(request):
                             'estado_pago', 'buscar', 'limit', 'referencia_externa']},
             {'metodo': 'POST', 'ruta': '/api/tercerizados/pedidos',
              'descripcion': 'Registra un pedido tercerizado.',
+             'ejemplo': EJEMPLO_ALTA,
              'cuerpo': {
                  'proveedor': 'id o nombre exacto (obligatorio)',
-                 'descripcion': 'qué se encargó (obligatorio)',
+                 'descripcion': (
+                     'qué se encargó (obligatorio), con el formato '
+                     + FORMATO_DESCRIPCION),
                  'monto': 'obligatorio',
                  'fecha': 'opcional, por defecto hoy',
                  'forma_pago': [v for v, _ in PedidoTercerizado.FormaPago.choices],
                  'estado': [v for v, _ in PedidoTercerizado.Estado.choices],
-                 'pedido_interno': 'opcional, número de pedido del cotizador',
+                 'pedidos_internos': (
+                     'opcional, lista de números de pedido del cotizador: un '
+                     'encargue puede cubrir varios pedidos nuestros'),
                  'nota': 'opcional',
                  'referencia_externa': 'opcional pero recomendado (Message-ID)',
              }},
@@ -429,7 +479,7 @@ def crear_pedido(request):
         descripcion=datos.get('descripcion', ''),
         monto=_monto(datos.get('monto'), 'monto'),
         fecha=_fecha(datos.get('fecha')),
-        pedido=_resolver_pedido_interno(datos),
+        pedidos=_resolver_pedidos_internos(datos),
         forma_pago=_opcion(datos.get('forma_pago'),
                            PedidoTercerizado.FormaPago.choices, 'forma_pago'),
         estado=_opcion(datos.get('estado'),
@@ -460,8 +510,8 @@ def editar_pedido(request, pedido_id):
         cambios['proveedor'] = _resolver_proveedor(datos)
     if 'descripcion' in datos:
         cambios['descripcion'] = datos['descripcion']
-    if 'pedido_interno' in datos:
-        cambios['pedido'] = _resolver_pedido_interno(datos)
+    if 'pedidos_internos' in datos or 'pedido_interno' in datos:
+        cambios['pedidos'] = _resolver_pedidos_internos(datos)
     if 'monto' in datos:
         cambios['monto'] = _monto(datos['monto'], 'monto')
     if 'forma_pago' in datos:
@@ -475,14 +525,14 @@ def editar_pedido(request, pedido_id):
 
     desconocidos = set(datos) - {
         'fecha', 'proveedor', 'proveedor_nombre', 'descripcion',
-        'pedido_interno', 'monto', 'forma_pago', 'estado', 'nota',
-        'referencia_externa'}
+        'pedido_interno', 'pedidos_internos', 'monto', 'forma_pago', 'estado',
+        'nota', 'referencia_externa'}
     if desconocidos:
         return _error(
             'Campos no editables por API: ' + ', '.join(sorted(desconocidos)),
             'campo_no_editable', 400,
             campos_editables=sorted({
-                'fecha', 'proveedor', 'descripcion', 'pedido_interno',
+                'fecha', 'proveedor', 'descripcion', 'pedidos_internos',
                 'monto', 'forma_pago', 'estado', 'nota'}))
     if not cambios:
         return _error('No mandaste ningún campo para cambiar.', 'sin_cambios')

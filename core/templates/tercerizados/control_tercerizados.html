@@ -25,6 +25,7 @@
 .imputacion-fila .descripcion small { color: var(--bs-secondary-color); }
 #imputacionesResumen { font-variant-numeric: tabular-nums; }
 .tabla-pagos .imputado-en { font-size: .78rem; color: var(--bs-secondary-color); }
+.badge-pedido { font-weight: 500; }
 </style>
 {% endblock %}
 <!--------------------------------------------------------------------------- Block title --------------------------------------------------------------------------->
@@ -191,7 +192,7 @@
                 <th class="centered">Fecha</th>
                 <th class="centered">Proveedor</th>
                 <th class="centered">Trabajo</th>
-                <th class="centered">Pedido</th>
+                <th class="centered">Pedidos</th>
                 <th class="centered">Monto</th>
                 <th class="centered">Pagado</th>
                 <th class="centered">Saldo</th>
@@ -216,9 +217,10 @@
                     {% if p.nota %}<br><small class="text-muted">{{ p.nota|truncatechars:80 }}</small>{% endif %}
                 </td>
                 <td class="text-center">
-                    {% if p.pedido_id %}
-                        <a href="/pedidos/v2" title="{{ p.pedido.descripcion }}">#{{ p.pedido_id|unlocalize }}</a>
-                    {% else %}—{% endif %}
+                    {% for interno in p.pedidos.all %}
+                        <a href="/pedidos/v2" class="badge text-bg-light text-decoration-none"
+                           title="{{ interno.cliente.nombre|default:'Sin cliente' }} · {{ interno.descripcion }}">#{{ interno.numero|unlocalize }}</a>
+                    {% empty %}—{% endfor %}
                 </td>
                 <td class="monto">$ {{ p.monto|floatformat:"2g" }}</td>
                 <td class="monto {% if not p.monto_pagado %}cero{% endif %}">$ {{ p.monto_pagado|floatformat:"2g" }}</td>

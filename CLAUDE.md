@@ -68,9 +68,15 @@ proveedor externo y lo que se le pagó, para que la deuda de cuenta corriente
 no se descubra recién cuando el proveedor quiere cobrar.
 
 - `PedidoTercerizado`: un encargue (proveedor, descripción, monto, forma de
-  pago, estado del trabajo, `pedido` interno opcional). `monto_pagado` es
-  **denormalizado**: lo recalcula `services.recalcular_tercerizado()` desde las
-  imputaciones; no escribirlo a mano. `saldo` y `estado_pago` son derivados.
+  pago, estado del trabajo). `monto_pagado` es **denormalizado**: lo recalcula
+  `services.recalcular_tercerizado()` desde las imputaciones; no escribirlo a
+  mano. `saldo` y `estado_pago` son derivados.
+- Vínculo con pedidos nuestros: **M2M** (`TercerizadoPedido`), no FK. Un pedido
+  de EasyPrint puede repartirse en varios proveedores o en varios encargues al
+  mismo (eso lo resolvía la FK), pero además **un encargue puede cubrir varios
+  pedidos nuestros**: la plancha de stickers que junta trabajos de dos clientes
+  para aprovechar material. Se escribe con `services.vincular_pedidos()`, que
+  reemplaza la lista completa.
 - `PagoTercerizado` + `ImputacionPago`: un pago se reparte entre varios
   pedidos del mismo proveedor. Lo no imputado queda **a cuenta**. El reparto
   automático va del pedido más viejo al más nuevo.
@@ -84,6 +90,21 @@ no se descubra recién cuando el proveedor quiere cobrar.
 - Al calcular deuda, sumar `monto` de los pagos y `imputaciones__monto` en la
   **misma** consulta infla el total (el JOIN repite el pago una vez por
   imputación): `resumen_deuda` los pide por separado a propósito.
+
+### Convención de la descripción (`tercerizados/instrucciones.py`)
+
+La descripción arranca con los identificadores que usa el proveedor en su
+correo, para poder conciliar contra su resumen de cuenta:
+
+    [<factura> · <pedido del proveedor>] - <qué se encargó>
+    [FA-A 00005-00078221 · S42352] - 200 lonas 3x2 con ojalillos
+
+No es un campo aparte a propósito: al vivir en la descripción se ve en la
+tabla, lo encuentra el buscador y sale en el Excel sin columnas extra.
+`instrucciones.py` es la **fuente única** del texto que se le pega al agente:
+lo muestra /tercerizados/tokens (con botón de copiar) y lo devuelve
+`GET /api/tercerizados/esquema` en `instruccion_completa`. Si cambia la
+convención, se toca ese módulo y se actualizan los dos lados solos.
 
 ### API del agente LLM (`/api/tercerizados/…`, `tercerizados/api.py`)
 
@@ -100,6 +121,10 @@ dependencia solo por esto).
 - Idempotencia: `referencia_externa` (Message-ID del correo) es única; si el
   agente reprocesa el mismo correo, devuelve el registro existente con
   `duplicado: true` en lugar de duplicarlo.
+- `pedidos_internos` es una **lista** de números de pedido (se acepta
+  `pedido_interno` suelto por comodidad). El cuerpo se lee en UTF-8 y, si no
+  decodifica, se reintenta en latin-1: el separador "·" de la convención no es
+  ASCII y no vale perder el registro por la codificación del cliente.
 - Los pedidos que entran por API quedan `origen='agente'` y `revisado=False`
   hasta que gerencia los valida.
 - `GET /api/tercerizados/esquema` devuelve el contrato completo, para que el

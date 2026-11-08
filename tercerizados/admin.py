@@ -2,13 +2,21 @@ from django.contrib import admin
 
 from .models import (
     ImputacionPago, PagoTercerizado, PedidoTercerizado, RegistroAuditoria,
-    TokenAgente,
+    TercerizadoPedido, TokenAgente,
 )
 
 
 class ImputacionInline(admin.TabularInline):
     model = ImputacionPago
     extra = 0
+
+
+class VinculoPedidoInline(admin.TabularInline):
+    """Pedidos de EasyPrint que entran en este encargue (pueden ser varios)."""
+
+    model = TercerizadoPedido
+    extra = 0
+    autocomplete_fields = ()
 
 
 @admin.register(PedidoTercerizado)
@@ -20,6 +28,7 @@ class PedidoTercerizadoAdmin(admin.ModelAdmin):
     date_hierarchy = 'fecha'
     # monto_pagado lo calcula services.recalcular_tercerizado.
     readonly_fields = ('monto_pagado', 'created', 'updated')
+    inlines = (VinculoPedidoInline,)
 
 
 @admin.register(PagoTercerizado)

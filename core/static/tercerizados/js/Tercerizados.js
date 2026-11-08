@@ -114,7 +114,8 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById("fechaPedido").value = datos.fecha;
         document.getElementById("proveedorPedido").value = datos.proveedor;
         document.getElementById("descripcionPedido").value = datos.descripcion;
-        document.getElementById("pedidoInternoPedido").value = datos.pedido_interno ?? "";
+        document.getElementById("pedidosInternosPedido").value =
+          (datos.pedidos_internos ?? []).join(", ");
         document.getElementById("montoPedido").value = formatearNumeroLocal(datos.monto);
         document.getElementById("formaPagoPedido").value = datos.forma_pago;
         document.getElementById("estadoPedido").value = datos.estado;

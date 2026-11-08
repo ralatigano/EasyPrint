@@ -4,7 +4,7 @@ Toda la escritura delega en `services.py`, que es lo mismo que usa la API del
 agente: así las dos vías validan igual y quedan auditadas igual.
 """
 
-import json
+import re
 from datetime import datetime
 from decimal import Decimal
 
@@ -23,6 +23,10 @@ from core.utils import format_ar, parse_ar
 from productos.models import Proveedor
 
 from . import services
+from .instrucciones import (
+    EJEMPLO_ALTA, EJEMPLO_CORREO, EJEMPLO_DESCRIPCION, FORMATO_DESCRIPCION,
+    INSTRUCCION_AGENTE,
+)
 from .models import (
     ImputacionPago, PagoTercerizado, PedidoTercerizado, RegistroAuditoria,
     TokenAgente,
@@ -36,6 +40,31 @@ def _fecha(valor, default=None):
         return datetime.strptime(valor, '%Y-%m-%d').date()
     except (TypeError, ValueError):
         return default
+
+
+def _pedidos_internos(crudo):
+    """Parsea "412, 419" y devuelve (pedidos encontrados, números que no existen).
+
+    Acepta varios porque un mismo encargue al proveedor puede cubrir trabajos
+    de más de un pedido nuestro (la plancha de stickers compartida).
+    """
+    from pedidos.models import Pedido
+
+    numeros = []
+    for parte in re.split(r'[\s,;]+', (crudo or '').strip()):
+        parte = parte.lstrip('#')
+        if not parte:
+            continue
+        if parte.isdigit():
+            numeros.append(int(parte))
+        else:
+            numeros.append(parte)
+
+    encontrados = list(Pedido.objects.filter(
+        numero__in=[n for n in numeros if isinstance(n, int)]))
+    existentes = {p.numero for p in encontrados}
+    desconocidos = [n for n in numeros if n not in existentes]
+    return encontrados, desconocidos
 
 
 def _contexto_base(request):
@@ -58,9 +87,9 @@ def _filtros(request):
     buscar = request.GET.get('buscar', '').strip()
 
     qs = (PedidoTercerizado.objects
-          .select_related('proveedor', 'pedido', 'pedido__cliente',
-                          'creado_por', 'creado_por_token')
+          .select_related('proveedor', 'creado_por', 'creado_por_token')
           .prefetch_related(
+              'pedidos__cliente',
               Prefetch('imputaciones',
                        queryset=ImputacionPago.objects.select_related('pago'))))
 
@@ -75,9 +104,14 @@ def _filtros(request):
     if forma_pago in PedidoTercerizado.FormaPago.values:
         qs = qs.filter(forma_pago=forma_pago)
     if buscar:
-        qs = qs.filter(
-            Q(descripcion__icontains=buscar) | Q(nota__icontains=buscar)
-            | Q(proveedor__nombre__icontains=buscar))
+        # El identificador del proveedor vive al principio de la descripción
+        # (ver instrucciones.py), así que buscar por "FA-A 00005-00078221"
+        # encuentra el registro.
+        filtro = (Q(descripcion__icontains=buscar) | Q(nota__icontains=buscar)
+                  | Q(proveedor__nombre__icontains=buscar))
+        if buscar.isdigit():
+            filtro |= Q(pedidos__numero=int(buscar))
+        qs = qs.filter(filtro).distinct()
 
     filtros = {
         'desde': desde, 'hasta': hasta, 'proveedor': proveedor_id,
@@ -157,21 +191,19 @@ def guardar_tercerizado(request):
     proveedor_id = request.POST.get('proveedor')
     proveedor = (Proveedor.objects.filter(pk=proveedor_id).first()
                  if proveedor_id else None)
-    interno_numero = request.POST.get('pedido_interno') or ''
-    interno = None
-    if interno_numero.strip():
-        from pedidos.models import Pedido
-        interno = Pedido.objects.filter(numero=interno_numero.strip()).first()
-        if interno is None:
-            messages.warning(
-                request,
-                f'No existe el pedido interno #{interno_numero}; se guardó sin vincular.')
+    internos, desconocidos = _pedidos_internos(
+        request.POST.get('pedidos_internos'))
+    if desconocidos:
+        messages.warning(
+            request,
+            'No existen estos pedidos de EasyPrint y se guardó sin '
+            'vincularlos: ' + ', '.join(f'#{n}' for n in desconocidos) + '.')
 
     datos = {
         'fecha': _fecha(request.POST.get('fecha'), timezone.localdate()),
         'proveedor': proveedor,
         'descripcion': request.POST.get('descripcion', ''),
-        'pedido': interno,
+        'pedidos': internos,
         'monto': parse_ar(request.POST.get('monto')),
         'forma_pago': request.POST.get('forma_pago'),
         'estado': request.POST.get('estado'),
@@ -203,15 +235,14 @@ def guardar_tercerizado(request):
 def info_tercerizado(request, pedido_id):
     """JSON para precargar el modal de edición."""
     pedido = get_object_or_404(
-        PedidoTercerizado.objects.select_related('proveedor', 'pedido'),
-        pk=pedido_id)
+        PedidoTercerizado.objects.select_related('proveedor'), pk=pedido_id)
     return JsonResponse({
         'id': pedido.pk,
         'fecha': pedido.fecha.strftime('%Y-%m-%d'),
         'proveedor': pedido.proveedor_id,
         'proveedor_nombre': pedido.proveedor.nombre,
         'descripcion': pedido.descripcion,
-        'pedido_interno': pedido.pedido_id,
+        'pedidos_internos': sorted(pedido.pedidos.values_list('numero', flat=True)),
         'monto': float(pedido.monto),
         'monto_pagado': float(pedido.monto_pagado),
         'saldo': float(pedido.saldo),
@@ -389,6 +420,12 @@ def tokens_agente(request):
         'tokens': TokenAgente.objects.select_related('creado_por'),
         # El token recién creado se muestra una sola vez, vía sesión.
         'token_nuevo': request.session.pop('token_agente_nuevo', None),
+        # Texto único para copiar y pegar en el prompt del agente.
+        'instruccion_agente': INSTRUCCION_AGENTE,
+        'formato_descripcion': FORMATO_DESCRIPCION,
+        'ejemplo_descripcion': EJEMPLO_DESCRIPCION,
+        'ejemplo_correo': EJEMPLO_CORREO,
+        'ejemplo_alta': EJEMPLO_ALTA,
     })
     return render(request, 'tercerizados/tokens.html', contexto)
 
@@ -473,7 +510,7 @@ def exportar_tercerizados(request):
     wb = Workbook()
     ws = wb.active
     ws.title = 'Pedidos'
-    ws.append(['Fecha', 'Proveedor', 'Trabajo', 'Pedido interno', 'Monto',
+    ws.append(['Fecha', 'Proveedor', 'Trabajo', 'Pedidos EasyPrint', 'Monto',
                'Pagado', 'Saldo', 'Forma de pago', 'Estado', 'Estado de pago',
                'Origen', 'Revisado', 'Nota'])
     for celda in ws[1]:
@@ -481,7 +518,9 @@ def exportar_tercerizados(request):
     for p in pedidos:
         ws.append([
             p.fecha, p.proveedor.nombre, p.descripcion,
-            p.pedido_id or '', float(p.monto), float(p.monto_pagado),
+            ', '.join(str(n) for n in sorted(
+                p.pedidos.values_list('numero', flat=True))),
+            float(p.monto), float(p.monto_pagado),
             float(p.saldo), p.get_forma_pago_display(), p.get_estado_display(),
             p.estado_pago_display, p.get_origen_display(),
             'Sí' if p.revisado else 'No', p.nota,

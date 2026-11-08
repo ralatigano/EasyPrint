@@ -22,6 +22,7 @@ from core.utils import format_ar
 
 from .models import (
     ImputacionPago, PagoTercerizado, PedidoTercerizado, RegistroAuditoria,
+    TercerizadoPedido,
 )
 
 CERO = Decimal('0.00')
@@ -112,7 +113,7 @@ def snapshot(pedido):
         'fecha': pedido.fecha.isoformat() if pedido.fecha else None,
         'proveedor': pedido.proveedor.nombre if pedido.proveedor_id else None,
         'descripcion': pedido.descripcion,
-        'pedido_interno': pedido.pedido_id,
+        'pedidos_internos': _numeros_de(pedido),
         'monto': str(pedido.monto),
         'forma_pago': pedido.forma_pago,
         'estado': pedido.estado,
@@ -120,6 +121,32 @@ def snapshot(pedido):
         'revisado': pedido.revisado,
         'referencia_externa': pedido.referencia_externa,
     }
+
+
+def _numeros_de(tercerizado):
+    """Números de los pedidos de EasyPrint vinculados, ordenados."""
+    if tercerizado.pk is None:
+        return []
+    return sorted(tercerizado.pedidos.values_list('numero', flat=True))
+
+
+def vincular_pedidos(tercerizado, pedidos):
+    """Reemplaza los vínculos con pedidos de EasyPrint por los de `pedidos`.
+
+    `pedidos` es una lista de instancias de Pedido (o vacía para desvincular
+    todo). Se reemplaza en bloque, no se agrega: es lo que espera un formulario
+    que manda la lista completa.
+    """
+    deseados = {p.pk for p in pedidos if p is not None}
+    actuales = set(
+        tercerizado.vinculos.values_list('pedido_id', flat=True))
+    sobran = actuales - deseados
+    if sobran:
+        tercerizado.vinculos.filter(pedido_id__in=sobran).delete()
+    TercerizadoPedido.objects.bulk_create(
+        [TercerizadoPedido(tercerizado=tercerizado, pedido_id=pk)
+         for pk in deseados - actuales])
+    return tercerizado
 
 
 def diferencias(antes, despues):
@@ -143,7 +170,7 @@ def recalcular_tercerizado(pedido):
 # ---------------------------------------------------------------- Pedidos
 
 
-def crear_pedido(*, proveedor, descripcion, monto, fecha=None, pedido=None,
+def crear_pedido(*, proveedor, descripcion, monto, fecha=None, pedidos=None,
                  forma_pago=None, estado=None, nota='', referencia_externa='',
                  origen=None, actor=None):
     """Alta de un pedido tercerizado (desde la UI o desde la API)."""
@@ -170,7 +197,6 @@ def crear_pedido(*, proveedor, descripcion, monto, fecha=None, pedido=None,
             fecha=fecha or timezone.localdate(),
             proveedor=proveedor,
             descripcion=descripcion,
-            pedido=pedido,
             monto=monto,
             forma_pago=forma_pago or PedidoTercerizado.FormaPago.CUENTA_CORRIENTE,
             estado=estado or PedidoTercerizado.Estado.PENDIENTE,
@@ -183,6 +209,8 @@ def crear_pedido(*, proveedor, descripcion, monto, fecha=None, pedido=None,
             creado_por=actor.usuario,
             creado_por_token=actor.token,
         )
+        if pedidos:
+            vincular_pedidos(nuevo, pedidos)
         auditar(
             actor, RegistroAuditoria.Accion.CREAR, 'pedido', nuevo.pk,
             f'Alta de "{nuevo.descripcion}" a {nuevo.proveedor.nombre} por '
@@ -193,7 +221,7 @@ def crear_pedido(*, proveedor, descripcion, monto, fecha=None, pedido=None,
 
 
 CAMPOS_EDITABLES = (
-    'fecha', 'proveedor', 'descripcion', 'pedido', 'monto', 'forma_pago',
+    'fecha', 'proveedor', 'descripcion', 'pedidos', 'monto', 'forma_pago',
     'estado', 'nota', 'revisado',
 )
 
@@ -238,10 +266,16 @@ def editar_pedido(pedido_tercerizado, *, actor=None, **cambios):
             'No se puede cambiar el proveedor de un pedido con pagos '
             'imputados. Anulá el pago primero.')
 
+    # Los vínculos con pedidos de EasyPrint son una tabla aparte, no un campo
+    # del modelo: se aplican después de guardar.
+    vinculos = cambios.pop('pedidos', None)
+
     with transaction.atomic():
         for campo, valor in cambios.items():
             setattr(pedido_tercerizado, campo, valor)
         pedido_tercerizado.save()
+        if vinculos is not None:
+            vincular_pedidos(pedido_tercerizado, vinculos)
         despues = snapshot(pedido_tercerizado)
         auditar(
             actor, RegistroAuditoria.Accion.EDITAR, 'pedido',
