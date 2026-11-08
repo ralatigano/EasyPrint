@@ -26,19 +26,22 @@ const iniciarTablas = () => {
     tablaPagos.destroy();
   }
   tablaTercerizados = $("#TablaTercerizados").DataTable({
-    responsive: true,
+    // responsive:false y scroll horizontal, igual que /pedidos/v2: el detalle
+    // de la fila se abre haciendo click en ella, no con el control de la
+    // izquierda que agrega el plugin Responsive.
+    responsive: false,
     pageLength: 25,
     order: [[1, "desc"]],
-    // La columna de checkboxes y la de acciones no se ordenan ni se buscan.
+    // La columna de checkboxes y la del chevron no se ordenan ni se buscan.
     columnDefs: [
       { targets: [0, 12], orderable: false, searchable: false },
-      { responsivePriority: 1, targets: 3 },
-      { responsivePriority: 2, targets: 7 },
     ],
     language: idioma,
   });
+  // Misma decisión que arriba: sin el control de la izquierda, scroll
+  // horizontal dentro de .tabla-scroll.
   tablaPagos = $("#TablaPagosTercerizados").DataTable({
-    responsive: true,
+    responsive: false,
     pageLength: 10,
     order: [[0, "desc"]],
     columnDefs: [{ targets: [8], orderable: false, searchable: false }],
@@ -270,16 +273,18 @@ document.addEventListener("DOMContentLoaded", () => {
   const mensaje = document.getElementById("borrarTercerizadoMensaje");
   const bootstrapModal = new bootstrap.Modal(modal);
 
-  document.querySelectorAll(".btn-borrar-tercerizado").forEach((boton) => {
-    boton.addEventListener("click", () => {
-      form.action = `/tercerizados/borrar/${boton.dataset.id}`;
-      mensaje.innerHTML =
-        `Vas a eliminar el pedido tercerizado <strong>#${boton.dataset.id}</strong>: ` +
-        `"${boton.dataset.descripcion}" de ${boton.dataset.proveedor} por ` +
-        `${boton.dataset.monto}.<br><br>Si tiene pagos imputados no se va a borrar: ` +
-        `en ese caso anulá el pago o marcalo como cancelado.`;
-      bootstrapModal.show();
-    });
+  // Delegado: los botones viven en el panel de detalle, que se arma al vuelo.
+  document.addEventListener("click", (evento) => {
+    const boton = evento.target.closest(".btn-borrar-tercerizado");
+    if (!boton) return;
+    form.action = `/tercerizados/borrar/${boton.dataset.id}`;
+    mensaje.innerHTML =
+      `Vas a eliminar el pedido tercerizado <strong>#${boton.dataset.id}</strong>: ` +
+      `"${boton.dataset.descripcion}" de ${boton.dataset.proveedor} por ` +
+      `$ ${formatearNumeroLocal(boton.dataset.monto)}.<br><br>Si tiene pagos ` +
+      `imputados no se va a borrar: en ese caso anulá el pago o marcalo como ` +
+      `cancelado.`;
+    bootstrapModal.show();
   });
 });
 
@@ -294,4 +299,162 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!confirm(texto)) evento.preventDefault();
     });
   });
+});
+
+/* ------------------------------------------------ Filas desplegables
+ * Mismo comportamiento que la tabla de /pedidos/v2: se hace click en la fila
+ * y el detalle se abre abajo, con el chevron de la derecha como indicador.
+ * En el detalle va lo que no entra en columnas: los pagos que cubrieron el
+ * pedido, la nota completa, la trazabilidad del registro y las acciones.
+ */
+
+function escAttr(texto) {
+  return (texto || "")
+    .replace(/&/g, "&amp;").replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+function construirDetalleTercerizado(tr) {
+  const d = tr.dataset;
+
+  const imputaciones = (d.imputaciones || "")
+    .split(";")
+    .filter(Boolean)
+    .map((item) => {
+      const [fecha, medio, monto] = item.split("|");
+      return `<li>${escAttr(fecha)} · ${escAttr(medio)} —
+              <strong>$ ${formatearNumeroLocal(monto)}</strong></li>`;
+    })
+    .join("");
+
+  const pagosHtml = imputaciones
+    ? `<ul class="terc-detalle-lista">${imputaciones}</ul>`
+    : '<span class="detail-obs-text text-muted fst-italic">Sin pagos imputados</span>';
+
+  const vinculados = (d.pedidos || "")
+    .split(",")
+    .filter(Boolean)
+    .map(
+      (numero) =>
+        `<a href="/pedidos/v2" class="badge text-bg-light text-decoration-none pill-pedido"
+            data-numero="${escAttr(numero)}"
+            title="Ver el pedido #${escAttr(numero)} en Pedidos">#${escAttr(numero)}</a>`
+    )
+    .join(" ");
+
+  const vinculadosHtml = vinculados
+    ? vinculados
+    : '<span class="detail-obs-text text-muted fst-italic">Sin pedidos vinculados</span>';
+
+  const notaHtml = d.nota
+    ? `<span class="detail-obs-text">${escAttr(d.nota)}</span>`
+    : '<span class="detail-obs-text text-muted fst-italic">Sin nota</span>';
+
+  const porQuien = d.origen === "agente"
+    ? `<i class="fa-solid fa-robot"></i> Agente${d.creadoPor ? " · " + escAttr(d.creadoPor) : ""}` +
+      (d.revisado === "true" ? " · revisado" : ' · <strong>sin revisar</strong>')
+    : `<i class="fa-solid fa-user"></i> Carga manual${d.creadoPor ? " · " + escAttr(d.creadoPor) : ""}`;
+
+  const referenciaHtml = d.referencia
+    ? `<div class="detail-metric">
+         <span class="detail-metric-label">Referencia del correo</span>
+         <span class="detail-obs-text">${escAttr(d.referencia)}</span>
+       </div>`
+    : "";
+
+  return `
+    <div class="detail-card">
+
+      <div class="detail-section">
+        <div class="detail-metric">
+          <span class="detail-metric-label">Monto</span>
+          <span class="detail-metric-value">$ ${formatearNumeroLocal(d.monto)}</span>
+        </div>
+        <div class="detail-metric">
+          <span class="detail-metric-label">Pagado</span>
+          <span class="detail-metric-value">$ ${formatearNumeroLocal(d.pagado)}</span>
+        </div>
+        <div class="detail-metric">
+          <span class="detail-metric-label">Saldo</span>
+          <span class="detail-metric-value ${parseFloat(d.saldo) > 0 ? "saldo-pendiente" : ""}">
+            $ ${formatearNumeroLocal(d.saldo)}
+          </span>
+        </div>
+      </div>
+
+      <div class="detail-section">
+        <div class="detail-metric">
+          <span class="detail-metric-label">Pagos imputados</span>
+          ${pagosHtml}
+        </div>
+        <div class="detail-metric">
+          <span class="detail-metric-label">Pedidos de EasyPrint</span>
+          <div>${vinculadosHtml}</div>
+        </div>
+        <div class="detail-metric">
+          <span class="detail-metric-label">Nota</span>
+          ${notaHtml}
+        </div>
+        <div class="detail-metric">
+          <span class="detail-metric-label">Origen (${escAttr(d.forma)})</span>
+          <span class="detail-obs-text">${porQuien}</span>
+        </div>
+        ${referenciaHtml}
+      </div>
+
+      <div class="detail-section">
+        <div class="action-grid">
+          <button type="button" class="btn btn-dark btn-xs" data-bs-toggle="modal"
+                  data-bs-target="#pedidoTercerizadoModal"
+                  data-bs-whatever="${escAttr(d.id)}">
+            <i class="fa-solid fa-pencil"></i> Editar
+          </button>
+          <button type="button" class="btn btn-danger btn-xs btn-borrar-tercerizado"
+                  data-id="${escAttr(d.id)}"
+                  data-descripcion="${escAttr(d.descripcion)}"
+                  data-proveedor="${escAttr(d.proveedor)}"
+                  data-monto="${escAttr(d.monto)}">
+            <i class="fa-solid fa-trash-can"></i> Eliminar
+          </button>
+        </div>
+      </div>
+
+    </div>`;
+}
+
+$(document).on("click", "#TablaTercerizados tbody tr.main-row", function (evento) {
+  // No desplegar si se tocó algo que ya hace lo suyo (checkbox, pill, botón).
+  if (
+    evento.target.closest('input[type="checkbox"]') ||
+    evento.target.closest("a") ||
+    evento.target.closest(".btn")
+  ) {
+    return;
+  }
+
+  const fila = tablaTercerizados.row(this);
+  const chevron = this.querySelector(".chevron-icon");
+
+  if (fila.child.isShown()) {
+    fila.child.hide();
+    $(this).removeClass("expanded");
+    chevron.classList.remove("open");
+  } else {
+    fila.child(construirDetalleTercerizado(this)).show();
+    $(this).addClass("expanded");
+    chevron.classList.add("open");
+  }
+});
+
+/* ------------------------------------------------ Ir al pedido de EasyPrint
+ * La tabla de pedidos lee `pedidos_buscar` de sessionStorage al cargar y deja
+ * la tabla filtrada por ese número (mismo mecanismo que usa el dashboard).
+ */
+document.addEventListener("click", (evento) => {
+  const pill = evento.target.closest(".pill-pedido");
+  if (!pill) return;
+  evento.preventDefault();
+  evento.stopPropagation();
+  sessionStorage.setItem("pedidos_buscar", pill.dataset.numero);
+  window.location.href = "/pedidos/v2";
 });

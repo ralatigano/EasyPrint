@@ -13,6 +13,16 @@
 .terc-tarjeta .detalle { font-size: .78rem; color: var(--bs-secondary-color); font-variant-numeric: tabular-nums; }
 .terc-tarjeta.general { border-color: #B1DE43; border-width: 2px; }
 .terc-tarjeta.deuda-cero { opacity: .65; }
+/* Las tarjetas son enlaces que filtran la tabla (la del total la limpia). */
+a.terc-tarjeta { text-decoration: none; color: inherit; display: block;
+                 transition: border-color .15s ease, box-shadow .15s ease; }
+a.terc-tarjeta:hover { border-color: #0d6efd; box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+a.terc-tarjeta.general:hover { border-color: #8cbb2a; }
+a.terc-tarjeta:focus-visible { outline: 2px solid #0d6efd; outline-offset: 2px; }
+.pill-pedido:hover { filter: brightness(.9); text-decoration: underline !important; }
+/* Detalle de la fila desplegada */
+.terc-detalle-lista { font-size: .82rem; margin: 0; padding: 0; list-style: none; }
+.terc-detalle-lista li { padding: 2px 0; font-variant-numeric: tabular-nums; }
 .monto { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .monto.saldo { font-weight: 600; }
 .monto.cero { color: var(--bs-secondary-color); font-weight: 400; }
@@ -80,7 +90,10 @@
 <h5 class="mt-2">Deuda por proveedor</h5>
 <div class="terc-deuda mb-4">
     {% for d in deuda %}
-    <div class="terc-tarjeta {% if not d.deuda %}deuda-cero{% endif %}">
+    {# Filtra la tabla por ese proveedor y solo lo que todavía debe plata. #}
+    <a class="terc-tarjeta {% if not d.deuda %}deuda-cero{% endif %}"
+       href="?proveedor={{ d.proveedor_id|unlocalize }}&amp;estado_pago=con_deuda"
+       title="Ver los pedidos con saldo de {{ d.proveedor }}">
         <div class="etiqueta">{{ d.proveedor }}</div>
         <div class="monto-grande">$ {{ d.deuda|floatformat:"2g" }}</div>
         <div class="detalle">
@@ -95,19 +108,22 @@
             A cuenta $ {{ d.a_cuenta|floatformat:"2g" }} · neto $ {{ d.deuda_neta|floatformat:"2g" }}
         </div>
         {% endif %}
-    </div>
+    </a>
     {% empty %}
     <p class="text-muted">Todavía no hay pedidos tercerizados registrados.</p>
     {% endfor %}
     {% if deuda %}
-    <div class="terc-tarjeta general">
+    {# La tarjeta del total equivale a limpiar los filtros. #}
+    <a class="terc-tarjeta general" href="{% url 'control_tercerizados' %}"
+       title="Ver todos los registros (quita los filtros)">
         <div class="etiqueta">Deuda total</div>
         <div class="monto-grande">$ {{ deuda_total|floatformat:"2g" }}</div>
         <div class="detalle">
             {{ deuda|length }} proveedor{{ deuda|length|pluralize:"es" }}
             {% if a_cuenta_total %}· $ {{ a_cuenta_total|floatformat:"2g" }} a cuenta{% endif %}
         </div>
-    </div>
+        <div class="detalle fst-italic">Ver todos</div>
+    </a>
     {% endif %}
 </div>
 
@@ -200,12 +216,26 @@
                 <th class="centered">Estado</th>
                 <th class="centered">Pago</th>
                 <th class="centered">Origen</th>
-                <th class="centered">Acciones</th>
+                <th class="centered"></th>
             </tr>
         </thead>
         <tbody>
             {% for p in pedidos %}
-            <tr>
+            <tr class="main-row"
+                data-id="{{ p.id|unlocalize }}"
+                data-descripcion="{{ p.descripcion }}"
+                data-proveedor="{{ p.proveedor.nombre }}"
+                data-monto="{{ p.monto|unlocalize }}"
+                data-pagado="{{ p.monto_pagado|unlocalize }}"
+                data-saldo="{{ p.saldo|unlocalize }}"
+                data-forma="{{ p.get_forma_pago_display }}"
+                data-nota="{{ p.nota }}"
+                data-origen="{{ p.origen }}"
+                data-revisado="{{ p.revisado|yesno:'true,false' }}"
+                data-referencia="{{ p.referencia_externa }}"
+                data-creado-por="{% if p.creado_por %}{{ p.creado_por.get_full_name|default:p.creado_por.username }}{% elif p.creado_por_token %}{{ p.creado_por_token.nombre }}{% endif %}"
+                data-pedidos="{% for interno in p.pedidos.all %}{{ interno.numero|unlocalize }}{% if not forloop.last %},{% endif %}{% endfor %}"
+                data-imputaciones="{% for i in p.imputaciones.all %}{{ i.pago.fecha|date:'d/m/Y' }}|{{ i.pago.get_medio_display }}|{{ i.monto|unlocalize }}{% if not forloop.last %};{% endif %}{% endfor %}">
                 <td class="text-center">
                     <input type="checkbox" class="form-check-input fila-checkbox" form="formRevisados"
                            name="ids" value="{{ p.id|unlocalize }}">
@@ -218,8 +248,9 @@
                 </td>
                 <td class="text-center">
                     {% for interno in p.pedidos.all %}
-                        <a href="/pedidos/v2" class="badge text-bg-light text-decoration-none"
-                           title="{{ interno.cliente.nombre|default:'Sin cliente' }} · {{ interno.descripcion }}">#{{ interno.numero|unlocalize }}</a>
+                        <a href="/pedidos/v2" class="badge text-bg-light text-decoration-none pill-pedido"
+                           data-numero="{{ interno.numero|unlocalize }}"
+                           title="Ver el pedido #{{ interno.numero|unlocalize }} en Pedidos · {{ interno.cliente.nombre|default:'Sin cliente' }}">#{{ interno.numero|unlocalize }}</a>
                     {% empty %}—{% endfor %}
                 </td>
                 <td class="monto">$ {{ p.monto|floatformat:"2g" }}</td>
@@ -264,20 +295,9 @@
                         </span>
                     {% endif %}
                 </td>
-                <td class="text-nowrap">
-                    <button type="button" class="btn btn-dark btn-xs" data-bs-toggle="modal"
-                            data-bs-target="#pedidoTercerizadoModal"
-                            data-bs-whatever="{{ p.id|unlocalize }}" title="Editar">
-                        <i class="fa-solid fa-pencil"></i>
-                    </button>
-                    <button type="button" class="btn btn-dark btn-xs btn-borrar-tercerizado"
-                            data-id="{{ p.id|unlocalize }}"
-                            data-descripcion="{{ p.descripcion }}"
-                            data-proveedor="{{ p.proveedor.nombre }}"
-                            data-monto="$ {{ p.monto|floatformat:'2g' }}"
-                            title="Eliminar">
-                        <i class="fa-solid fa-trash-can"></i>
-                    </button>
+                {# Chevron: indicador de fila desplegada, igual que en /pedidos/v2. #}
+                <td class="text-center align-middle">
+                    <i class="fa-solid fa-chevron-down chevron-icon"></i>
                 </td>
             </tr>
             {% endfor %}
