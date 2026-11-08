@@ -1,6 +1,7 @@
 {% extends 'core/base.html' %}
 {% load static %}
 {% load l10n %}
+{% load ayuda %}
 
 {% block title %}Estructura de costos{% endblock %}
 
@@ -26,19 +27,19 @@
         <div class="card-body">
             <div class="row text-center g-3 align-items-center">
                 <div class="col-6 col-md-3">
-                    <div class="text-secondary small">Costo fijo mensual</div>
+                    <div class="text-secondary small">Costo fijo mensual {% ayuda 'costo_fijo_mensual' 'bottom' %}</div>
                     <div class="fs-5 fw-semibold">$ <span id="panel-costo-fijo">—</span></div>
                 </div>
                 <div class="col-6 col-md-3">
-                    <div class="text-secondary small">Horas disponibles / mes</div>
+                    <div class="text-secondary small">Horas disponibles / mes {% ayuda 'horas_disponibles' 'bottom' %}</div>
                     <div class="fs-5 fw-semibold"><span id="panel-horas-disp">—</span></div>
                 </div>
                 <div class="col-6 col-md-3">
-                    <div class="text-secondary small">Horas productivas / mes</div>
+                    <div class="text-secondary small">Horas productivas / mes {% ayuda 'horas_productivas' 'bottom' %}</div>
                     <div class="fs-5 fw-semibold"><span id="panel-horas-prod">—</span></div>
                 </div>
                 <div class="col-6 col-md-3">
-                    <div class="text-secondary small text-uppercase">Tasa por hora</div>
+                    <div class="text-secondary small text-uppercase">Tasa por hora {% ayuda 'tasa_hora' 'bottom' %}</div>
                     <div class="fw-bold text-success" style="font-size: 1.9rem;">
                         $ <span id="panel-tasa">—</span>
                     </div>
@@ -59,37 +60,42 @@
         {% csrf_token %}
         <div class="card-body row g-3 align-items-end">
             <div class="col-6 col-md-2">
-                <label class="form-label fw-semibold">Operarios</label>
+                <label class="form-label fw-semibold">Operarios {% ayuda 'operarios' %}</label>
                 <input type="number" min="0" step="1" name="operarios" id="in-operarios"
                        class="form-control" value="{{ parametros.operarios|unlocalize }}">
             </div>
             <div class="col-6 col-md-2">
-                <label class="form-label fw-semibold">Horas / día</label>
+                <label class="form-label fw-semibold">Horas / día {% ayuda 'horas_dia' %}</label>
                 <input type="text" inputmode="decimal" name="horas_dia" id="in-horas-dia"
                        class="form-control" value="{{ parametros.horas_dia }}">
             </div>
             <div class="col-6 col-md-2">
-                <label class="form-label fw-semibold">Días / mes</label>
+                <label class="form-label fw-semibold">Días / mes {% ayuda 'dias_mes' %}</label>
                 <input type="number" min="0" max="31" step="1" name="dias_mes" id="in-dias-mes"
                        class="form-control" value="{{ parametros.dias_mes|unlocalize }}">
             </div>
             <div class="col-6 col-md-3">
-                <label class="form-label fw-semibold">Ratio productivas</label>
+                <label class="form-label fw-semibold">Ratio productivas {% ayuda 'ratio_productivas' %}</label>
                 <input type="text" inputmode="decimal" name="ratio_productivas" id="in-ratio"
                        class="form-control" value="{{ parametros.ratio_productivas }}">
                 <div class="form-text">Entre 0 y 1 (ej: 0,70).</div>
             </div>
-            {# Factor de corrección de tiempos: deshabilitado (fijo en 1). Se tantea
-               con el ratio productivo, que le hace lo mismo al precio sin distorsionar
-               las horas del panel. Ver core/costos.py::factor_correccion_tiempos. #}
+            {% comment %}
+            Factor de corrección de tiempos: deshabilitado (fijo en 1). Se tantea
+            con el ratio productivo, que le hace lo mismo al precio sin distorsionar
+            las horas del panel. Ver core/costos.py::factor_correccion_tiempos.
+
+            Ojo: {# ... #} en Django es de UNA sola línea. Escrito en varias, no
+            comenta nada y el texto se imprime en la página (era lo que pasaba acá).
+            {% endcomment %}
             <div class="col-6 col-md-3">
-                <label class="form-label fw-semibold">Margen objetivo (método nuevo)</label>
+                <label class="form-label fw-semibold">Margen objetivo (método nuevo) {% ayuda 'margen_objetivo' %}</label>
                 <input type="text" inputmode="decimal" name="margen_objetivo"
                        id="in-margen-objetivo" class="form-control" value="{{ parametros.margen_objetivo }}">
                 <div class="form-text">Sobre el costo total. Ej: 1,30 = +30%.</div>
             </div>
             <div class="col-6 col-md-3">
-                <label class="form-label fw-semibold">Horas mano de obra (método viejo)</label>
+                <label class="form-label fw-semibold">Horas mano de obra (método viejo) {% ayuda 'horas_legacy' %}</label>
                 <input type="text" inputmode="decimal" name="horas_legacy"
                        id="in-horas-legacy" class="form-control" value="{{ parametros.horas_legacy }}">
                 <div class="form-text">Horas fijas que cobra el método viejo. En 1,00 el
@@ -128,7 +134,7 @@
                     <input type="text" name="concepto" class="form-control" placeholder="ej: Alquiler" required>
                 </div>
                 <div class="col-6 col-md-2">
-                    <label class="form-label fw-semibold">Grupo</label>
+                    <label class="form-label fw-semibold">Grupo {% ayuda 'grupo_costo' %}</label>
                     <input type="text" name="grupo" class="form-control" placeholder="ej: Ocupación" list="grupos-existentes">
                 </div>
                 <div class="col-6 col-md-2">
@@ -136,7 +142,7 @@
                     <input type="text" inputmode="decimal" name="monto" class="form-control alta-monto" placeholder="0,00">
                 </div>
                 <div class="col-6 col-md-2">
-                    <label class="form-label fw-semibold">Periodicidad</label>
+                    <label class="form-label fw-semibold">Periodicidad {% ayuda 'periodicidad' %}</label>
                     <select name="periodicidad" class="form-select alta-periodicidad">
                         {% for val, txt in periodicidades %}
                         <option value="{{ val }}">{{ txt }}</option>
@@ -144,7 +150,7 @@
                     </select>
                 </div>
                 <div class="col-6 col-md-2">
-                    <label class="form-label fw-semibold">Meses</label>
+                    <label class="form-label fw-semibold">Meses {% ayuda 'meses_amortizacion' %}</label>
                     <input type="number" min="1" step="1" name="meses_amortizacion" class="form-control alta-meses" value="12">
                 </div>
                 <div class="col-12 col-md-1 d-grid">
@@ -177,11 +183,11 @@
             <thead>
                 <tr class="text-secondary small">
                     <th style="min-width: 140px;">Concepto</th>
-                    <th style="min-width: 110px;" title="Etiqueta para ordenar. No afecta el cálculo.">Grupo</th>
+                    <th style="min-width: 110px;">Grupo {% ayuda 'grupo_costo' %}</th>
                     <th style="min-width: 105px;">Monto</th>
-                    <th style="min-width: 125px;">Periodicidad</th>
-                    <th style="min-width: 80px;" title="Solo para 'Único': en cuántos meses repartís la compra.">Meses</th>
-                    <th style="min-width: 115px;" class="text-end" title="Lo que aporta por mes. Es lo que usa la tasa.">= Costo mensual</th>
+                    <th style="min-width: 125px;">Periodicidad {% ayuda 'periodicidad' %}</th>
+                    <th style="min-width: 80px;">Meses {% ayuda 'meses_amortizacion' %}</th>
+                    <th style="min-width: 115px;" class="text-end">= Costo mensual {% ayuda 'costo_mensual_linea' %}</th>
                     <th class="text-center">Activo</th>
                     <th class="text-end">Acciones</th>
                 </tr>

@@ -303,3 +303,62 @@ body[data-bs-theme="dark"] .navbar .nav-link.nav-active {
   color: var(--bs-body-color);
   border-color: var(--bs-border-color) !important;
 }
+
+/* ---------------------------------------------------------------------------
+   Botón "(i)" de ayuda y su tooltip (ver core/glosario.py y el tag {% ayuda %})
+   --------------------------------------------------------------------------- */
+.ayuda-info {
+    /* Botón para que reciba foco: en mobile el tooltip se abre al tocarlo. */
+    background: none;
+    border: none;
+    padding: 0 0 0 .25rem;
+    margin: 0;
+    line-height: 1;
+    color: var(--bs-secondary-color);
+    cursor: pointer;
+    vertical-align: baseline;
+    font-size: .85em;
+}
+
+.ayuda-info:hover,
+.ayuda-info:focus-visible {
+    color: #0d6efd;
+}
+
+.ayuda-info:focus {
+    outline: none;
+}
+
+.ayuda-info:focus-visible {
+    outline: 2px solid #0d6efd;
+    outline-offset: 2px;
+    border-radius: 50%;
+}
+
+/* En mobile el ícono queda chico para el dedo: se le agranda el área táctil
+   sin mover el texto que tiene al lado. */
+@media (max-width: 575.98px) {
+    .ayuda-info {
+        padding: .35rem;
+        margin: -.35rem -.35rem -.35rem .1rem;
+        font-size: 1em;
+    }
+}
+
+/* El proyecto sube los modales a z-index 1100 (más arriba que el 1055 de
+   Bootstrap), pero el tooltip se queda en 1080 y termina DETRÁS del modal.
+   Como varios "(i)" viven dentro del modal del cotizador, el tooltip tiene
+   que ir por encima de todo. */
+.tooltip {
+    z-index: 1115 !important;
+}
+
+/* Los textos del glosario son de 2-3 renglones: el tooltip por defecto es
+   angosto y queda como una columna. */
+.tooltip-ayuda .tooltip-inner {
+    max-width: 320px;
+    text-align: left;
+    font-size: .82rem;
+    line-height: 1.35;
+    padding: .5rem .65rem;
+}

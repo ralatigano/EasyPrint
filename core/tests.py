@@ -443,3 +443,104 @@ class RolesTests(TestCase):
         self.client.login(username='ger1', password='x')
         resp = self.client.get('/productos/insumos/')
         self.assertContains(resp, 'id="nav_item_dashboard"')
+
+
+@override_settings(STORAGES={
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+})
+class AyudaTooltipsTests(TestCase):
+    """Botones "(i)" con la explicación de cada concepto (core/glosario.py)."""
+
+    def setUp(self):
+        from django.contrib.auth.models import Group
+        grupo, _ = Group.objects.get_or_create(name='Gerencia')
+        self.user = User.objects.create_user('gerente_ayuda', password='x')
+        self.user.groups.add(grupo)
+        self.client.force_login(self.user)
+        # El cotizador exige este cliente por defecto (presupuestos/views.Inicio).
+        from clientes.models import Cliente
+        Cliente.objects.get_or_create(nombre='Consumidor final')
+
+    def test_el_tag_dibuja_el_boton_con_el_texto(self):
+        from django.template import Context, Template
+        from core.glosario import GLOSARIO
+        html = Template(
+            "{% load ayuda %}{% ayuda 'piso_absoluto' %}").render(Context({}))
+        self.assertIn('ayuda-info', html)
+        self.assertIn('data-bs-toggle="tooltip"', html)
+        # El texto va en data-bs-title y no en title, para que no se
+        # superponga el tooltip nativo del navegador.
+        self.assertIn('data-bs-title=', html)
+        self.assertNotIn(' title=', html)
+        self.assertIn(GLOSARIO['piso_absoluto'][:40], html)
+
+    def test_una_clave_inexistente_no_rompe_la_pagina(self):
+        from django.template import Context, Template
+        html = Template(
+            "{% load ayuda %}{% ayuda 'no_existe_esta_clave' %}").render(
+                Context({}))
+        self.assertEqual(html.strip(), '')
+
+    def test_todas_las_claves_usadas_en_templates_existen(self):
+        """Una clave mal escrita deja el concepto sin explicación y no avisa:
+        este test la caza."""
+        import re
+        from pathlib import Path
+
+        from django.conf import settings
+        from core.glosario import GLOSARIO
+
+        usadas = set()
+        raiz = Path(settings.BASE_DIR) / 'core' / 'templates'
+        for plantilla in raiz.rglob('*.html'):
+            texto = plantilla.read_text(encoding='utf-8')
+            usadas.update(re.findall(r"{%\s*ayuda\s+'([^']+)'", texto))
+
+        self.assertTrue(usadas, 'No se encontró ningún {% ayuda %} en los templates')
+        faltantes = sorted(usadas - set(GLOSARIO))
+        self.assertEqual(
+            faltantes, [],
+            f'Claves usadas en templates que no están en glosario.py: {faltantes}')
+
+    def test_la_configuracion_de_costos_explica_sus_conceptos(self):
+        respuesta = self.client.get('/configuracion/costos')
+        self.assertEqual(respuesta.status_code, 200)
+        html = respuesta.content.decode('utf-8')
+        for clave in ('tasa_hora', 'ratio_productivas', 'margen_objetivo',
+                      'horas_legacy', 'horas_productivas'):
+            from core.glosario import GLOSARIO
+            self.assertIn(
+                GLOSARIO[clave][:35], html,
+                f'Falta la ayuda de "{clave}" en la configuración de costos')
+
+    def test_el_modal_de_cotizar_explica_los_pisos(self):
+        from core.glosario import GLOSARIO
+        respuesta = self.client.get('/presupuestos/inicio/')
+        self.assertEqual(respuesta.status_code, 200)
+        html = respuesta.content.decode('utf-8')
+        for clave in ('piso_absoluto', 'piso_absorcion', 'precio_sugerido',
+                      'tasa_hora_usada'):
+            self.assertIn(
+                GLOSARIO[clave][:35], html,
+                f'Falta la ayuda de "{clave}" en el modal de cotizar')
+
+    def test_no_queda_ningun_comentario_django_multilinea(self):
+        """{# ... #} es de UNA línea: escrito en varias, Django lo imprime en
+        la página. Pasaba en configuracion_costos.html."""
+        import re
+        from pathlib import Path
+
+        from django.conf import settings
+
+        culpables = []
+        raiz = Path(settings.BASE_DIR) / 'core' / 'templates'
+        for plantilla in raiz.rglob('*.html'):
+            for linea in plantilla.read_text(encoding='utf-8').splitlines():
+                if '{#' in linea and '#}' not in linea:
+                    culpables.append(f'{plantilla.name}: {linea.strip()[:60]}')
+        self.assertEqual(
+            culpables, [],
+            'Comentarios {# #} abiertos en una línea y cerrados en otra: '
+            'Django los imprime como texto. Usar {% comment %}. ' + str(culpables))

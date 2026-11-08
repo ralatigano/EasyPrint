@@ -1,0 +1,16 @@
+{% comment %}
+Botón "(i)" con la explicación del concepto. Lo dibuja el tag `ayuda` (ver core/templatetags/ayuda.py).
+
+Es un <button> a propósito: así recibe foco y en mobile el tooltip aparece al
+tocarlo (Bootstrap dispara con "hover focus"), además de quedar accesible por
+teclado. Se usa data-bs-title y no title para que no se superponga el tooltip
+nativo del navegador.
+{% endcomment %}
+{% if texto %}<button type="button" class="ayuda-info"
+        data-bs-toggle="tooltip"
+        data-bs-placement="{{ posicion }}"
+        data-bs-custom-class="tooltip-ayuda"
+        data-bs-title="{{ texto }}"
+        aria-label="Qué significa">
+    <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
+</button>{% endif %}

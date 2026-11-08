@@ -29,10 +29,12 @@
               </div>
             </div>
 
-            {# El tiempo de producción no se edita acá: mientras viva el andamio
-               (horas_legacy) no mueve el precio cobrado, así que un input que no
-               hace nada solo confunde. Se retoma cuando se cobre con la
-               estructura de costos. Ver PLAN_ESTRUCTURA_COSTOS.md. #}
+            {% comment %}
+            El tiempo de producción no se edita acá: mientras viva el andamio
+            (horas_legacy) no mueve el precio cobrado, así que un input que no
+            hace nada solo confunde. Se retoma cuando se cobre con la
+            estructura de costos. Ver PLAN_ESTRUCTURA_COSTOS.md.
+            {% endcomment %}
             <div class="row mb-3">
               <div class="col-md-6">
                 <label for="descuento_editar" class="form-label">Descuento (%)</label>

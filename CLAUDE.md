@@ -73,6 +73,36 @@ Administración) y `puede.<permiso>`. No consultar `groups.filter(name=...)` a m
   partir para que el usuario decida. Regenerar alterna a cortar el otro lado solo si eso cambia el
   resultado y mejora lo de sin partir (desde "corto" siempre vuelve a "largo").
 
+## Ayuda en pantalla: los botones "(i)" (`core/glosario.py`)
+
+Los conceptos del costeo se explican con un botón "(i)" al lado de cada uno:
+hover en escritorio, tocándolo en mobile.
+
+- Los textos viven en el dict `GLOSARIO` de `core/glosario.py`, **fuente
+  única**: varios conceptos (tasa por hora, los dos pisos) salen en más de una
+  pantalla y no sirve que cada una los explique distinto.
+- Se insertan con `{% load ayuda %}` + `{% ayuda 'clave' %}`
+  (`core/templatetags/ayuda.py`, parcial `core/partials/ayuda.html`). Segundo
+  argumento opcional: la posición (`'top'` por defecto).
+- Si la clave no existe el tag no dibuja nada. Hay un test que recorre los
+  templates y falla si alguna clave usada no está en el glosario.
+- El parcial usa `<button>` (recibe foco ⇒ anda el tap en mobile) y
+  `data-bs-title`, no `title`, para que no se superponga el tooltip nativo.
+
+Dos trampas ya resueltas, para no repetirlas:
+
+- `core.js` se carga en el `<head>`, así que **nada que toque el DOM puede ir
+  al tope del archivo**: corre antes de que exista el `<body>`. Los tooltips
+  se inicializan en `DOMContentLoaded` (`inicializarTooltips`). Antes de eso
+  no se inicializaba ninguno en toda la app.
+- Los modales del proyecto van a `z-index: 1100` y el tooltip de Bootstrap a
+  1080, así que dentro de un modal quedaba detrás. `.tooltip` está subido a
+  1115 en `styles.css`.
+
+> `{# ... #}` en Django comenta **una sola línea**. Escrito en varias, el
+> texto se imprime en la página (pasó dos veces en este repo). Para varias
+> líneas va `{% comment %}`; hay un test que lo verifica.
+
 ## Convención de números — formato argentino (IMPORTANTE)
 
 Los precios se muestran/ingresan en formato AR: **punto = separador de miles,

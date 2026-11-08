@@ -288,8 +288,20 @@ document.addEventListener('DOMContentLoaded', function() {
     toggleNavbar();
 });
 
-const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
-const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
+// Tooltips de Bootstrap.
+// Este archivo se carga en el <head>, antes de que exista el <body> y antes
+// que el bundle de Bootstrap, así que la inicialización tiene que esperar a
+// DOMContentLoaded: hasta que se corrigió esto, el querySelectorAll devolvía
+// 0 elementos y NINGÚN tooltip de la app llegaba a inicializarse (quedaban en
+// el tooltip nativo del navegador, que además no aparece al tocar en mobile).
+function inicializarTooltips(raiz = document) {
+    if (!window.bootstrap) return;
+    raiz.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
+        if (!bootstrap.Tooltip.getInstance(el)) new bootstrap.Tooltip(el);
+    });
+}
+
+document.addEventListener('DOMContentLoaded', () => inicializarTooltips());
 
 
 // Convierte un número real a formato es-AR (coma + miles + 2 decimales)
