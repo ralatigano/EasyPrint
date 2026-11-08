@@ -1,0 +1,137 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% load l10n %}
+{% block head %}
+<style>
+.aud-filtros { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
+.aud-filtros .form-label { font-size: .8rem; margin-bottom: 2px; }
+.aud-detalle { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .72rem;
+               white-space: pre-wrap; max-width: 520px; color: var(--bs-secondary-color); margin: 0; }
+.aud-nota { border: 1px solid var(--bs-border-color); border-left: 5px solid #B1DE43;
+            border-radius: 8px; padding: 10px 14px; margin-bottom: 1rem; }
+</style>
+{% endblock %}
+{% block title %}Auditoría de tercerizados{% endblock %}
+{% block header %}
+<div class="container">
+    <div class="titulo">
+        <h1>Auditoría de tercerizados</h1>
+        <a href="{% url 'control_tercerizados' %}">
+            <button class="btn btn-dark btn-fuente btn-xs"><i class="fa-solid fa-arrow-left"></i> Volver</button>
+        </a>
+    </div>
+</div>
+{% endblock %}
+{% block content %}
+<div class="aud-nota">
+    <i class="fa-solid fa-lock me-2"></i>
+    Registro de quién tocó qué: cada alta, edición, borrado y pago, hecho desde la
+    pantalla o por el agente vía API. Es <strong>solo lectura y append-only</strong>:
+    ni el agente ni esta pantalla pueden modificarlo o borrarlo.
+</div>
+
+<form method="get" class="aud-filtros mb-3">
+    <div>
+        <label for="actor_tipo" class="form-label">Quién</label>
+        <select id="actor_tipo" name="actor_tipo" class="form-select form-select-sm">
+            <option value="">Todos</option>
+            {% for valor, etiqueta in actores %}
+            <option value="{{ valor }}" {% if filtros.actor_tipo == valor %}selected{% endif %}>{{ etiqueta }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div>
+        <label for="accion" class="form-label">Acción</label>
+        <select id="accion" name="accion" class="form-select form-select-sm">
+            <option value="">Todas</option>
+            {% for valor, etiqueta in acciones %}
+            <option value="{{ valor }}" {% if filtros.accion == valor %}selected{% endif %}>{{ etiqueta }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div>
+        <label for="buscar" class="form-label">Texto</label>
+        <input type="search" id="buscar" name="buscar" class="form-control form-control-sm"
+               value="{{ filtros.buscar }}" placeholder="Buscar…">
+    </div>
+    <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-dark btn-sm btn-fuente"><i class="fa-solid fa-filter"></i> Filtrar</button>
+        <a href="{% url 'auditoria_tercerizados' %}" class="btn btn-outline-secondary btn-sm">Limpiar</a>
+    </div>
+</form>
+
+<div class="tabla-scroll">
+    <table id="TablaAuditoria" class="table table-hover">
+        <thead>
+            <tr>
+                <th class="centered">Cuándo</th>
+                <th class="centered">Quién</th>
+                <th class="centered">Acción</th>
+                <th class="centered">Objeto</th>
+                <th class="centered">Qué pasó</th>
+                <th class="centered">Detalle</th>
+                <th class="centered">IP</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in registros %}
+            <tr>
+                <td data-orden="{{ r.momento|date:'Y-m-d H:i:s' }}" class="text-nowrap">
+                    {{ r.momento|date:"d/m/Y H:i" }}
+                </td>
+                <td>
+                    {% if r.actor_tipo == 'agente' %}
+                        <i class="fa-solid fa-robot" title="Agente vía API"></i>
+                    {% elif r.actor_tipo == 'usuario' %}
+                        <i class="fa-solid fa-user" title="Usuario"></i>
+                    {% else %}
+                        <i class="fa-solid fa-gear" title="Sistema"></i>
+                    {% endif %}
+                    {{ r.actor }}
+                </td>
+                <td class="text-center">
+                    <span class="badge text-bg-{% if r.accion == 'borrar' or r.accion == 'anular_pago' %}danger{% elif r.accion == 'crear' or r.accion == 'pagar' %}success{% else %}secondary{% endif %}">
+                        {{ r.get_accion_display }}
+                    </span>
+                </td>
+                <td class="text-center">
+                    {{ r.objeto }}{% if r.objeto_id %} #{{ r.objeto_id|unlocalize }}{% endif %}
+                </td>
+                <td>{{ r.resumen }}</td>
+                <td>
+                    {% if r.detalle %}
+                    <details>
+                        <summary class="small text-muted">ver</summary>
+                        <pre class="aud-detalle">{{ r.detalle }}</pre>
+                    </details>
+                    {% else %}—{% endif %}
+                </td>
+                <td class="small text-muted">{{ r.ip|default:"—" }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+<p class="text-muted small mt-2">Se muestran los últimos 500 registros del filtro.</p>
+{% endblock %}
+{% block scripts %}
+<script>
+  window.addEventListener("load", () => {
+    $("#TablaAuditoria").DataTable({
+      responsive: true,
+      pageLength: 25,
+      order: [[0, "desc"]],
+      columnDefs: [{ targets: [5], orderable: false }],
+      language: {
+        lengthMenu: "Mostrar _MENU_ registros por página",
+        zeroRecords: "No hay registros",
+        info: "Mostrando de _START_ a _END_ de _TOTAL_ registros",
+        infoEmpty: "Sin registros",
+        infoFiltered: "(filtrado de _MAX_ registros totales)",
+        search: "Buscar:",
+        paginate: { first: "Primero", last: "Último", next: "Siguiente", previous: "Anterior" },
+      },
+    });
+  });
+</script>
+{% endblock %}

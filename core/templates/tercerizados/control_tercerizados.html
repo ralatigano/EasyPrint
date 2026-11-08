@@ -1,0 +1,362 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% load l10n %}
+<!--------------------------------------------------------------------------- Block head --------------------------------------------------------------------------->
+{% block head %}
+<style>
+.terc-filtros { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
+.terc-filtros .form-label { font-size: .8rem; margin-bottom: 2px; }
+.terc-deuda { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; }
+.terc-tarjeta { border: 1px solid var(--bs-border-color); border-radius: 10px; padding: 12px 14px; background: var(--bs-body-bg); }
+.terc-tarjeta .etiqueta { font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; color: var(--bs-secondary-color); }
+.terc-tarjeta .monto-grande { font-size: 1.35rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.terc-tarjeta .detalle { font-size: .78rem; color: var(--bs-secondary-color); font-variant-numeric: tabular-nums; }
+.terc-tarjeta.general { border-color: #B1DE43; border-width: 2px; }
+.terc-tarjeta.deuda-cero { opacity: .65; }
+.monto { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.monto.saldo { font-weight: 600; }
+.monto.cero { color: var(--bs-secondary-color); font-weight: 400; }
+/* Aviso permanente: NO usar la clase .alert, que base.html oculta a los 7 s. */
+.aviso-revisar { border: 1px solid #ffc107; border-left-width: 5px; border-radius: 8px;
+                 padding: 10px 14px; margin-bottom: 1rem; background: rgba(255,193,7,.12); }
+.imputacion-fila { display: grid; grid-template-columns: 1fr 120px; gap: 10px; align-items: center;
+                   padding: 6px 0; border-bottom: 1px solid var(--bs-border-color); }
+.imputacion-fila .descripcion { font-size: .85rem; }
+.imputacion-fila .descripcion small { color: var(--bs-secondary-color); }
+#imputacionesResumen { font-variant-numeric: tabular-nums; }
+.tabla-pagos .imputado-en { font-size: .78rem; color: var(--bs-secondary-color); }
+</style>
+{% endblock %}
+<!--------------------------------------------------------------------------- Block title --------------------------------------------------------------------------->
+{% block title %}Pedidos tercerizados{% endblock %}
+<!--------------------------------------------------------------------------- Block header --------------------------------------------------------------------------->
+{% block header %}
+<div class="container">
+    <div class="titulo">
+        <h1>Pedidos tercerizados</h1>
+        <button type="button" class="btn btn-dark btn-fuente btn-xs" data-bs-toggle="modal"
+                data-bs-target="#pedidoTercerizadoModal" data-bs-whatever="0">
+            <i class="fa-solid fa-square-plus"></i> Registrar pedido
+        </button>
+        <button type="button" class="btn btn-dark btn-fuente btn-xs" data-bs-toggle="modal"
+                data-bs-target="#pagoTercerizadoModal">
+            <i class="fa-solid fa-hand-holding-dollar"></i> Registrar pago
+        </button>
+        <a href="{% url 'exportar_tercerizados' %}?{{ query }}">
+            <button class="btn btn-dark btn-fuente btn-xs"><i class="fa-solid fa-file-excel"></i> Exportar</button>
+        </a>
+        <a href="{% url 'auditoria_tercerizados' %}">
+            <button class="btn btn-dark btn-fuente btn-xs"><i class="fa-solid fa-clipboard-check"></i> Auditoría</button>
+        </a>
+        {% if puede.tercerizados_tokens %}
+        <a href="{% url 'tercerizados_tokens' %}">
+            <button class="btn btn-dark btn-fuente btn-xs"><i class="fa-solid fa-key"></i> Acceso del agente</button>
+        </a>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+<!--------------------------------------------------------------------------- Block content --------------------------------------------------------------------------->
+{% block content %}
+<p class="text-muted small mb-3">
+    Trabajos encargados a proveedores externos y lo que se les pagó. Los que van por
+    <strong>cuenta corriente</strong> suman deuda hasta que un pago se les imputa, así que
+    acá se ve en todo momento cuánto se le debe a cada uno y por qué pedidos.
+</p>
+
+{% if sin_revisar %}
+<div class="aviso-revisar">
+    <i class="fa-solid fa-robot me-2"></i>
+    Hay <strong>{{ sin_revisar }}</strong> pedido{{ sin_revisar|pluralize }} cargado{{ sin_revisar|pluralize }}
+    por el agente que todavía nadie revisó.
+    <button type="button" class="btn btn-sm btn-outline-dark ms-2" id="btnFiltrarSinRevisar">
+        Ver sin revisar
+    </button>
+</div>
+{% endif %}
+
+<!-- ------------------------------------------------ Deuda por proveedor -->
+<h5 class="mt-2">Deuda por proveedor</h5>
+<div class="terc-deuda mb-4">
+    {% for d in deuda %}
+    <div class="terc-tarjeta {% if not d.deuda %}deuda-cero{% endif %}">
+        <div class="etiqueta">{{ d.proveedor }}</div>
+        <div class="monto-grande">$ {{ d.deuda|floatformat:"2g" }}</div>
+        <div class="detalle">
+            {{ d.pendientes }} pedido{{ d.pendientes|pluralize }} con saldo
+            {% if d.desde %}· desde {{ d.desde|date:"d/m/Y" }}{% endif %}
+        </div>
+        <div class="detalle">
+            Encargado $ {{ d.encargado|floatformat:"2g" }} · Pagado $ {{ d.pagado|floatformat:"2g" }}
+        </div>
+        {% if d.a_cuenta %}
+        <div class="detalle text-success">
+            A cuenta $ {{ d.a_cuenta|floatformat:"2g" }} · neto $ {{ d.deuda_neta|floatformat:"2g" }}
+        </div>
+        {% endif %}
+    </div>
+    {% empty %}
+    <p class="text-muted">Todavía no hay pedidos tercerizados registrados.</p>
+    {% endfor %}
+    {% if deuda %}
+    <div class="terc-tarjeta general">
+        <div class="etiqueta">Deuda total</div>
+        <div class="monto-grande">$ {{ deuda_total|floatformat:"2g" }}</div>
+        <div class="detalle">
+            {{ deuda|length }} proveedor{{ deuda|length|pluralize:"es" }}
+            {% if a_cuenta_total %}· $ {{ a_cuenta_total|floatformat:"2g" }} a cuenta{% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- ------------------------------------------------ Filtros -->
+<form method="get" class="terc-filtros mb-3" id="formFiltros">
+    <div>
+        <label for="desde" class="form-label">Desde</label>
+        <input type="date" id="desde" name="desde" class="form-control form-control-sm"
+               value="{{ filtros.desde|date:'Y-m-d' }}">
+    </div>
+    <div>
+        <label for="hasta" class="form-label">Hasta</label>
+        <input type="date" id="hasta" name="hasta" class="form-control form-control-sm"
+               value="{{ filtros.hasta|date:'Y-m-d' }}">
+    </div>
+    <div>
+        <label for="proveedorFiltro" class="form-label">Proveedor</label>
+        <select id="proveedorFiltro" name="proveedor" class="form-select form-select-sm">
+            <option value="">Todos</option>
+            {% for p in proveedores %}
+            <option value="{{ p.id|unlocalize }}" {% if filtros.proveedor == p.id|stringformat:"s" %}selected{% endif %}>{{ p.nombre }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div>
+        <label for="estadoFiltro" class="form-label">Estado del trabajo</label>
+        <select id="estadoFiltro" name="estado" class="form-select form-select-sm">
+            <option value="">Todos</option>
+            {% for valor, etiqueta in estados %}
+            <option value="{{ valor }}" {% if filtros.estado == valor %}selected{% endif %}>{{ etiqueta }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div>
+        <label for="estadoPagoFiltro" class="form-label">Pago</label>
+        <select id="estadoPagoFiltro" name="estado_pago" class="form-select form-select-sm">
+            <option value="">Todos</option>
+            <option value="con_deuda" {% if filtros.estado_pago == 'con_deuda' %}selected{% endif %}>Con saldo</option>
+            <option value="pendiente" {% if filtros.estado_pago == 'pendiente' %}selected{% endif %}>Pendiente</option>
+            <option value="parcial" {% if filtros.estado_pago == 'parcial' %}selected{% endif %}>Pago parcial</option>
+            <option value="pagado" {% if filtros.estado_pago == 'pagado' %}selected{% endif %}>Pagado</option>
+            <option value="cancelado" {% if filtros.estado_pago == 'cancelado' %}selected{% endif %}>Cancelado</option>
+        </select>
+    </div>
+    <div>
+        <label for="formaPagoFiltro" class="form-label">Forma de pago</label>
+        <select id="formaPagoFiltro" name="forma_pago" class="form-select form-select-sm">
+            <option value="">Todas</option>
+            {% for valor, etiqueta in formas_pago %}
+            <option value="{{ valor }}" {% if filtros.forma_pago == valor %}selected{% endif %}>{{ etiqueta }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div>
+        <label for="buscar" class="form-label">Trabajo / nota</label>
+        <input type="search" id="buscar" name="buscar" class="form-control form-control-sm"
+               value="{{ filtros.buscar }}" placeholder="Buscar…">
+    </div>
+    <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-dark btn-sm btn-fuente"><i class="fa-solid fa-filter"></i> Filtrar</button>
+        <a href="{% url 'control_tercerizados' %}" class="btn btn-outline-secondary btn-sm">Limpiar</a>
+    </div>
+</form>
+
+<!-- ------------------------------------------------ Tabla de pedidos -->
+<div class="d-flex align-items-center gap-2 mb-2">
+    <h5 class="mb-0">Pedidos</h5>
+    <form method="post" action="{% url 'marcar_revisados' %}" id="formRevisados" class="d-flex gap-2">
+        {% csrf_token %}
+        <input type="hidden" name="volver" value="{{ request.get_full_path }}">
+        <button type="submit" name="revisado" value="1" class="btn btn-outline-dark btn-sm">
+            <i class="fa-solid fa-check"></i> Marcar revisados
+        </button>
+    </form>
+</div>
+
+<div class="tabla-scroll">
+    <table id="TablaTercerizados" class="table table-hover">
+        <thead>
+            <tr>
+                <th class="centered"><input type="checkbox" id="seleccionarTodos"></th>
+                <th class="centered">Fecha</th>
+                <th class="centered">Proveedor</th>
+                <th class="centered">Trabajo</th>
+                <th class="centered">Pedido</th>
+                <th class="centered">Monto</th>
+                <th class="centered">Pagado</th>
+                <th class="centered">Saldo</th>
+                <th class="centered">Forma</th>
+                <th class="centered">Estado</th>
+                <th class="centered">Pago</th>
+                <th class="centered">Origen</th>
+                <th class="centered">Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for p in pedidos %}
+            <tr>
+                <td class="text-center">
+                    <input type="checkbox" class="form-check-input fila-checkbox" form="formRevisados"
+                           name="ids" value="{{ p.id|unlocalize }}">
+                </td>
+                <td data-orden="{{ p.fecha|date:'Y-m-d' }}">{{ p.fecha|date:"d/m/Y" }}</td>
+                <td>{{ p.proveedor.nombre }}</td>
+                <td>
+                    {{ p.descripcion }}
+                    {% if p.nota %}<br><small class="text-muted">{{ p.nota|truncatechars:80 }}</small>{% endif %}
+                </td>
+                <td class="text-center">
+                    {% if p.pedido_id %}
+                        <a href="/pedidos/v2" title="{{ p.pedido.descripcion }}">#{{ p.pedido_id|unlocalize }}</a>
+                    {% else %}—{% endif %}
+                </td>
+                <td class="monto">$ {{ p.monto|floatformat:"2g" }}</td>
+                <td class="monto {% if not p.monto_pagado %}cero{% endif %}">$ {{ p.monto_pagado|floatformat:"2g" }}</td>
+                <td class="monto saldo {% if not p.saldo %}cero{% endif %}">$ {{ p.saldo|floatformat:"2g" }}</td>
+                <td class="text-center">
+                    {% if p.forma_pago == 'cuenta_corriente' %}
+                        <span class="badge text-bg-warning">Cta. corriente</span>
+                    {% else %}
+                        <span class="badge text-bg-secondary">Contado</span>
+                    {% endif %}
+                </td>
+                <td class="text-center">
+                    {% if p.estado == 'cancelado' %}
+                        <span class="badge text-bg-dark">Cancelado</span>
+                    {% elif p.estado == 'recibido' %}
+                        <span class="badge text-bg-success">Recibido</span>
+                    {% else %}
+                        <span class="badge text-bg-info">Pendiente</span>
+                    {% endif %}
+                </td>
+                <td class="text-center">
+                    {% if p.estado_pago == 'pagado' %}
+                        <span class="badge text-bg-success">Pagado</span>
+                    {% elif p.estado_pago == 'parcial' %}
+                        <span class="badge text-bg-warning">Parcial</span>
+                    {% elif p.estado_pago == 'cancelado' %}
+                        <span class="badge text-bg-dark">—</span>
+                    {% else %}
+                        <span class="badge text-bg-danger">Pendiente</span>
+                    {% endif %}
+                </td>
+                <td class="text-center">
+                    {% if p.origen == 'agente' %}
+                        <span title="Cargado por el agente desde el correo"><i class="fa-solid fa-robot"></i></span>
+                        {% if not p.revisado %}
+                            <span class="badge text-bg-warning" title="Gerencia todavía no lo validó">sin revisar</span>
+                        {% endif %}
+                    {% else %}
+                        <span title="Carga manual{% if p.creado_por %} · {{ p.creado_por.get_full_name }}{% endif %}">
+                            <i class="fa-solid fa-user"></i>
+                        </span>
+                    {% endif %}
+                </td>
+                <td class="text-nowrap">
+                    <button type="button" class="btn btn-dark btn-xs" data-bs-toggle="modal"
+                            data-bs-target="#pedidoTercerizadoModal"
+                            data-bs-whatever="{{ p.id|unlocalize }}" title="Editar">
+                        <i class="fa-solid fa-pencil"></i>
+                    </button>
+                    <button type="button" class="btn btn-dark btn-xs btn-borrar-tercerizado"
+                            data-id="{{ p.id|unlocalize }}"
+                            data-descripcion="{{ p.descripcion }}"
+                            data-proveedor="{{ p.proveedor.nombre }}"
+                            data-monto="$ {{ p.monto|floatformat:'2g' }}"
+                            title="Eliminar">
+                        <i class="fa-solid fa-trash-can"></i>
+                    </button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="5" class="text-end fw-bold">Totales del listado:</td>
+                <td class="monto fw-bold">$ {{ total_listado|floatformat:"2g" }}</td>
+                <td></td>
+                <td class="monto fw-bold">$ {{ saldo_listado|floatformat:"2g" }}</td>
+                <td colspan="5"></td>
+            </tr>
+        </tfoot>
+    </table>
+</div>
+
+<!-- ------------------------------------------------ Tabla de pagos -->
+<h5 class="mt-4">Pagos a proveedores</h5>
+<div class="tabla-scroll">
+    <table id="TablaPagosTercerizados" class="table table-hover tabla-pagos">
+        <thead>
+            <tr>
+                <th class="centered">Fecha</th>
+                <th class="centered">Proveedor</th>
+                <th class="centered">Monto</th>
+                <th class="centered">Medio</th>
+                <th class="centered">Comprobante</th>
+                <th class="centered">Imputado a</th>
+                <th class="centered">A cuenta</th>
+                <th class="centered">Registró</th>
+                <th class="centered">Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for pago in pagos %}
+            <tr>
+                <td data-orden="{{ pago.fecha|date:'Y-m-d' }}">{{ pago.fecha|date:"d/m/Y" }}</td>
+                <td>{{ pago.proveedor.nombre }}</td>
+                <td class="monto">$ {{ pago.monto|floatformat:"2g" }}</td>
+                <td class="text-center"><span class="badge text-bg-light">{{ pago.get_medio_display }}</span></td>
+                <td>{{ pago.comprobante|default:"—" }}</td>
+                <td>
+                    {% for i in pago.imputaciones.all %}
+                        <div class="imputado-en">
+                            #{{ i.pedido_id|unlocalize }} {{ i.pedido.descripcion|truncatechars:34 }}
+                            — $ {{ i.monto|floatformat:"2g" }}
+                        </div>
+                    {% empty %}
+                        <span class="text-muted small">Sin imputar</span>
+                    {% endfor %}
+                </td>
+                <td class="monto {% if not pago.sin_imputar %}cero{% endif %}">$ {{ pago.sin_imputar|floatformat:"2g" }}</td>
+                <td>
+                    {% if pago.usuario %}{{ pago.usuario.get_full_name|default:pago.usuario.username }}
+                    {% elif pago.creado_por_token %}<i class="fa-solid fa-robot"></i> {{ pago.creado_por_token.nombre }}
+                    {% else %}—{% endif %}
+                </td>
+                <td>
+                    <form method="post" action="{% url 'anular_pago_tercerizado' pago.id|unlocalize %}"
+                          class="form-anular-pago d-inline">
+                        {% csrf_token %}
+                        <input type="hidden" name="volver" value="{{ request.get_full_path }}">
+                        <button type="submit" class="btn btn-dark btn-xs"
+                                data-monto="$ {{ pago.monto|floatformat:'2g' }}"
+                                data-proveedor="{{ pago.proveedor.nombre }}"
+                                title="Anular este pago y devolver el saldo a los pedidos">
+                            <i class="fa-solid fa-rotate-left"></i>
+                        </button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+<!--------------------------------------------------------------------------- Block modal --------------------------------------------------------------------------->
+{% block modal %}
+{% include 'tercerizados/partials/modales.html' %}
+{% endblock %}
+<!--------------------------------------------------------------------------- Block scripts --------------------------------------------------------------------------->
+{% block scripts %}
+<script src="{% static 'tercerizados/js/Tercerizados.js' %}"></script>
+{% endblock %}

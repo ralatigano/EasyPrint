@@ -31,11 +31,14 @@ Ejecutar desde `EasyPrint/` (ajustar la ruta del python del venv):
 - **presupuestos**, **pedidos**: cotizaciones y pedidos; consumen stock de insumos
   y registran `FaltanteInsumo` cuando no alcanza.
 - **clientes**, **dashboard**: ABM de clientes y tablero de métricas.
+- **tercerizados**: deuda con proveedores externos (ver sección propia) + API
+  con token para el agente LLM de gerencia.
 
 ## Roles (`core/roles.py`)
 
 Grupos de Django: **Gerencia** (todo), **Administración** (gestión: ABMs,
-configuración, caja; sin Dashboard, Usuaries ni exportar caja) y **Ventas**.
+configuración, caja; sin Dashboard, Usuaries, exportar caja ni tercerizados) y
+**Ventas**.
 Los permisos están en el dict `PERMISOS` de `core/roles.py` (permiso → grupos):
 para mover un permiso entre roles, tocar solo ahí. Vistas: `@solo_gerencia`
 (= permiso `gestion`), `@solo_dashboard`, `@solo_usuarios` o
@@ -56,6 +59,54 @@ Administración) y `puede.<permiso>`. No consultar `groups.filter(name=...)` a m
   `bloqueado_cancelado` (irreversible).
 - Vista `/caja/` (permiso `caja`): totales por medio y movimientos por período.
   Por ahora solo ingresos; egresos (compras, alquiler, servicios) no se registran.
+
+## Pedidos tercerizados y deuda con proveedores (app `tercerizados`)
+
+Vista `/tercerizados/` (permiso `tercerizados`, **solo Gerencia**: a diferencia
+de `caja`, Administración NO la ve). Registra lo que se le encarga a un
+proveedor externo y lo que se le pagó, para que la deuda de cuenta corriente
+no se descubra recién cuando el proveedor quiere cobrar.
+
+- `PedidoTercerizado`: un encargue (proveedor, descripción, monto, forma de
+  pago, estado del trabajo, `pedido` interno opcional). `monto_pagado` es
+  **denormalizado**: lo recalcula `services.recalcular_tercerizado()` desde las
+  imputaciones; no escribirlo a mano. `saldo` y `estado_pago` son derivados.
+- `PagoTercerizado` + `ImputacionPago`: un pago se reparte entre varios
+  pedidos del mismo proveedor. Lo no imputado queda **a cuenta**. El reparto
+  automático va del pedido más viejo al más nuevo.
+- Reglas: no se imputa por encima del saldo del pedido ni del monto del pago;
+  un pedido cancelado no suma deuda ni admite pagos; un pedido con pagos
+  imputados no se borra, no se cancela y no cambia de proveedor (hay que
+  anular el pago primero); el monto no puede bajar de lo ya pagado.
+- Toda la escritura pasa por `tercerizados/services.py` (lo comparten la UI y
+  la API) y queda en `RegistroAuditoria`, un log **append-only**: su `save()`
+  rechaza modificar una entrada ya escrita y su `delete()` rechaza borrarla.
+- Al calcular deuda, sumar `monto` de los pagos y `imputaciones__monto` en la
+  **misma** consulta infla el total (el JOIN repite el pago una vez por
+  imputación): `resumen_deuda` los pide por separado a propósito.
+
+### API del agente LLM (`/api/tercerizados/…`, `tercerizados/api.py`)
+
+Hecha a mano con `JsonResponse` (el proyecto **no usa DRF**; no agregar la
+dependencia solo por esto).
+
+- Autentica con `TokenAgente` vía `Authorization: Bearer <token>`. El token se
+  guarda hasheado (SHA-256), se muestra una sola vez al crearlo en
+  `/tercerizados/tokens` (permiso `tercerizados_tokens`) y **no abre sesión de
+  Django**: son las únicas vistas del proyecto que lo aceptan, así que su
+  alcance es el CRUD de tercerizados más la lectura de proveedores.
+- Permisos por token: leer / crear / editar / borrar / pagar. `pagar` viene
+  apagado por defecto. La API no crea proveedores ni toca la auditoría.
+- Idempotencia: `referencia_externa` (Message-ID del correo) es única; si el
+  agente reprocesa el mismo correo, devuelve el registro existente con
+  `duplicado: true` en lugar de duplicarlo.
+- Los pedidos que entran por API quedan `origen='agente'` y `revisado=False`
+  hasta que gerencia los valida.
+- `GET /api/tercerizados/esquema` devuelve el contrato completo, para que el
+  agente no tenga que adivinarlo.
+- Montos: número JSON o string AR (`"45.000,50"`). Un string con punto y 1-2
+  decimales (`"45000.50"`) se lee como decimal, con 3 dígitos (`"45.000"`)
+  como separador de miles. Ver `_monto()`.
 
 ## Cotizador: gráfico y "Partir diseño" (`presupuestos/functions.py`)
 
