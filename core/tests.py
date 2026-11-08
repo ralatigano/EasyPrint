@@ -526,6 +526,29 @@ class AyudaTooltipsTests(TestCase):
                 GLOSARIO[clave][:35], html,
                 f'Falta la ayuda de "{clave}" en el modal de cotizar')
 
+    def test_el_dashboard_explica_sus_conceptos(self):
+        from core.glosario import GLOSARIO
+        respuesta = self.client.get('/dashboard/')
+        self.assertEqual(respuesta.status_code, 200)
+        html = respuesta.content.decode('utf-8')
+        # Estos paneles se dibujan siempre.
+        for clave in ('absorcion_mes', 'absorcion_recuperada',
+                      'conversion_cotizado', 'punto_equilibrio',
+                      'horas_objetivo'):
+            self.assertIn(
+                GLOSARIO[clave][:35], html,
+                f'Falta la ayuda de "{clave}" en el dashboard')
+
+        # El ranking de contribución por hora solo aparece cuando hay ventas
+        # del mes cotizadas con la estructura, así que acá se verifica sobre
+        # el template y no sobre el HTML.
+        from pathlib import Path
+
+        from django.conf import settings
+        plantilla = (Path(settings.BASE_DIR) / 'core' / 'templates' /
+                     'dashboard' / 'dashboard.html').read_text(encoding='utf-8')
+        self.assertIn("{% ayuda 'contribucion_por_hora'", plantilla)
+
     def test_no_queda_ningun_comentario_django_multilinea(self):
         """{# ... #} es de UNA línea: escrito en varias, Django lo imprime en
         la página. Pasaba en configuracion_costos.html."""

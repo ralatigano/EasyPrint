@@ -355,6 +355,14 @@ body[data-bs-theme="dark"] .navbar .nav-link.nav-active {
 
 /* Los textos del glosario son de 2-3 renglones: el tooltip por defecto es
    angosto y queda como una columna. */
+.tooltip-ayuda {
+    /* Bootstrap los deja en 0.9 y sobre una tarjeta clara se transparenta el
+       texto de abajo, que es justo lo que uno está tratando de entender. */
+    /* Solo la variable: un `opacity` crudo acá pelea con la animación de
+       Bootstrap (.tooltip.fade arranca en 0) y el tooltip no se ve. */
+    --bs-tooltip-opacity: 1;
+}
+
 .tooltip-ayuda .tooltip-inner {
     max-width: 320px;
     text-align: left;

@@ -123,4 +123,43 @@ GLOSARIO = {
         'Cuánto se estima que tarda este trabajo. Es lo que determina qué '
         'parte de los gastos fijos absorbe, a razón de la tasa por hora.'
     ),
+
+    # ── Dashboard ─────────────────────────────────────────────────────────
+    'punto_equilibrio': (
+        'Cuántas horas de producción tenés que vender este mes para cubrir '
+        'los gastos fijos. Sale de dividir el costo fijo por lo que deja en '
+        'promedio cada hora vendida. Por debajo de esa marca, el mes da '
+        'pérdida.'
+    ),
+    'horas_vendidas_mes': (
+        'Las horas de producción de los trabajos que este mes pasaron de '
+        'presupuesto a pedido. Solo cuenta lo cotizado con la estructura de '
+        'costos: lo cotizado antes no tiene el dato y falsearía el panel.'
+    ),
+    'horas_objetivo': (
+        'Las horas productivas que da tu capacidad declarada en el mes '
+        '(operarios × horas × días × ratio). Es el techo contra el que se '
+        'mide lo que se vendió.'
+    ),
+    'absorcion_mes': (
+        'Cuánto de los gastos fijos del mes recuperaste con las horas '
+        'vendidas. En verde ya los cubriste; en rojo todavía falta. Es un '
+        'mecanismo de precios, no un flujo de fondos: el alquiler y los '
+        'sueldos se pagan igual. Un mes en rojo no es alarma (hay '
+        'estacionalidad); varios seguidos sí.'
+    ),
+    'absorcion_recuperada': (
+        'Las horas vendidas por la tasa por hora: la parte de los gastos '
+        'fijos que esos trabajos ya pagaron.'
+    ),
+    'conversion_cotizado': (
+        'Qué proporción de las horas que cotizaste terminó vendida. Mide '
+        'cuánto de lo que presupuestás se convierte en trabajo real.'
+    ),
+    'contribucion_por_hora': (
+        'Lo que deja cada hora de ese producto después de pagar su material. '
+        'Es el criterio para saber qué conviene empujar: el recurso escaso es '
+        'el tiempo, así que un producto de margen chico pero rápido puede '
+        'rendir más que uno de margen grande que tarda un día.'
+    ),
 }
