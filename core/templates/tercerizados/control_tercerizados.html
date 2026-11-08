@@ -210,12 +210,10 @@ a.terc-tarjeta:focus-visible { outline: 2px solid #0d6efd; outline-offset: 2px; 
                 <th class="centered">Trabajo</th>
                 <th class="centered">Pedidos</th>
                 <th class="centered">Monto</th>
-                <th class="centered">Pagado</th>
                 <th class="centered">Saldo</th>
                 <th class="centered">Forma</th>
                 <th class="centered">Estado</th>
                 <th class="centered">Pago</th>
-                <th class="centered">Origen</th>
                 <th class="centered"></th>
             </tr>
         </thead>
@@ -243,7 +241,13 @@ a.terc-tarjeta:focus-visible { outline: 2px solid #0d6efd; outline-offset: 2px; 
                 <td data-orden="{{ p.fecha|date:'Y-m-d' }}">{{ p.fecha|date:"d/m/Y" }}</td>
                 <td>{{ p.proveedor.nombre }}</td>
                 <td>
+                    {% if p.origen == 'agente' %}
+                        <i class="fa-solid fa-robot text-muted" title="Lo cargó el agente desde el correo"></i>
+                    {% endif %}
                     {{ p.descripcion }}
+                    {% if p.origen == 'agente' and not p.revisado %}
+                        <span class="badge text-bg-warning" title="Gerencia todavía no lo validó">sin revisar</span>
+                    {% endif %}
                     {% if p.nota %}<br><small class="text-muted">{{ p.nota|truncatechars:80 }}</small>{% endif %}
                 </td>
                 <td class="text-center">
@@ -254,13 +258,12 @@ a.terc-tarjeta:focus-visible { outline: 2px solid #0d6efd; outline-offset: 2px; 
                     {% empty %}—{% endfor %}
                 </td>
                 <td class="monto">$ {{ p.monto|floatformat:"2g" }}</td>
-                <td class="monto {% if not p.monto_pagado %}cero{% endif %}">$ {{ p.monto_pagado|floatformat:"2g" }}</td>
                 <td class="monto saldo {% if not p.saldo %}cero{% endif %}">$ {{ p.saldo|floatformat:"2g" }}</td>
                 <td class="text-center">
                     {% if p.forma_pago == 'cuenta_corriente' %}
-                        <span class="badge text-bg-warning">Cta. corriente</span>
+                        <span class="badge text-bg-warning" title="Cuenta corriente">C. cte.</span>
                     {% else %}
-                        <span class="badge text-bg-secondary">Contado</span>
+                        <span class="badge text-bg-secondary" title="Pagado al contado">Contado</span>
                     {% endif %}
                 </td>
                 <td class="text-center">
@@ -283,18 +286,6 @@ a.terc-tarjeta:focus-visible { outline: 2px solid #0d6efd; outline-offset: 2px; 
                         <span class="badge text-bg-danger">Pendiente</span>
                     {% endif %}
                 </td>
-                <td class="text-center">
-                    {% if p.origen == 'agente' %}
-                        <span title="Cargado por el agente desde el correo"><i class="fa-solid fa-robot"></i></span>
-                        {% if not p.revisado %}
-                            <span class="badge text-bg-warning" title="Gerencia todavía no lo validó">sin revisar</span>
-                        {% endif %}
-                    {% else %}
-                        <span title="Carga manual{% if p.creado_por %} · {{ p.creado_por.get_full_name }}{% endif %}">
-                            <i class="fa-solid fa-user"></i>
-                        </span>
-                    {% endif %}
-                </td>
                 {# Chevron: indicador de fila desplegada, igual que en /pedidos/v2. #}
                 <td class="text-center align-middle">
                     <i class="fa-solid fa-chevron-down chevron-icon"></i>
@@ -306,9 +297,8 @@ a.terc-tarjeta:focus-visible { outline: 2px solid #0d6efd; outline-offset: 2px; 
             <tr>
                 <td colspan="5" class="text-end fw-bold">Totales del listado:</td>
                 <td class="monto fw-bold">$ {{ total_listado|floatformat:"2g" }}</td>
-                <td></td>
                 <td class="monto fw-bold">$ {{ saldo_listado|floatformat:"2g" }}</td>
-                <td colspan="5"></td>
+                <td colspan="4"></td>
             </tr>
         </tfoot>
     </table>

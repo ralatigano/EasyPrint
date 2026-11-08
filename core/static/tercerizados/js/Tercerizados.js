@@ -33,8 +33,9 @@ const iniciarTablas = () => {
     pageLength: 25,
     order: [[1, "desc"]],
     // La columna de checkboxes y la del chevron no se ordenan ni se buscan.
+    // (0 = checkbox, 10 = chevron; son 11 columnas.)
     columnDefs: [
-      { targets: [0, 12], orderable: false, searchable: false },
+      { targets: [0, 10], orderable: false, searchable: false },
     ],
     language: idioma,
   });
