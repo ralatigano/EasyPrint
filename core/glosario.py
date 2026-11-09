@@ -16,24 +16,23 @@ GLOSARIO = {
 
     # ── Panel de la tasa ──────────────────────────────────────────────────
     'costo_fijo_mensual': (
-        'Lo que te sale tener el negocio abierto un mes, entre y no entre '
-        'trabajo: alquiler, sueldos, luz, impuestos, las cuotas de las '
-        'máquinas. Es la suma de la tabla de costos fijos de abajo.'
+        'Lo que te sale tener el negocio abierto un mes, aunque entre o '
+        'no entre trabajo: alquiler, sueldos, luz, impuestos, las cuotas '
+        'de las máquinas. Es la suma de la tabla de costos fijos de abajo.'
     ),
     'horas_disponibles': (
-        'Las horas que pagás en el mes: operarios × horas por día × días por '
+        'Las horas que pagás en el mes: operarios × horas al día × días al '
         'mes. Es el total teórico, antes de descontar el tiempo que no se '
-        'dedica a producir.'
+        'está produciendo.'
     ),
     'horas_productivas': (
         'De las horas que pagás, las que realmente se van en producir (el '
-        'resto se va en atender, comprar, limpiar y tiempos muertos). Son '
-        'estas, y no las disponibles, las que reparten el costo fijo.'
+        'resto se va en atender, comprar, limpiar y tiempos muertos). Estas '
+        'son las horas que cuentan para cubrir el costo fijo.'
     ),
     'tasa_hora': (
         'Cuánto tiene que aportar cada hora de trabajo para cubrir la '
-        'estructura: costo fijo mensual ÷ horas productivas. Es el número con '
-        'el que cada trabajo paga su parte de los gastos, según lo que tarda.'
+        'estructura: costo fijo mensual ÷ horas productivas. '
     ),
 
     # ── Capacidad productiva ──────────────────────────────────────────────
@@ -60,8 +59,7 @@ GLOSARIO = {
     'horas_legacy': (
         'Las horas de mano de obra que usa el método viejo, que es el que hoy '
         'define lo que cobrás. Está en 1,00 para que el precio no se mueva '
-        'mientras cargás los tiempos reales de cada producto. Es temporal: se '
-        'saca cuando pases a cobrar el precio sugerido.'
+        'mientras cargás los tiempos reales de cada producto. '
     ),
 
     # ── Costos fijos (tabla) ──────────────────────────────────────────────
@@ -103,10 +101,17 @@ GLOSARIO = {
         'respecto del que cobrás hoy. +20% significa que el sugerido es un '
         '20% más caro que tu precio actual.'
     ),
+    'descuento_margen': (
+        'Hasta dónde podés bajar el precio. Mientras no cruces el piso de '
+        'absorción seguís ganando (menos) y el trabajo sigue pagando su '
+        'parte de los gastos fijos. Entre ese piso y el absoluto no ganás: '
+        'recuperás el material y solo una parte de la estructura, así que '
+        'sirve para un caso puntual, no como norma. Debajo del piso '
+        'absoluto, ponés plata de tu bolsillo.'
+    ),
     'piso_absoluto': (
         'Lo que te cuesta este trabajo en material y empaquetado, sin nada '
-        'más. Por debajo de este precio perdés plata en el acto: estarías '
-        'pagando para trabajar. Es el límite que nunca conviene cruzar.'
+        'más. Por debajo de este precio perdés plata en el acto. '
     ),
     'piso_absorcion': (
         'El material más la parte de los gastos fijos que le toca a este '
