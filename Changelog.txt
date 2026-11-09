@@ -451,3 +451,56 @@ Versión v3.8.2
         *El tilde "Precio arb." pasa a llamarse "Precio manual" y ahora aparece marcado al volver a abrir un producto con el precio puesto a mano. Antes se abría destildado y, al guardar, el producto dejaba de figurar como precio manual.
         *Se saca el campo "Tiempo producción" del modal: hoy el tiempo no cambia el precio que se cobra (igual que al cotizar), así que un campo que no altera nada solo confunde. El tiempo cargado al cotizar se conserva y se sigue usando para la capacidad de producción y el Dashboard. El campo vuelve cuando se pase a cobrar con la estructura de costos.
         *Al agregar o quitar el empaquetado ahora también se actualizan los costos del producto, así que el semáforo de precio y el precio sugerido quedan bien. Antes solo se movía el precio de venta y el semáforo seguía comparando contra los costos de cuando se cotizó.
+
+****************** 8/11/2026 ******************
+Versión v3.9.0
+
+    -Estructura de costos (nuevo, Configuración → Estructura de costos)
+        *Se cargan los costos fijos del negocio (alquiler, sueldos, impuestos, servicios, cuotas de máquinas) con su periodicidad; los gastos de una sola vez, como la compra de una máquina, se reparten en los meses que se indiquen. El sistema los lleva a su equivalente mensual.
+        *Se declara la capacidad productiva: operarios, horas por día, días por mes y qué proporción de esas horas se dedica realmente a producir (el resto se va en atender, comprar, limpiar y tiempos muertos).
+        *Con eso se calcula la TASA POR HORA: cuánto tiene que aportar cada hora de trabajo para cubrir la estructura. El panel superior la recalcula en vivo mientras se editan los valores.
+        *La sección es solo para Gerencia.
+
+    -Productos: tiempo de producción
+        *Cada producto puede tener un tiempo de preparación por trabajo (armar el archivo, calibrar, la primera prueba) y un tiempo por unidad. Son los que determinan cuántas horas ocupa cada cotización.
+
+    -Cotizador: comparación de métodos
+        *El resultado de la cotización ahora muestra, además del precio de siempre, el precio sugerido según la estructura de costos y la diferencia entre los dos.
+        *Muestra también los dos pisos del trabajo: el costo variable o "piso absoluto" (material y empaquetado) y el costo con estructura o "piso de absorción" (lo anterior más la parte de los gastos fijos que le toca según las horas que ocupa).
+        *IMPORTANTE: es informativo. El precio que se cobra sigue siendo el de siempre, salvo que se use el botón "Agregar con precio sugerido". El cambio de método de cobro queda para más adelante.
+
+    -Dashboard: horas y absorción
+        *Punto de equilibrio del mes: cuántas horas de producción hay que vender para cubrir los gastos fijos, con una barra que compara lo vendido contra el objetivo.
+        *Absorción del mes: cuánto de los gastos fijos se recuperó con las horas vendidas. Es un mecanismo de precios, no un flujo de fondos: un mes en rojo no es alarma, varios seguidos sí.
+        *Conversión de horas cotizadas a vendidas, y ranking de productos por contribución por hora, que es el criterio para saber qué conviene empujar cuando lo que escasea es el tiempo.
+        *Solo entran los trabajos cotizados con la estructura de costos; los anteriores no tienen el dato y falsearían el panel.
+
+    -Control de fechas de entrega y feriados
+        *Al poner una fecha de entrega se avisa si no hay horas de producción suficientes entre hoy y esa fecha, considerando todo lo ya comprometido. Es un aviso, no un bloqueo.
+        *Nueva pantalla Configuración → Feriados para cargar los días no laborables que usa ese cálculo, a mano o importándolos.
+
+    -Ayuda en pantalla: botones "(i)"
+        *Los conceptos del costeo tienen un botón "(i)" al lado que los explica en palabras simples: con el mouse encima en la computadora, tocándolo en el celular.
+        *Están en la configuración de la estructura de costos, en el modal de resultado del cotizador y en el dashboard.
+        *Entre ellos, hasta dónde se puede bajar un precio si se quiere hacer un descuento: por encima del piso de absorción se sigue ganando; entre ese piso y el absoluto no se gana pero se recupera el material y parte de la estructura; por debajo del piso absoluto se pone plata del bolsillo.
+        *Se corrige un problema de base: los tooltips de la aplicación nunca llegaban a activarse, así que caían en el aviso del navegador, que además no aparece al tocar en el celular.
+
+    -Pedidos tercerizados (nuevo, Gestión → Pedidos tercerizados)
+        *Registro de los trabajos que se le encargan a proveedores externos. Los que van por cuenta corriente generaban una deuda sin seguimiento, y había que reconstruir el período entero cuando el proveedor venía a cobrar.
+        *Los pagos se imputan a pedidos concretos, así que se admiten pagos parciales y un mismo pago puede cubrir varios pedidos. Lo que no se impute queda como plata a cuenta del proveedor. Hay un botón que reparte el pago del pedido más viejo al más nuevo.
+        *La pantalla abre con la deuda viva por proveedor. Tocando la tarjeta de un proveedor se filtra la tabla por lo que todavía debe; la del total vuelve a mostrar todo.
+        *Un pedido tercerizado se puede vincular a varios pedidos de EasyPrint y al revés: una plancha de stickers que junta trabajos de dos clientes se registra una sola vez y queda vinculada a los dos. Tocando la etiqueta de un pedido se salta a la vista de Pedidos filtrada por ese pedido.
+        *Exporta a Excel en tres hojas (detalle, pagos y resumen de deuda), que es lo que se le muestra al proveedor cuando las cuentas no coinciden.
+        *Protecciones: no se puede imputar más de lo que debe un pedido ni más de lo que se pagó, y un pedido con pagos imputados no se borra ni se cancela sin anular el pago primero.
+        *La sección es solo para Gerencia: no la ve Administración ni Ventas.
+
+    -Pedidos tercerizados: carga automática desde el correo
+        *Una API permite que el agente de gerencia registre los pedidos tercerizados al llegar la confirmación del proveedor por correo, y que corrija o cancele un registro si el trabajo cambia.
+        *El acceso se maneja desde Gestión → Pedidos tercerizados → Acceso del agente, generando una credencial con permisos por acción (leer, crear, editar, borrar y, si se habilita, registrar pagos). La credencial se muestra una sola vez.
+        *Esa credencial sirve únicamente para los pedidos tercerizados: no abre sesión en el cotizador ni da acceso a pedidos, presupuestos, caja o clientes.
+        *Los registros que carga el agente quedan marcados y "sin revisar" hasta que Gerencia los valida. Si el mismo correo se procesa dos veces, no se duplica el registro.
+        *Para poder cruzar los registros contra el resumen de cuenta del proveedor, la descripción empieza con los identificadores que el proveedor usa en su correo, con el formato [factura · pedido] - trabajo. La misma pantalla trae la instrucción lista para pegarle al agente.
+        *Todo lo que se toca, desde la pantalla o por el agente, queda en un registro de auditoría que no se puede editar ni borrar, con quién lo hizo, cuándo y qué cambió.
+
+    -Tabla de pedidos tercerizados
+        *Las filas se despliegan haciendo click, igual que en la tabla de Pedidos, con los pagos imputados, los pedidos vinculados, la nota completa y las acciones.
