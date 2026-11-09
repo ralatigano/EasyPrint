@@ -46,10 +46,16 @@ window.addEventListener("load", async () => {
     }
     await initDataTable();
     if (window._buscarPedido) {
+        // Venimos de otra pantalla (dashboard, pedidos tercerizados) para ver
+        // UN pedido puntual: hay que limpiar los filtros guardados, porque un
+        // filtro de cliente/estado/saldo que quedó de antes lo escondería y la
+        // tabla aparecería vacía.
+        limpiarFiltros();
         dataTable.search(String(window._buscarPedido)).draw();
         delete window._buscarPedido;
+    } else {
+        restaurarFiltros();
     }
-    restaurarFiltros();
     document.getElementById("nav_item_pedidos").style.fontWeight = "bold";
 });
 

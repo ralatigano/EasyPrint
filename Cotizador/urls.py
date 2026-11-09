@@ -29,4 +29,8 @@ urlpatterns = [
     path('dashboard/', include('dashboard.urls')),
     path('facturacion/', include('facturacion.urls')),
     path('caja/', include('caja.urls')),
+    path('tercerizados/', include('tercerizados.urls')),
+    # API del agente LLM de gerencia: autenticada por token, acotada al CRUD
+    # de pedidos tercerizados (ver tercerizados/api.py).
+    path('api/tercerizados/', include('tercerizados.api_urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

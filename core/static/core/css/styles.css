@@ -370,3 +370,54 @@ body[data-bs-theme="dark"] .navbar .nav-link.nav-active {
     line-height: 1.35;
     padding: .5rem .65rem;
 }
+
+/* ---------------------------------------------------------------------------
+   Filas expandibles y panel de detalle
+   Compartido por la tabla de pedidos (#Pedidos) y la de pedidos tercerizados
+   (#TablaTercerizados). Las dos abren el detalle haciendo click en la fila, con
+   un chevron a la derecha como indicador: no se usa el control de la izquierda
+   del plugin Responsive de DataTables (esas tablas van con responsive:false y
+   scroll horizontal).
+   --------------------------------------------------------------------------- */
+tbody tr.main-row { cursor: pointer; }
+tbody tr.main-row.expanded > td { background: rgba(0,0,0,.03); }
+
+.chevron-icon {
+    display: inline-block;
+    transition: transform 0.2s ease;
+    font-size: 12px;
+    color: var(--bs-secondary-color, #6c757d);
+}
+.chevron-icon.open { transform: rotate(180deg); }
+
+.detail-card {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    border-top: 1px solid rgba(128,128,128,.15);
+}
+.detail-section { padding: 12px 16px; }
+.detail-section + .detail-section { border-left: 1px solid rgba(128,128,128,.15); }
+
+.detail-metric { margin-bottom: 10px; }
+.detail-metric:last-child { margin-bottom: 0; }
+.detail-metric-label { font-size: 11px; color: var(--bs-secondary-color, #6c757d); display: block; margin-bottom: 2px; }
+.detail-metric-value { font-size: 15px; font-weight: 500; }
+.detail-metric-value.saldo-pendiente { color: #0d6efd; }
+
+.detail-obs-text { font-size: 13px; margin-top: 4px; }
+
+.action-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 5px;
+}
+.action-grid .btn { white-space: nowrap; font-size: 12px; text-align: left; }
+
+/* En pantalla angosta el detalle se apila en vez de quedar en tres columnas. */
+@media (max-width: 767.98px) {
+    .detail-card { grid-template-columns: 1fr; }
+    .detail-section + .detail-section {
+        border-left: none;
+        border-top: 1px solid rgba(128,128,128,.15);
+    }
+}

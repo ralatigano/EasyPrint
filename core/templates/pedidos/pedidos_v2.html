@@ -28,16 +28,8 @@
 }
 
 /* ── Filas expandibles ───────────────────────────────────────────────────────── */
-#Pedidos tbody tr.main-row { cursor: pointer; }
-#Pedidos tbody tr.main-row.expanded > td { background: rgba(0,0,0,.03); }
-
-.chevron-icon {
-    display: inline-block;
-    transition: transform 0.2s ease;
-    font-size: 12px;
-    color: var(--bs-secondary-color, #6c757d);
-}
-.chevron-icon.open { transform: rotate(180deg); }
+/* Filas expandibles y panel de detalle: los estilos genéricos viven ahora en
+   core/css/styles.css, compartidos con la tabla de pedidos tercerizados. */
 
 /* ── Fila seleccionada (bulk) ────────────────────────────────────────────────── */
 #Pedidos tbody tr.row-selected > td {
@@ -61,29 +53,6 @@
     margin-left: 2px;
 }
 
-/* ── Panel de detalle ────────────────────────────────────────────────────────── */
-.detail-card {
-    display: grid;
-    grid-template-columns: auto 1fr auto;
-    border-top: 1px solid rgba(128,128,128,.15);
-}
-.detail-section { padding: 12px 16px; }
-.detail-section + .detail-section { border-left: 1px solid rgba(128,128,128,.15); }
-
-.detail-metric { margin-bottom: 10px; }
-.detail-metric:last-child { margin-bottom: 0; }
-.detail-metric-label { font-size: 11px; color: var(--bs-secondary-color, #6c757d); display: block; margin-bottom: 2px; }
-.detail-metric-value { font-size: 15px; font-weight: 500; }
-.detail-metric-value.saldo-pendiente { color: #0d6efd; }
-
-.detail-obs-text { font-size: 13px; margin-top: 4px; }
-
-.action-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 5px;
-}
-.action-grid .btn { white-space: nowrap; font-size: 12px; text-align: left; }
 
 /* ── Badges de estado ────────────────────────────────────────────────────────── */
 .badge-estado {

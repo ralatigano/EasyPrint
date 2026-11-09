@@ -58,13 +58,16 @@
       </li>
 
       <li class="nav-item dropdown nav-menu">
-        <a class="nav-link dropdown-toggle {% if path|slice:':10' == '/dashboard' or path|slice:':5' == '/caja' or '/facturacion/comprobantes' in path or path|slice:':9' == '/usuarios' %}nav-active{% endif %}" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Gestión</a>
+        <a class="nav-link dropdown-toggle {% if path|slice:':10' == '/dashboard' or path|slice:':5' == '/caja' or path|slice:':13' == '/tercerizados' or '/facturacion/comprobantes' in path or path|slice:':9' == '/usuarios' %}nav-active{% endif %}" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Gestión</a>
         <ul class="dropdown-menu dropdown-menu-lg-end">
           {% if puede.dashboard %}
           <li><a class="dropdown-item {% if path|slice:':10' == '/dashboard' %}active{% endif %}" href="/dashboard" id="nav_item_dashboard"><i class="fa-solid fa-chart-line fa-fw me-2"></i>Dashboard</a></li>
           {% endif %}
           {% if puede.caja %}
           <li><a class="dropdown-item {% if path|slice:':5' == '/caja' %}active{% endif %}" href="/caja/" id="nav_item_caja"><i class="fa-solid fa-cash-register fa-fw me-2"></i>Control de caja</a></li>
+          {% endif %}
+          {% if puede.tercerizados %}
+          <li><a class="dropdown-item {% if path|slice:':13' == '/tercerizados' %}active{% endif %}" href="/tercerizados/" id="nav_item_tercerizados"><i class="fa-solid fa-truck-ramp-box fa-fw me-2"></i>Pedidos tercerizados</a></li>
           {% endif %}
           <li><a class="dropdown-item {% if '/facturacion/comprobantes' in path %}active{% endif %}" href="/facturacion/comprobantes" id="nav_item_comprobantes"><i class="fa-solid fa-file-invoice-dollar fa-fw me-2"></i>Comprobantes</a></li>
           {% if puede.usuarios %}

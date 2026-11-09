@@ -24,6 +24,11 @@ PERMISOS = {
     'caja': GRUPOS_GESTION,
     'caja_exportar': (GERENCIA,),
     'caja_eliminar': (GERENCIA,),
+    # Pedidos tercerizados: deuda con proveedores. Solo Gerencia, ni
+    # Administración ni Ventas.
+    'tercerizados': (GERENCIA,),
+    # Tokens de la API del agente LLM: son credenciales, solo Gerencia.
+    'tercerizados_tokens': (GERENCIA,),
 }
 
 

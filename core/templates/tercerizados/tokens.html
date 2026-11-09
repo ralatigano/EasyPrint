@@ -1,0 +1,283 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% load l10n %}
+{% block head %}
+<style>
+.token-nuevo { border: 2px solid #B1DE43; border-radius: 10px; padding: 14px 16px; margin-bottom: 1.25rem; }
+.token-valor { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .95rem;
+               word-break: break-all; background: var(--bs-tertiary-bg); padding: 8px 10px;
+               border-radius: 6px; display: block; margin: 8px 0; }
+.token-aviso { border: 1px solid var(--bs-border-color); border-left: 5px solid #0dcaf0;
+               border-radius: 8px; padding: 10px 14px; margin-bottom: 1rem; }
+.endpoints { font-size: .85rem; }
+.endpoints code { white-space: nowrap; }
+.permiso-si { color: var(--bs-success); }
+.permiso-no { color: var(--bs-secondary-color); }
+.instruccion-caja { border: 1px solid var(--bs-border-color); border-left: 5px solid #B1DE43;
+                    border-radius: 10px; padding: 12px 14px; margin-bottom: 1.25rem; }
+.instruccion-texto { font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+                     font-size: .78rem; white-space: pre-wrap; max-height: 340px;
+                     overflow-y: auto; background: var(--bs-tertiary-bg);
+                     padding: 12px; border-radius: 6px; margin: 0; }
+</style>
+{% endblock %}
+{% block title %}Acceso del agente{% endblock %}
+{% block header %}
+<div class="container">
+    <div class="titulo">
+        <h1>Acceso del agente</h1>
+        <a href="{% url 'control_tercerizados' %}">
+            <button class="btn btn-dark btn-fuente btn-xs"><i class="fa-solid fa-arrow-left"></i> Volver</button>
+        </a>
+    </div>
+</div>
+{% endblock %}
+{% block content %}
+
+{% if token_nuevo %}
+<div class="token-nuevo">
+    <h5 class="mb-1"><i class="fa-solid fa-key me-2"></i>Token de "{{ token_nuevo.nombre }}"</h5>
+    <p class="mb-1 small">
+        Copialo ahora: <strong>no se vuelve a mostrar</strong>. En la base queda solo
+        su hash, así que si se pierde hay que generar uno nuevo.
+    </p>
+    <code class="token-valor">{{ token_nuevo.token }}</code>
+    <p class="mb-0 small text-muted">
+        El agente lo manda en cada pedido como cabecera
+        <code>Authorization: Bearer {{ token_nuevo.token|slice:":8" }}…</code>
+    </p>
+</div>
+{% endif %}
+
+<div class="token-aviso">
+    <i class="fa-solid fa-shield-halved me-2"></i>
+    Estos tokens habilitan <strong>únicamente</strong> la API de pedidos tercerizados
+    (<code>/api/tercerizados/…</code>) y la lectura de proveedores. No son usuarios del
+    cotizador: no abren sesión, no entran a pedidos, presupuestos, caja ni clientes, y no
+    pueden tocar el registro de auditoría. Todo lo que escriben queda firmado con el
+    nombre del token en la
+    <a href="{% url 'auditoria_tercerizados' %}">auditoría</a>.
+</div>
+
+<!-- ------------------------------------------------ Alta -->
+<h5>Nuevo token</h5>
+<form method="post" action="{% url 'crear_token_agente' %}" class="row g-3 align-items-end mb-4">
+    {% csrf_token %}
+    <div class="col-md-4">
+        <label for="nombre" class="form-label">Nombre</label>
+        <input type="text" class="form-control" id="nombre" name="nombre" maxlength="80"
+               placeholder="Ej: agente-correo-gerencia" required>
+        <div class="form-text">Con qué nombre va a figurar en la auditoría.</div>
+    </div>
+    <div class="col-md-5">
+        <label class="form-label">Permisos</label>
+        <div class="d-flex flex-wrap gap-3">
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="permite_crear" name="permite_crear" checked>
+                <label class="form-check-label" for="permite_crear">Crear</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="permite_editar" name="permite_editar" checked>
+                <label class="form-check-label" for="permite_editar">Editar</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="permite_borrar" name="permite_borrar" checked>
+                <label class="form-check-label" for="permite_borrar">Borrar</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="permite_pagar" name="permite_pagar">
+                <label class="form-check-label" for="permite_pagar">Registrar pagos</label>
+            </div>
+        </div>
+        <div class="form-text">
+            La lectura va siempre incluida. "Registrar pagos" viene apagado: los pagos
+            los hace gerencia.
+        </div>
+    </div>
+    <div class="col-md-3">
+        <button type="submit" class="btn btn-dark btn-fuente">
+            <i class="fa-solid fa-plus"></i> Generar token
+        </button>
+    </div>
+</form>
+
+<!-- ------------------------------------------------ Listado -->
+<h5>Tokens</h5>
+<div class="tabla-scroll">
+    <table class="table table-hover">
+        <thead>
+            <tr>
+                <th>Nombre</th>
+                <th class="centered">Prefijo</th>
+                <th class="centered">Estado</th>
+                <th class="centered">Permisos</th>
+                <th class="centered">Creado</th>
+                <th class="centered">Último uso</th>
+                <th class="centered">Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for t in tokens %}
+            <tr>
+                <td>{{ t.nombre }}</td>
+                <td class="text-center"><code>{{ t.prefijo }}…</code></td>
+                <td class="text-center">
+                    {% if t.activo %}
+                        <span class="badge text-bg-success">Activo</span>
+                    {% else %}
+                        <span class="badge text-bg-secondary">Inactivo</span>
+                    {% endif %}
+                </td>
+                <td class="text-center small">
+                    <span class="{% if t.permite_crear %}permiso-si{% else %}permiso-no{% endif %}">crear</span> ·
+                    <span class="{% if t.permite_editar %}permiso-si{% else %}permiso-no{% endif %}">editar</span> ·
+                    <span class="{% if t.permite_borrar %}permiso-si{% else %}permiso-no{% endif %}">borrar</span> ·
+                    <span class="{% if t.permite_pagar %}permiso-si{% else %}permiso-no{% endif %}">pagar</span>
+                </td>
+                <td class="text-center">{{ t.creado|date:"d/m/Y" }}</td>
+                <td class="text-center">
+                    {% if t.ultimo_uso %}{{ t.ultimo_uso|date:"d/m/Y H:i" }}{% else %}nunca{% endif %}
+                </td>
+                <td class="text-nowrap">
+                    <form method="post" action="{% url 'alternar_token_agente' t.id|unlocalize %}" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-dark btn-xs"
+                                title="{% if t.activo %}Desactivar{% else %}Activar{% endif %}">
+                            <i class="fa-solid fa-power-off"></i>
+                        </button>
+                    </form>
+                    <form method="post" action="{% url 'borrar_token_agente' t.id|unlocalize %}"
+                          class="d-inline" onsubmit="return confirm('¿Eliminar el token \'{{ t.nombre|escapejs }}\'? El agente va a dejar de tener acceso.');">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-dark btn-xs" title="Eliminar">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </form>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="7" class="text-muted">Todavía no hay tokens generados.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- ------------------------------------------------ Instrucción para el agente -->
+<h5 class="mt-4">Instrucción para el agente</h5>
+<p class="small text-muted mb-2">
+    Pegale este texto al agente en su prompt. Define el formato de la descripción,
+    que es lo que después permite cruzar nuestra tabla contra el resumen de cuenta
+    del proveedor. El agente también puede releerlo solo en
+    <code>GET /api/tercerizados/esquema</code>.
+</p>
+
+<div class="instruccion-caja">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <span class="small text-muted">
+            Formato: <code>{{ formato_descripcion }}</code>
+        </span>
+        <button type="button" class="btn btn-dark btn-sm btn-fuente" id="btnCopiarInstruccion">
+            <i class="fa-solid fa-copy"></i> Copiar instrucción
+        </button>
+    </div>
+    <pre id="instruccionAgente" class="instruccion-texto">{{ instruccion_agente }}</pre>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-6">
+        <p class="small mb-1"><strong>Ejemplo: así llega el correo</strong></p>
+        <pre class="token-valor">{{ ejemplo_correo }}</pre>
+    </div>
+    <div class="col-md-6">
+        <p class="small mb-1"><strong>Ejemplo: así lo registra</strong></p>
+        <pre class="token-valor">{{ ejemplo_alta }}</pre>
+    </div>
+</div>
+
+<!-- ------------------------------------------------ Cómo usarla -->
+<h5 class="mt-4">Cómo la usa el agente</h5>
+<div class="endpoints">
+    <p class="small text-muted">
+        El propio servidor describe el contrato en
+        <code>GET /api/tercerizados/esquema</code>, así que al agente le alcanza con
+        el token, la URL base y esa llamada.
+    </p>
+    <table class="table table-sm">
+        <thead>
+            <tr><th>Método</th><th>Ruta</th><th>Para qué</th></tr>
+        </thead>
+        <tbody>
+            <tr><td><code>GET</code></td><td><code>/api/tercerizados/ping</code></td><td>Verificar el token y ver qué permisos tiene.</td></tr>
+            <tr><td><code>GET</code></td><td><code>/api/tercerizados/esquema</code></td><td>Contrato completo de la API, incluida esta instrucción.</td></tr>
+            <tr><td><code>GET</code></td><td><code>/api/tercerizados/proveedores</code></td><td>Proveedores cargados (para vincular por nombre o id).</td></tr>
+            <tr><td><code>GET</code></td><td><code>/api/tercerizados/pedidos</code></td><td>Listar / buscar pedidos tercerizados.</td></tr>
+            <tr><td><code>POST</code></td><td><code>/api/tercerizados/pedidos</code></td><td>Registrar un pedido al llegar la confirmación por correo.</td></tr>
+            <tr><td><code>PATCH</code></td><td><code>/api/tercerizados/pedidos/&lt;id&gt;</code></td><td>Corregir monto, estado (incluido <code>cancelado</code>), etc.</td></tr>
+            <tr><td><code>DELETE</code></td><td><code>/api/tercerizados/pedidos/&lt;id&gt;</code></td><td>Borrar un pedido sin pagos imputados.</td></tr>
+            <tr><td><code>GET</code></td><td><code>/api/tercerizados/deuda</code></td><td>Deuda viva por proveedor.</td></tr>
+            <tr><td><code>GET/POST</code></td><td><code>/api/tercerizados/pagos</code></td><td>Ver o registrar pagos (POST pide el permiso "pagar").</td></tr>
+        </tbody>
+    </table>
+    <p class="small mb-1"><strong>Ejemplo de alta</strong> (el <code>referencia_externa</code> evita duplicados si se reprocesa el mismo correo):</p>
+<pre class="token-valor">curl -X POST https://TU-DOMINIO/api/tercerizados/pedidos \
+  -H "Authorization: Bearer EL-TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"proveedor": "Nombre del proveedor",
+       "descripcion": "[FA-A 00005-00078221 · S42352] - 200 lonas 3x2",
+       "monto": 145000.50,
+       "fecha": "2026-11-08",
+       "forma_pago": "cuenta_corriente",
+       "referencia_externa": "&lt;CAF...@mail.gmail.com&gt;",
+       "pedidos_internos": [412, 419]}'</pre>
+    <p class="small text-muted mb-0">
+        Los pedidos que entran por API quedan marcados con <i class="fa-solid fa-robot"></i> y
+        <em>sin revisar</em> hasta que gerencia los valide desde la pantalla principal.
+    </p>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+  // Copia la instrucción completa al portapapeles para pegarla en el prompt.
+  document.addEventListener("DOMContentLoaded", () => {
+    const boton = document.getElementById("btnCopiarInstruccion");
+    if (!boton) return;
+    boton.addEventListener("click", async () => {
+      const bloque = document.getElementById("instruccionAgente");
+      const original = boton.innerHTML;
+      const avisar = (html, ms) => {
+        boton.innerHTML = html;
+        setTimeout(() => { boton.innerHTML = original; }, ms);
+      };
+
+      // navigator.clipboard solo existe en contexto seguro (https o
+      // localhost). Si el cotizador se sirve por http plano se usa el camino
+      // viejo, y si tampoco se puede, al menos queda el texto seleccionado.
+      try {
+        await navigator.clipboard.writeText(bloque.innerText);
+        avisar('<i class="fa-solid fa-check"></i> Copiada', 2500);
+        return;
+      } catch (error) {
+        /* sigue abajo */
+      }
+
+      const rango = document.createRange();
+      rango.selectNodeContents(bloque);
+      const seleccion = window.getSelection();
+      seleccion.removeAllRanges();
+      seleccion.addRange(rango);
+      let copiado = false;
+      try {
+        copiado = document.execCommand("copy");
+      } catch (error) {
+        copiado = false;
+      }
+      if (copiado) {
+        seleccion.removeAllRanges();
+        avisar('<i class="fa-solid fa-check"></i> Copiada', 2500);
+      } else {
+        avisar('<i class="fa-solid fa-i-cursor"></i> Seleccionada: Ctrl+C', 4000);
+      }
+    });
+  });
+</script>
+{% endblock %}

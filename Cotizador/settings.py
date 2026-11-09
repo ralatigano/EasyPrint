@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     'dashboard',
     'facturacion',
     'caja',
+    'tercerizados',
 ]
 
 MIDDLEWARE = [

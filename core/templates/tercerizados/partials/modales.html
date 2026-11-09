@@ -1,0 +1,191 @@
+{% load l10n %}
+<!-- ======================================================= Alta / edición de pedido -->
+<div class="modal fade" id="pedidoTercerizadoModal" tabindex="-1"
+     aria-labelledby="pedidoTercerizadoModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <form method="post" action="{% url 'guardar_tercerizado' %}" id="formPedidoTercerizado">
+        {% csrf_token %}
+        <input type="hidden" name="volver" value="{{ request.get_full_path }}">
+        <input type="hidden" name="pedidoId" id="pedidoId" value="0">
+        <div class="modal-header">
+          <h1 class="modal-title fs-5" id="pedidoTercerizadoModalLabel">Registrar pedido tercerizado</h1>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-md-4">
+              <label for="fechaPedido" class="form-label">Fecha</label>
+              <input type="date" class="form-control" id="fechaPedido" name="fecha"
+                     value="{{ hoy|date:'Y-m-d' }}" required>
+            </div>
+            <div class="col-md-8">
+              <label for="proveedorPedido" class="form-label">Proveedor</label>
+              <select class="form-select" id="proveedorPedido" name="proveedor" required>
+                <option value="">Elegí un proveedor…</option>
+                {% for p in proveedores %}
+                <option value="{{ p.id|unlocalize }}">{{ p.nombre }}</option>
+                {% endfor %}
+              </select>
+              <div class="form-text">
+                Si falta el proveedor, cargalo en
+                <a href="/productos/proveedores/" target="_blank">Proveedores</a>.
+              </div>
+            </div>
+            <div class="col-12">
+              <label for="descripcionPedido" class="form-label">Trabajo encargado</label>
+              <input type="text" class="form-control" id="descripcionPedido" name="descripcion"
+                     maxlength="200" placeholder="Ej: 200 lonas 3x2 con ojalillos" required>
+            </div>
+            <div class="col-md-4">
+              <label for="montoPedido" class="form-label">Monto</label>
+              <input type="text" class="form-control" id="montoPedido" name="monto"
+                     inputmode="decimal" placeholder="0,00" required>
+            </div>
+            <div class="col-md-4">
+              <label for="formaPagoPedido" class="form-label">Forma de pago</label>
+              <select class="form-select" id="formaPagoPedido" name="forma_pago">
+                {% for valor, etiqueta in formas_pago %}
+                <option value="{{ valor }}">{{ etiqueta }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label for="estadoPedido" class="form-label">Estado del trabajo</label>
+              <select class="form-select" id="estadoPedido" name="estado">
+                {% for valor, etiqueta in estados %}
+                <option value="{{ valor }}">{{ etiqueta }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label for="pedidosInternosPedido" class="form-label">Pedidos del cotizador</label>
+              <input type="text" class="form-control" id="pedidosInternosPedido"
+                     name="pedidos_internos" placeholder="Ej: 412, 419">
+              <div class="form-text">
+                Opcional. Pueden ser varios separados por coma: un mismo encargue
+                al proveedor puede cubrir trabajos de más de un pedido nuestro.
+              </div>
+            </div>
+            <div class="col-md-8">
+              <label for="notaPedido" class="form-label">Nota</label>
+              <textarea class="form-control" id="notaPedido" name="nota" rows="2"
+                        placeholder="Opcional"></textarea>
+            </div>
+          </div>
+          <div id="infoPagosPedido" class="mt-3 small text-muted" style="display:none;"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary btn-fuente" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-dark btn-fuente">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ======================================================= Registrar pago -->
+<div class="modal fade" id="pagoTercerizadoModal" tabindex="-1"
+     aria-labelledby="pagoTercerizadoModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <form method="post" action="{% url 'registrar_pago_tercerizado' %}" id="formPagoTercerizado">
+        {% csrf_token %}
+        <input type="hidden" name="volver" value="{{ request.get_full_path }}">
+        <div class="modal-header">
+          <h1 class="modal-title fs-5" id="pagoTercerizadoModalLabel">Registrar pago a proveedor</h1>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label for="proveedorPago" class="form-label">Proveedor</label>
+              <select class="form-select" id="proveedorPago" name="proveedor" required>
+                <option value="">Elegí un proveedor…</option>
+                {% for p in proveedores %}
+                <option value="{{ p.id|unlocalize }}">{{ p.nombre }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label for="fechaPago" class="form-label">Fecha</label>
+              <input type="date" class="form-control" id="fechaPago" name="fecha"
+                     value="{{ hoy|date:'Y-m-d' }}" required>
+            </div>
+            <div class="col-md-3">
+              <label for="montoPago" class="form-label">Monto pagado</label>
+              <input type="text" class="form-control" id="montoPago" name="monto"
+                     inputmode="decimal" placeholder="0,00" required>
+            </div>
+            <div class="col-md-4">
+              <label for="medioPago" class="form-label">Medio</label>
+              <select class="form-select" id="medioPago" name="medio">
+                {% for valor, etiqueta in medios %}
+                <option value="{{ valor }}">{{ etiqueta }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label for="comprobantePago" class="form-label">Comprobante</label>
+              <input type="text" class="form-control" id="comprobantePago" name="comprobante"
+                     maxlength="120" placeholder="Nº de factura / recibo">
+            </div>
+            <div class="col-md-4">
+              <label for="notaPago" class="form-label">Nota</label>
+              <input type="text" class="form-control" id="notaPago" name="nota" maxlength="255">
+            </div>
+          </div>
+
+          <hr>
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <h6 class="mb-0">Imputar a estos pedidos</h6>
+            <button type="button" class="btn btn-outline-dark btn-sm" id="btnRepartirAuto">
+              <i class="fa-solid fa-wand-magic-sparkles"></i> Repartir del más viejo
+            </button>
+          </div>
+          <p class="small text-muted">
+            Cada pedido se cubre hasta su saldo. Lo que no se impute queda como plata
+            a cuenta del proveedor.
+          </p>
+          <div id="listaImputaciones">
+            <p class="text-muted small mb-0">Elegí un proveedor para ver sus pedidos con saldo.</p>
+          </div>
+          <div id="imputacionesResumen" class="mt-2 small"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary btn-fuente" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-dark btn-fuente">Registrar pago</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ======================================================= Confirmar borrado -->
+<div class="modal fade" id="borrarTercerizadoModal" tabindex="-1"
+     aria-labelledby="borrarTercerizadoModalLabel" data-bs-backdrop="static" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="post" id="formBorrarTercerizado">
+        {% csrf_token %}
+        <input type="hidden" name="volver" value="{{ request.get_full_path }}">
+        <div class="modal-header">
+          <h1 class="modal-title fs-5" id="borrarTercerizadoModalLabel">
+            <i class="fa-solid fa-triangle-exclamation me-2 text-warning"></i>
+            Confirmar eliminación
+          </h1>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+          <p id="borrarTercerizadoMensaje" class="mb-0"></p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-dark btn-fuente" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-danger btn-fuente">
+            <i class="fa-solid fa-trash-can me-1"></i> Eliminar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
