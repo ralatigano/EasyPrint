@@ -531,8 +531,10 @@ class AyudaTooltipsTests(TestCase):
         respuesta = self.client.get('/dashboard/')
         self.assertEqual(respuesta.status_code, 200)
         html = respuesta.content.decode('utf-8')
-        # Estos paneles se dibujan siempre.
-        for clave in ('absorcion_mes', 'absorcion_recuperada',
+        # Estos paneles se dibujan siempre. La absorción salió de la pantalla
+        # en el lote B (sólo miraba horas, no precios: ver PLAN_v3.10.md §2.4);
+        # ahora el card muestra el resultado del mes.
+        for clave in ('resultado_mes', 'contribucion', 'dinero_por_entrar',
                       'conversion_cotizado', 'punto_equilibrio',
                       'horas_objetivo'):
             self.assertIn(

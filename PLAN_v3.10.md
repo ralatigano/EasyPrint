@@ -1,12 +1,12 @@
 # Plan v3.10 — Manual de uso y mejoras de lectura
 
-Estado: **lote A terminado y liberado como v3.10.0** (2026-11-09); los lotes
-B a E quedan pendientes. Punto de partida: `main` en `e09f8c6` (v3.9.0,
+Estado: **lotes A (v3.10.0) y B (v3.11.0) terminados y desplegados**; quedan
+C, D y E. Punto de partida: `main` en `e09f8c6` (v3.9.0,
 desplegada en la VM).
 
-El lote A se adelantó y salió solo, a pedido del usuario, para que la gente
-empiece a leer el manual y diga si se entiende. **Los lotes que quedan van a un
-release posterior (v3.11.0)**, no a v3.10.0.
+Los lotes salen de a uno, a medida que se terminan, en lugar de esperar a un
+release grande: **A = v3.10.0** (manual), **B = v3.11.0** (dashboard). Lo que
+queda (C, D, E) va a releases posteriores.
 
 Este plan agrupa un conjunto de trabajos heterogéneos que salieron de una misma
 observación: el cotizador acumuló features y la forma de usarlo dejó de ser
@@ -25,20 +25,20 @@ no mezclar dos:
 - Un `PLAN_*.md` en la raíz como documento rector del conjunto (igual que
   `PLAN_ESTRUCTURA_COSTOS.md`). Este archivo es ese documento.
 - Cada lote termina en `main` con su entrada en `Changelog.txt`. El lote A
-  salió como **v3.10.0**; lo que resta va al siguiente release.
+  salió como **v3.10.0** y el B como **v3.11.0**; lo que resta va a releases
+  posteriores.
 
 Lotes y ramas:
 
 | Lote | Rama | Contenido | Tamaño |
 |------|------|-----------|--------|
 | **A** | `feature/manual` | Manual de uso como wiki en la app (`/ayuda/`) + export PDF | **hecho**, v3.10.0 |
-| **B** | `feature/dashboard-claro` | Corte en dos bloques, panel de horas reescrito, conversión arreglada, card "Dinero por entrar", filtro de fechas | mediano |
+| **B** | `feature/dashboard-claro` | Corte en dos bloques, panel de horas reescrito, conversión arreglada, card "Dinero por entrar", filtro de fechas | **hecho**, v3.11.0 |
 | **C** | `feature/pedidos-filtros` | Indicador de facturado + filtro de fechas en pedidos | chico |
 | **D** | `feature/buscador-costos` | Buscador en estructura de costos | mínimo (puede ir con B) |
 | **E** | `feature/producto-estandar` | Guardar un ProductoCotizado como producto estándar reutilizable | grande |
 
-**Orden**: A salió primero (ver arriba). Sigue D y C (chicos, no dependen de
-nada) → B → E. El capítulo del dashboard se escribió **antes** de B, así que
+**Orden**: A y B hechos. Siguen D y C (chicos, no dependen de nada) → E. El capítulo del dashboard se escribió **antes** de B, así que
 describe el tablero actual: cuando B cambie la pantalla hay que repasar el paso
 5 del capítulo y sacar el recuadro sobre absorción vs. equilibrio (ver §2.4).
 

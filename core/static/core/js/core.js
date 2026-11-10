@@ -255,9 +255,13 @@ document.addEventListener('DOMContentLoaded', function() {
             if (profileImgToggler) {
                 profileImgToggler.classList.remove('d-none');
                 profileImgToggler.classList.add('d-inline');
-            }
-            if (navbarTogglerIcon) {
-                navbarTogglerIcon.classList.add('d-none');
+                // El ícono de hamburguesa se esconde SOLO si hay foto que lo
+                // reemplace. Sin ese guardia, un usuario sin foto de perfil
+                // se quedaba en mobile con el botón del menú vacío (el
+                // template ya no dibuja un <img src="None">).
+                if (navbarTogglerIcon) {
+                    navbarTogglerIcon.classList.add('d-none');
+                }
             }
             if (imgPerfilNormal) {
                 imgPerfilNormal.classList.add('d-none');

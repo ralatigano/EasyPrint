@@ -165,54 +165,17 @@ piso de absorción = piso absoluto + (horas del trabajo × tasa por hora)</div>
 </p>
 
 <p>
-    De ahí sale el número que el tablero llama
-    <strong>absorción recuperada</strong> {% ayuda 'absorcion_recuperada' %}: las
-    horas de todos los pedidos creados en el mes, valuadas a la tasa. Esas horas
-    salen del tiempo cargado en cada producto —setup más el unitario por la
-    cantidad—, <strong>no del precio que se cobró</strong>. Y la
-    diferencia contra el costo fijo es la <strong>sub-absorción</strong>
-    {% ayuda 'absorcion_mes' %}, que es el número que el card
-    <em>Absorción del mes</em> muestra en grande, en rojo o en verde:
+    De ahí viene la palabra <strong>absorción</strong> {% ayuda 'absorcion_mes' %}:
+    cuando un trabajo ocupa una hora, esa hora «absorbe» su parte del costo
+    fijo. Es el mismo mecanismo del piso de absorción del paso anterior, visto
+    desde el mes entero en lugar de desde un trabajo.
 </p>
 
-<div class="manual-formula">absorción recuperada = horas vendidas en el mes × tasa por hora
-sub-absorción        = absorción recuperada − costo fijo del mes</div>
-
-<div class="table-responsive">
-<table class="table table-sm">
-    <thead>
-        <tr><th>Lo que se ve</th><th>Qué significa</th></tr>
-    </thead>
-    <tbody>
-        <tr>
-            <td class="text-danger fw-bold text-nowrap">−$ … en rojo</td>
-            <td>Las horas vendidas todavía no alcanzan a repartirse todo el
-                costo fijo del mes. Ese monto es lo que falta recuperar.</td>
-        </tr>
-        <tr>
-            <td class="text-success fw-bold text-nowrap">+$ … en verde</td>
-            <td>Las horas vendidas ya cubren el costo fijo del mes. De ahí en
-                adelante, cada hora que entra trabaja para la ganancia.</td>
-        </tr>
-    </tbody>
-</table>
-</div>
-
-<div class="manual-ojo">
-    <strong>La absorción es un mecanismo de precios, no un flujo de fondos.</strong>
-    El alquiler y los sueldos se pagan igual, haya o no haya trabajo. Que el mes
-    cierre «sub-absorbido» no significa que falte plata en la caja ese día:
-    significa que el trabajo que entró no da para sostener la estructura a ese
-    ritmo. Un mes en rojo no es alarma —hay temporadas—; varios seguidos sí.
-</div>
-
-<h3>Lo que un trabajo aporta de verdad: la contribución</h3>
+<h3>Lo que un trabajo deja: la contribución</h3>
 
 <p>
-    La absorción recuperada mide <strong>horas</strong>: cuenta cada hora vendida
-    como si hubiera dejado la tasa, sin mirar a qué precio se cobró. Para saber
-    cuánto dejó realmente un trabajo está la <strong>contribución</strong>, que
-    es lo que queda después de pagar <em>su propio material</em>:
+    La <strong>contribución</strong> {% ayuda 'contribucion' %} de un trabajo es
+    lo que queda después de pagar <em>su propio material</em>:
 </p>
 
 <div class="manual-formula">contribución = lo cobrado − piso absoluto</div>
@@ -225,12 +188,43 @@ sub-absorción        = absorción recuperada − costo fijo del mes</div>
     «contribuye» al pozo común.
 </div>
 
+<h3>El card de la derecha: qué falta para cubrir la estructura</h3>
+
 <p>
-    Las dos miradas responden preguntas distintas, y por eso pueden no coincidir:
-    la absorción dice <strong>si se vendieron suficientes horas</strong>, y la
-    contribución dice <strong>si esas horas se vendieron a buen precio</strong>.
-    El paso siguiente las junta.
+    Si se suma la contribución de todo lo vendido en el mes y se le resta el
+    costo fijo, sale el número del card de la derecha
+    {% ayuda 'resultado_mes' %}:
 </p>
+
+<div class="manual-formula">falta para cubrir la estructura = contribución de lo vendido − costo fijo del mes</div>
+
+<div class="table-responsive">
+<table class="table table-sm">
+    <thead>
+        <tr><th>Lo que se ve</th><th>Qué significa</th></tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td class="text-danger fw-bold text-nowrap">−$ … en rojo</td>
+            <td>Lo vendido hasta ahora no alcanza a pagar la estructura del
+                mes. Ese monto es lo que falta.</td>
+        </tr>
+        <tr>
+            <td class="text-success fw-bold text-nowrap">+$ … en verde</td>
+            <td>La estructura del mes ya está cubierta. De ahí en adelante,
+                lo que entre es ganancia.</td>
+        </tr>
+    </tbody>
+</table>
+</div>
+
+<div class="manual-ojo">
+    <strong>Que falte para cubrir la estructura no significa que falte plata en
+    la caja ese día.</strong> El alquiler y los sueldos se pagan igual, haya o
+    no haya trabajo; el número dice si el trabajo que entró da para sostener la
+    estructura a ese ritmo. Un mes en rojo no es alarma —hay temporadas—; varios
+    seguidos sí.
+</div>
 
 <h2>Paso 5: el punto de equilibrio</h2>
 
@@ -347,15 +341,21 @@ punto de equilibrio            = costo fijo del mes ÷ contribución promedio po
     horas. Se arregla aumentando precios, fomentando la venta de los productos
     que dejan más por hora, o reduciendo el tiempo que lleva cada trabajo.
     <br><br>
-    Si ves 353 h de equilibrio contra 297 h de capacidad, eso es lo que está
-    diciendo.
+    Cuando pasa, el tablero lo dice con todas las letras —<em>«con los precios
+    de este mes no cierra»</em>— y calcula cuánto precio más haría falta para
+    que el equilibrio entre en la capacidad.
 </div>
 
-<div class="manual-ojo">
-    <strong>Si la absorción y el punto de equilibrio no se dan la mano, manda el
-    punto de equilibrio.</strong> La absorción cuenta horas; el equilibrio mira
-    lo que se cobró. Un mes se puede llenar de horas a precios flojos: la
-    absorción lo va a ver bien y el equilibrio no.
+<div class="manual-ejemplo">
+    <div class="manual-ejemplo-titulo">Los dos cards dicen lo mismo</div>
+    <p class="mb-0">
+        El card de la izquierda cuenta en <strong>horas</strong> (cuántas faltan
+        vender) y el de la derecha en <strong>pesos</strong> (cuánto falta para
+        cubrir la estructura). No son dos indicadores: es el mismo, y cruzan el
+        cero juntos. Cuando las horas vendidas llegan al punto de equilibrio, la
+        contribución acumulada iguala al costo fijo y el card de la derecha pasa
+        a verde.
+    </p>
 </div>
 
 <h2>Paso 6: contribución por hora, el criterio para decidir qué vender</h2>
@@ -404,7 +404,10 @@ punto de equilibrio            = costo fijo del mes ÷ contribución promedio po
     <p class="mb-0">
         El ranking del tablero ordena por esa última columna, y no por el total
         cobrado ni por el margen en porcentaje. Es el criterio real para saber
-        qué conviene salir a buscar.
+        qué conviene salir a buscar. A diferencia de los números de horas, este
+        ranking <strong>sí sigue el filtro de período</strong>: la contribución
+        de un trabajo no depende de cómo se reparta el costo fijo del mes, así
+        que se puede mirar en cualquier ventana de tiempo.
     </p>
 </div>
 {% endif %}
@@ -479,12 +482,23 @@ punto de equilibrio            = costo fijo del mes ÷ contribución promedio po
 
 <div class="manual-ejemplo">
     <div class="manual-ejemplo-titulo">Dos bloques que se leen distinto</div>
-    <p class="mb-0">
-        Los números de horas, equilibrio y absorción son <strong>siempre del mes
-        en curso</strong>, porque la estructura de costos está mensualizada y no
-        tiene sentido preguntarse cuánto alquiler le toca a «los últimos 17
-        días». Los filtros de período afectan a la otra parte del tablero —
-        pedidos completados, ticket promedio, productos más vendidos—, que sí se
-        puede mirar en cualquier ventana.
+    <p class="mb-2">
+        El tablero está partido en dos, y la línea divisoria es el filtro de
+        período:
+    </p>
+    <ul class="mb-0">
+        <li><strong>Salud del mes</strong> —horas, equilibrio, qué falta para
+            cubrir la estructura— es <strong>siempre del mes calendario en
+            curso</strong>, porque la estructura de costos está mensualizada y
+            no tiene sentido preguntarse cuánto alquiler le toca a «los últimos
+            17 días». No cambia con el filtro.</li>
+        <li><strong>Actividad comercial</strong> —todo lo que está debajo del
+            filtro: pedidos completados, ticket promedio, conversión, el ranking
+            por hora, productos más vendidos y clientes— usa el período que
+            elijas, incluido un rango de fechas a mano.</li>
+    </ul>
+    <p class="mb-0 mt-2 small text-muted">
+        Entre los dos está <strong>Dinero por entrar</strong>, que tampoco sigue
+        el filtro: es una foto de lo que falta cobrar hoy.
     </p>
 </div>

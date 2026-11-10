@@ -18,49 +18,79 @@
 {% block content %}
 <div class="container-fluid py-3">
 
-    {# ── Filtro de período ──────────────────────────────────────────────── #}
-    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
-        <div class="d-flex gap-2 flex-wrap">
-            <a href="?periodo=semana" class="btn btn-sm {% if periodo == 'semana' %}btn-primary{% else %}btn-outline-secondary{% endif %}">Última semana</a>
-            <a href="?periodo=mes"    class="btn btn-sm {% if periodo == 'mes'    %}btn-primary{% else %}btn-outline-secondary{% endif %}">Últimos 30 días</a>
-            <a href="?periodo=trimestre" class="btn btn-sm {% if periodo == 'trimestre' %}btn-primary{% else %}btn-outline-secondary{% endif %}">Últimos 3 meses</a>
-        </div>
-        <div class="d-flex gap-2 flex-wrap">
-            <a href="/dashboard/exportar/pedidos/?periodo={{ periodo }}" class="btn btn-sm btn-outline-success">
-                <i class="bi bi-file-earmark-excel me-1"></i>Exportar pedidos
-            </a>
-            <a href="/dashboard/exportar/presupuestos/?periodo={{ periodo }}" class="btn btn-sm btn-outline-success">
-                <i class="bi bi-file-earmark-excel me-1"></i>Exportar presupuestos
-            </a>
-        </div>
+    {% comment %}
+    ═══ BLOQUE 1 — Salud del mes ═══
+    Mes calendario en curso, SIN el filtro de período: la estructura de costos
+    está mensualizada y repartirla en ventanas arbitrarias sería tan complejo
+    como engañoso (¿cuánto alquiler le toca a "los últimos 17 días"?). Ahora se
+    dice en pantalla, que antes no se decía.
+    {% endcomment %}
+    <div class="d-flex flex-wrap align-items-baseline gap-2 mb-2">
+        <h4 class="mb-0">Salud del mes</h4>
+        <span class="text-muted small">
+            {{ horas.hoy|date:"F Y" }}, del 1 al {{ horas.hoy|date:"j" }} ·
+            no sigue el filtro de período
+        </span>
     </div>
 
-    {# ── Panel de horas / punto de equilibrio (Fase 5) ──────────────────── #}
     <div class="row g-3 mb-4">
         <div class="col-12 col-lg-7">
             <div class="card h-100 shadow-sm">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-start">
-                        <h5 class="card-title mb-0">Horas de producción <span class="text-muted fw-normal small">(mes en curso)</span></h5>
+                        <h5 class="card-title mb-0">Horas de producción</h5>
                         <i class="bi bi-clock-history text-primary fs-5"></i>
                     </div>
 
                     {% if horas.punto_equilibrio_hs %}
-                        <div class="mt-2">
-                            <span class="display-5 fw-bold">{{ horas.punto_equilibrio_hs|floatformat:0 }} h</span>
-                            <span class="text-muted"> para no perder plata este mes.</span>
-                            {% ayuda 'punto_equilibrio' 'bottom' %}
-                        </div>
-                        <div class="mt-1">
-                            Van <strong>{{ horas.horas_vendidas|floatformat:1 }} h</strong> vendidas
-                            {% ayuda 'horas_vendidas_mes' %}
-                            de un objetivo de {{ horas.horas_objetivo|floatformat:0 }} h productivas.
-                            {% ayuda 'horas_objetivo' %}
-                        </div>
+                        {% if horas.equilibrio_entra %}
+                            {% comment %}El equilibrio cabe en la capacidad: el número grande es lo que falta vender.{% endcomment %}
+                            {% if horas.horas_restantes > 0 %}
+                            <div class="mt-2">
+                                <span class="display-5 fw-bold text-warning">{{ horas.horas_restantes|floatformat:1 }} h</span>
+                                <span class="text-muted"> te faltan vender para cubrir la estructura de este mes.</span>
+                                {% ayuda 'punto_equilibrio' 'bottom' %}
+                            </div>
+                            {% else %}
+                            <div class="mt-2">
+                                <span class="display-5 fw-bold text-success">Cubierta</span>
+                                <span class="text-muted"> la estructura del mes. Lo que entre de acá en adelante es ganancia.</span>
+                                {% ayuda 'punto_equilibrio' 'bottom' %}
+                            </div>
+                            {% endif %}
+                            <div class="mt-1">
+                                Vendiste <strong>{{ horas.horas_vendidas|floatformat:1 }} h</strong>
+                                {% ayuda 'horas_vendidas_mes' %}
+                                de las {{ horas.horas_objetivo|floatformat:0 }} h que podés producir
+                                {% ayuda 'horas_objetivo' %}; el equilibrio está en
+                                {{ horas.punto_equilibrio_hs|floatformat:0 }} h.
+                            </div>
+                        {% else %}
+                            {% comment %}La alarma: ni vendiendo el 100 % de la capacidad cierra el mes.{% endcomment %}
+                            <div class="mt-2">
+                                <span class="fs-3 fw-bold text-danger">Con los precios de este mes no cierra</span>
+                                {% ayuda 'punto_equilibrio' 'bottom' %}
+                            </div>
+                            <div class="mt-1">
+                                Harían falta <strong>{{ horas.punto_equilibrio_hs|floatformat:0 }} h</strong> y el local
+                                da {{ horas.horas_objetivo|floatformat:0 }} h.
+                                {% ayuda 'horas_objetivo' %}
+                                <strong>No se arregla trabajando más: no alcanzan las horas.</strong>
+                                {% if horas.falta_precio_pct %}
+                                Con un <strong>{{ horas.falta_precio_pct|floatformat:0 }} % más de precio</strong>
+                                en lo vendido, el equilibrio entraría en la capacidad.
+                                {% endif %}
+                            </div>
+                            <div class="mt-1 text-muted small">
+                                Vendiste {{ horas.horas_vendidas|floatformat:1 }} h
+                                {% ayuda 'horas_vendidas_mes' %}
+                            </div>
+                        {% endif %}
 
-                        {# Barra: vendidas vs objetivo, con marca del punto de equilibrio #}
+                        {% comment %}Una sola escala: 0 → capacidad.{% endcomment %}
                         <div class="progress mt-3" style="height: 22px; position: relative;">
-                            <div class="progress-bar bg-success" role="progressbar"
+                            <div class="progress-bar {% if horas.equilibrio_entra %}bg-success{% else %}bg-danger{% endif %}"
+                                 role="progressbar"
                                  style="width: {{ horas.pct_vendidas|unlocalize }}%;">
                                 {{ horas.horas_vendidas|floatformat:0 }} h
                             </div>
@@ -71,14 +101,18 @@
                         </div>
                         <div class="d-flex justify-content-between text-muted small mt-1">
                             <span>0</span>
-                            <span>🔴 equilibrio {{ horas.punto_equilibrio_hs|floatformat:0 }} h</span>
-                            <span>objetivo {{ horas.horas_objetivo|floatformat:0 }} h</span>
+                            <span>
+                                🔴 equilibrio {{ horas.punto_equilibrio_hs|floatformat:0 }} h
+                                {% if not horas.equilibrio_entra %}<em>(se va de la escala)</em>{% endif %}
+                            </span>
+                            <span>capacidad {{ horas.horas_objetivo|floatformat:0 }} h</span>
                         </div>
                     {% else %}
                         <div class="mt-3 text-muted">
-                            Todavía no hay ventas este mes para estimar el punto de equilibrio.
+                            Todavía no hay ventas este mes, así que no se puede estimar cuántas
+                            horas hay que vender.
                             {% ayuda 'punto_equilibrio' %}
-                            Objetivo: {{ horas.horas_objetivo|floatformat:0 }} h productivas.
+                            Podés producir {{ horas.horas_objetivo|floatformat:0 }} h.
                             {% ayuda 'horas_objetivo' %}
                         </div>
                     {% endif %}
@@ -89,38 +123,122 @@
         <div class="col-12 col-lg-5">
             <div class="card h-100 shadow-sm">
                 <div class="card-body">
-                    <h6 class="text-muted">Absorción del mes {% ayuda 'absorcion_mes' 'bottom' %}</h6>
-                    <div class="fs-4 fw-bold {% if horas.sub_absorcion < 0 %}text-danger{% else %}text-success{% endif %}">
-                        {% if horas.sub_absorcion < 0 %}−${{ horas.sub_absorcion|floatformat:0|cut:"-" }}{% else %}+${{ horas.sub_absorcion|floatformat:0 }}{% endif %}
+                    {% if horas.falta_cubrir > 0 %}
+                    <h6 class="text-muted">Falta para cubrir la estructura
+                        {% ayuda 'resultado_mes' 'bottom' %}</h6>
+                    <div class="fs-4 fw-bold text-danger">
+                        −${{ horas.falta_cubrir|floatformat:0 }}
                     </div>
+                    {% else %}
+                    <h6 class="text-muted">Estructura cubierta
+                        {% ayuda 'resultado_mes' 'bottom' %}</h6>
+                    <div class="fs-4 fw-bold text-success">
+                        +${{ horas.resultado_mes|floatformat:0 }}
+                    </div>
+                    {% endif %}
                     <div class="text-muted small">
-                        Recuperado {% localize on %}${{ horas.absorcion_recuperada|floatformat:0 }}{% endlocalize %}
-                        de {% localize on %}${{ horas.costo_fijo_mensual|floatformat:0 }}{% endlocalize %} de costo fijo.
-                        {% ayuda 'absorcion_recuperada' %}
+                        Lo vendido este mes dejó
+                        {% localize on %}${{ horas.contribucion_mes|floatformat:0 }}{% endlocalize %}
+                        después de pagar su material {% ayuda 'contribucion' %}, contra
+                        {% localize on %}${{ horas.costo_fijo_mensual|floatformat:0 }}{% endlocalize %}
+                        de costo fijo. {% ayuda 'costo_fijo_mensual' %}
                     </div>
                     <hr class="my-2">
-                    <div class="d-flex justify-content-between">
-                        <span class="text-muted small">Conversión cotizadas → vendidas
-                            {% ayuda 'conversion_cotizado' %}</span>
-                        <span class="fw-bold">{{ horas.conversion|floatformat:0 }}%</span>
-                    </div>
                     <div class="text-muted small">
-                        {{ horas.horas_vendidas|floatformat:1 }} h vendidas de {{ horas.horas_cotizadas|floatformat:1 }} h cotizadas.
+                        Cada hora de producción tiene que dejar
+                        <strong>{% localize on %}${{ horas.tasa_hora|floatformat:0 }}{% endlocalize %}</strong>
+                        sólo para la estructura {% ayuda 'tasa_hora' %}; las horas vendidas están
+                        dejando
+                        <strong>{% localize on %}${{ horas.contrib_prom_por_hora|floatformat:0 }}{% endlocalize %}</strong>.
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
+    {% comment %}Dinero por entrar: foto de hoy, tampoco sigue el filtro.{% endcomment %}
+    <div class="row g-3 mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+                        <div>
+                            <h6 class="text-muted mb-1">Dinero por entrar
+                                {% ayuda 'dinero_por_entrar' 'bottom' %}
+                                <span class="fw-normal">· al día de hoy</span>
+                            </h6>
+                            <div class="fs-3 fw-bold">${{ dinero.total|floatformat:0 }}</div>
+                        </div>
+                        <div class="d-flex gap-3 flex-wrap">
+                            <div class="kpi-card p-2 rounded" role="button"
+                                 onclick="irAPedidosConFiltro(['No iniciado','En proceso'])">
+                                <div class="text-muted small">Pedidos en curso ({{ dinero.en_curso_count }})</div>
+                                <div class="fw-bold text-warning fs-5">${{ dinero.en_curso|floatformat:0 }}</div>
+                                <div class="text-muted" style="font-size:.78rem;">trabajo por hacer y cobrar</div>
+                            </div>
+                            <div class="kpi-card p-2 rounded" role="button"
+                                 onclick="irAPedidosConFiltro(['Terminado (falta pago)'])">
+                                <div class="text-muted small">Entregados sin pagar ({{ dinero.entregado_count }})</div>
+                                <div class="fw-bold text-danger fs-5">${{ dinero.entregado|floatformat:0 }}</div>
+                                <div class="text-muted" style="font-size:.78rem;">hay que ir a cobrarlo</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% comment %}
+    ═══ BLOQUE 2 — Actividad comercial ═══
+    Todo lo que va abajo del filtro respeta el período elegido.
+    {% endcomment %}
+    <div class="d-flex flex-wrap align-items-baseline gap-2 mb-2">
+        <h4 class="mb-0">Actividad comercial</h4>
+        <span class="text-muted small">{{ periodo.etiqueta }} · todo lo que sigue usa este período</span>
+    </div>
+
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+        <div class="d-flex gap-2 flex-wrap align-items-center">
+            <a href="?periodo=semana" class="btn btn-sm {% if periodo.clave == 'semana' %}btn-primary{% else %}btn-outline-secondary{% endif %}">Última semana</a>
+            <a href="?periodo=mes" class="btn btn-sm {% if periodo.clave == 'mes' %}btn-primary{% else %}btn-outline-secondary{% endif %}">Últimos 30 días</a>
+            <a href="?periodo=trimestre" class="btn btn-sm {% if periodo.clave == 'trimestre' %}btn-primary{% else %}btn-outline-secondary{% endif %}">Últimos 3 meses</a>
+            {% comment %}
+            flex-wrap acá adentro no es decorativo: sin eso el formulario es un
+            ítem flex de ~360px que no puede achicarse y sacaba 55px de scroll
+            horizontal en un teléfono.
+            {% endcomment %}
+            <form method="get" class="d-flex gap-1 align-items-center flex-wrap ms-lg-2">
+                <input type="hidden" name="periodo" value="personalizado">
+                <input type="date" name="desde" class="form-control form-control-sm" style="width:auto;"
+                       aria-label="Desde" value="{{ periodo.desde|date:'Y-m-d' }}">
+                <span class="text-muted small">a</span>
+                <input type="date" name="hasta" class="form-control form-control-sm" style="width:auto;"
+                       aria-label="Hasta" value="{{ periodo.hasta|date:'Y-m-d' }}">
+                <button type="submit" class="btn btn-sm {% if periodo.es_personalizado %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+                    Aplicar
+                </button>
+            </form>
+        </div>
+        <div class="d-flex gap-2 flex-wrap">
+            <a href="/dashboard/exportar/pedidos/?{{ periodo.querystring }}" class="btn btn-sm btn-outline-success">
+                <i class="bi bi-file-earmark-excel me-1"></i>Exportar pedidos
+            </a>
+            <a href="/dashboard/exportar/presupuestos/?{{ periodo.querystring }}" class="btn btn-sm btn-outline-success">
+                <i class="bi bi-file-earmark-excel me-1"></i>Exportar presupuestos
+            </a>
+        </div>
+    </div>
+
     {# ── Ranking de productos por contribución por hora (Fase 5) ─────────── #}
-    {% if horas.ranking_contrib_hora %}
+    {% if ranking_contrib_hora %}
     <div class="row g-3 mb-4">
         <div class="col-12">
             <div class="card shadow-sm">
                 <div class="card-body">
                     <h5 class="card-title">Productos por contribución por hora
                         {% ayuda 'contribucion_por_hora' 'bottom' %}
-                        <span class="text-muted fw-normal small">(mes en curso — el criterio real para saber qué empujar)</span>
+                        <span class="text-muted fw-normal small">({{ periodo.etiqueta }} — el criterio real para saber qué conviene fomentar)</span>
                     </h5>
                     <div class="table-responsive">
                         <table class="table table-sm align-middle mb-0">
@@ -134,7 +252,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for r in horas.ranking_contrib_hora %}
+                                {% for r in ranking_contrib_hora %}
                                 <tr>
                                     <td>{{ r.insumo__nombre }}</td>
                                     <td class="text-end fw-bold">${{ r.contrib_por_hora|floatformat:0 }}</td>
@@ -154,29 +272,13 @@
     {# ── Fila 1: KPIs principales ───────────────────────────────────────── #}
     <div class="row g-3 mb-4">
 
-        {# Pedidos en curso #}
-        <div class="col-6 col-lg-3">
-            <div class="card h-100 shadow-sm kpi-card" role="button"
-                 onclick="irAPedidosConFiltro(['No iniciado','En proceso'])">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <span class="text-muted small">Pedidos en curso</span>
-                        <i class="bi bi-arrow-repeat text-primary fs-5"></i>
-                    </div>
-                    <div class="kpi-numero mt-1">{{ pedidos_en_curso_count }}</div>
-                    <div class="text-muted small mt-2">Saldo pendiente</div>
-                    <div class="fw-bold text-warning fs-5">${{ total_saldo_pendiente|floatformat:0 }}</div>
-                </div>
-            </div>
-        </div>
-
         {# Pedidos completados #}
-        <div class="col-6 col-lg-3">
+        <div class="col-6 col-lg-4">
             <div class="card h-100 shadow-sm kpi-card" role="button"
                  onclick="irAPedidosConFiltro(['Terminado (falta pago)','Terminado y pagado'])">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-start">
-                        <span class="text-muted small">Completados ({{ periodo }})</span>
+                        <span class="text-muted small">Completados</span>
                         <i class="bi bi-check-circle text-success fs-5"></i>
                     </div>
                     <div class="kpi-numero mt-1">{{ pedidos_completados_count }}</div>
@@ -187,7 +289,7 @@
         </div>
 
         {# Ticket promedio #}
-        <div class="col-6 col-lg-3">
+        <div class="col-6 col-lg-4">
             <div class="card h-100 shadow-sm kpi-card">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-start">
@@ -201,17 +303,19 @@
         </div>
 
         {# Presupuestos y conversión #}
-        <div class="col-6 col-lg-3">
+        <div class="col-6 col-lg-4">
             <div class="card h-100 shadow-sm kpi-card">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-start">
-                        <span class="text-muted small">Presupuestos (15 días)</span>
+                        <span class="text-muted small">Presupuestos del período</span>
                         <i class="bi bi-file-text text-secondary fs-5"></i>
                     </div>
                     <div class="kpi-numero mt-1">{{ total_presupuestos }}</div>
-                    <div class="text-muted small mt-2">Conversión a pedido</div>
+                    <div class="text-muted small mt-2">Terminaron en pedido
+                        {% ayuda 'conversion_cotizado' %}</div>
                     <div class="fw-bold fs-5 {% if tasa_conversion >= 60 %}text-success{% elif tasa_conversion >= 30 %}text-warning{% else %}text-danger{% endif %}">
                         {{ tasa_conversion }}%
+                        <span class="text-muted fw-normal small">({{ presupuestos_convertidos }} de {{ total_presupuestos }})</span>
                     </div>
                 </div>
             </div>
@@ -298,7 +402,7 @@
         <div class="col-md-7">
             <div class="card shadow-sm h-100">
                 <div class="card-body d-flex flex-column">
-                    <h5 class="card-title">Top 5 clientes <span class="text-muted fw-normal small">(últimos 6 meses)</span></h5>
+                    <h5 class="card-title">Top 5 clientes</h5>
                     <div class="flex-grow-1 d-flex align-items-center" style="min-height:220px;">
                         <canvas id="chartClientes" style="width:100%"></canvas>
                     </div>
@@ -315,7 +419,7 @@
         <div class="col-md-5">
             <div class="card shadow-sm h-100">
                 <div class="card-body">
-                    <h5 class="card-title">Productos más vendidos <span class="text-muted fw-normal small">({{ periodo }})</span></h5>
+                    <h5 class="card-title">Productos más vendidos</h5>
                     {% if productos_vendidos %}
                     <div class="table-responsive">
                         <table class="table table-sm table-hover align-middle mb-0">

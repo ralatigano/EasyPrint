@@ -3,7 +3,6 @@ from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseForbidden, JsonResponse, HttpResponse
 from django.utils import timezone
 from django.db.models import Sum, Count, Avg
-from datetime import timedelta
 import openpyxl
 from openpyxl.styles import Font, PatternFill, Alignment
 from openpyxl.utils import get_column_letter
@@ -12,8 +11,10 @@ from pedidos.models import Pedido
 from presupuestos.models import Presupuesto
 from productos.models import ProductoCotizado
 from clientes.models import Cliente
+from . import periodos
 from .models import ObjetivoVentas
-from .metrics import panel_horas
+from .metrics import (EN_CURSO, dinero_por_entrar, panel_horas,
+                      ranking_contribucion_hora)
 
 
 @login_required
@@ -22,29 +23,21 @@ def dashboard(request):
 
     hoy = timezone.now().date()
 
-    # ── Período ──────────────────────────────────────────────────────────────
-    periodo = request.GET.get('periodo', 'mes')
-    if periodo == 'semana':
-        fecha_desde = hoy - timedelta(days=7)
-    elif periodo == 'trimestre':
-        fecha_desde = hoy - timedelta(days=90)
-    else:
-        fecha_desde = hoy - timedelta(days=30)
+    # ── Período (sólo afecta al bloque de actividad comercial) ───────────────
+    periodo = periodos.resolver(request, hoy)
 
-    # ── Pedidos en curso ─────────────────────────────────────────────────────
-    estados_en_curso = ['No iniciado', 'En proceso']
-    pedidos_en_curso = Pedido.objects.filter(
-        estado__in=estados_en_curso,
-        bloqueado_cancelado=False
-    )
-    total_saldo_pendiente = pedidos_en_curso.aggregate(
-        total=Sum('saldo'))['total'] or 0
+    # ── Dinero por entrar ────────────────────────────────────────────────────
+    # Foto de hoy, no del período: lo que falta cobrar no es la actividad de
+    # una ventana de tiempo.
+    dinero = dinero_por_entrar()
+    estados_en_curso = EN_CURSO
 
     # ── Pedidos completados en el período ────────────────────────────────────
     estados_completados = ['Terminado (falta pago)', 'Terminado y pagado']
     pedidos_completados = Pedido.objects.filter(
         estado__in=estados_completados,
-        created__date__gte=fecha_desde  # usamos created ya que updated es auto_now_add
+        # `created` y no `updated`: updated es auto_now_add en este modelo.
+        **periodo.filtro()
     )
     total_cobrado = 0
     for p in pedidos_completados:
@@ -65,15 +58,17 @@ def dashboard(request):
         .order_by('estado')
     )
 
-    # ── Presupuestos últimos 15 días ─────────────────────────────────────────
-    hace_15_dias = hoy - timedelta(days=15)
-    presupuestos_recientes = Presupuesto.objects.filter(
-        created__date__gte=hace_15_dias)
+    # ── Presupuestos del período y su conversión ─────────────────────────────
+    # Misma cohorte en los dos lados: de los presupuestos hechos en esta
+    # ventana, cuántos terminaron en pedido (sin importar cuándo se cerraron).
+    # Así el porcentaje no puede pasar de 100.
+    presupuestos_recientes = Presupuesto.objects.filter(**periodo.filtro())
     total_presupuestos = presupuestos_recientes.count()
     numeros_presupuesto = presupuestos_recientes.values_list(
         'numero', flat=True)
     presupuestos_convertidos = Pedido.objects.filter(
-        presupuesto__in=numeros_presupuesto).count()
+        presupuesto__in=numeros_presupuesto,
+        bloqueado_cancelado=False).count()
     tasa_conversion = (
         round((presupuestos_convertidos / total_presupuestos) * 100)
         if total_presupuestos > 0 else 0
@@ -81,8 +76,7 @@ def dashboard(request):
 
     # ── Productos más vendidos ───────────────────────────────────────────────
     presupuestos_con_pedido = Pedido.objects.filter(
-        presupuesto__isnull=False,
-        created__date__gte=fecha_desde
+        presupuesto__isnull=False, **periodo.filtro()
     ).values_list('presupuesto', flat=True)
 
     productos_vendidos = (
@@ -97,12 +91,11 @@ def dashboard(request):
         .order_by('-veces_vendido')[:5]
     )
 
-    # ── Top 5 clientes (6 meses) ─────────────────────────────────────────────
-    hace_6_meses = hoy - timedelta(days=180)
+    # ── Top 5 clientes del período ───────────────────────────────────────────
     top_clientes = (
         Pedido.objects
         .filter(cliente__isnull=False, bloqueado_cancelado=False,
-                created__date__gte=hace_6_meses)
+                **periodo.filtro())
         .values('cliente__id', 'cliente__nombre', 'cliente__negocio')
         .annotate(cantidad_pedidos=Count('numero'), total_comprado=Sum('precio'))
         .order_by('-total_comprado')[:5]
@@ -150,8 +143,8 @@ def dashboard(request):
 
     objetivos_vigentes = [o for o in objetivos_con_progreso if o['activo']]
 
-    # ── Panel de horas / punto de equilibrio (Fase 5) ────────────────────────
-    # Mes en curso, independiente del filtro de período de arriba.
+    # ── Salud del mes (bloque 1) ─────────────────────────────────────────────
+    # Mes calendario en curso, independiente del filtro de período.
     horas = panel_horas(hoy)
 
     context = {
@@ -160,8 +153,9 @@ def dashboard(request):
         'img': request.session.get('img'),
         'periodo': periodo,
         'horas': horas,
-        'pedidos_en_curso_count': pedidos_en_curso.count(),
-        'total_saldo_pendiente': total_saldo_pendiente,
+        'ranking_contrib_hora': ranking_contribucion_hora(
+            periodo.desde, periodo.hasta),
+        'dinero': dinero,
         'pedidos_completados_count': pedidos_completados.count(),
         'total_cobrado': total_cobrado,
         'ticket_promedio': ticket_promedio,
@@ -222,13 +216,10 @@ def eliminar_objetivo(request, pk):
 def exportar_excel(request, tipo):
 
     hoy = timezone.now().date()
-    periodo = request.GET.get('periodo', 'mes')
-    if periodo == 'semana':
-        fecha_desde = hoy - timedelta(days=7)
-    elif periodo == 'trimestre':
-        fecha_desde = hoy - timedelta(days=90)
-    else:
-        fecha_desde = hoy - timedelta(days=30)
+    # El MISMO período que la pantalla: antes esta vista lo recalculaba por su
+    # cuenta y bastaba agregar una opción en un lado para que el Excel trajera
+    # otro rango.
+    periodo = periodos.resolver(request, hoy)
 
     wb = openpyxl.Workbook()
     ws = wb.active
@@ -242,7 +233,7 @@ def exportar_excel(request, tipo):
         headers = ['#', 'Cliente', 'Descripción', 'Estado',
                    'Total', 'Seña', 'Saldo', 'Encargado', 'Fecha entrega']
         qs = Pedido.objects.filter(
-            created__date__gte=fecha_desde
+            **periodo.filtro()
         ).select_related('cliente', 'encargado').order_by('-numero')
 
         for col, h in enumerate(headers, 1):
@@ -269,7 +260,7 @@ def exportar_excel(request, tipo):
         headers = ['#', 'Cliente', 'Total',
                    'Descuento', 'Seña', 'Saldo', 'Fecha']
         qs = Presupuesto.objects.filter(
-            created__date__gte=fecha_desde
+            **periodo.filtro()
         ).select_related('cliente').order_by('-numero')
 
         for col, h in enumerate(headers, 1):
@@ -297,6 +288,7 @@ def exportar_excel(request, tipo):
     response = HttpResponse(
         content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )
-    response['Content-Disposition'] = f'attachment; filename="{tipo}_{periodo}_{hoy}.xlsx"'
+    response['Content-Disposition'] = (
+        f'attachment; filename="{tipo}_{periodo.sufijo_archivo}_{hoy}.xlsx"')
     wb.save(response)
     return response

@@ -517,3 +517,40 @@ Versión v3.10.0
         *Se descarga en PDF, con un glosario al final que junta las definiciones de los botones "(i)": en papel no se pueden tocar.
         *Los capítulos de pedidos, caja, tercerizados y el recetario se listan como "en preparación". Se ve el mapa completo sin prometer páginas que todavía no existen.
         *El capítulo del dashboard es solo para Gerencia, igual que el tablero: muestra el costo fijo, la tasa por hora y lo que se cobró en cotizaciones reales. El resto del manual lo ve cualquier usuario.
+
+****************** 10/11/2026 ******************
+Versión v3.11.0
+
+    -Dashboard: la pantalla ahora está partida en dos
+        *Arriba, "Salud del mes": horas, punto de equilibrio y qué falta para cubrir la estructura. Es SIEMPRE del mes calendario en curso y no cambia con el filtro de período, porque la estructura de costos está mensualizada y no tiene sentido preguntarse cuánto alquiler le toca a "los últimos 17 días". Ahora lo dice en pantalla.
+        *Abajo, "Actividad comercial": pedidos completados, ticket promedio, conversión, ranking por hora, productos más vendidos y clientes. Todo lo que está debajo del filtro respeta el período elegido.
+        *En el medio, "Dinero por entrar", que tampoco sigue el filtro: es una foto de lo que falta cobrar hoy.
+
+    -Dashboard: el número grande cambió de significado
+        *Antes mostraba el punto de equilibrio en horas, que se leía como un objetivo hasta que la barra de abajo decía otro número distinto. Ahora muestra las horas que FALTAN vender para cubrir la estructura del mes, y cuando ya está cubierta lo dice.
+        *Si el punto de equilibrio supera la capacidad del local, no hay número grande: aparece el aviso "Con los precios de este mes no cierra", con cuántas horas harían falta contra cuántas se pueden producir, y cuánto precio más haría falta para que entre. Es la alarma más importante del tablero y antes pasaba desapercibida.
+        *La barra tiene una sola escala (de 0 a la capacidad) y avisa cuando la marca del equilibrio se va de la escala, en vez de clavarse al final como si estuviera todo bien.
+
+    -Dashboard: el card de la derecha pasa a mostrar el resultado del mes
+        *Antes mostraba la "absorción", que sólo mira las horas vendidas y no el precio al que se vendieron: se podía llenar el mes de trabajo barato y verlo en verde.
+        *Ahora muestra lo que dejó todo lo vendido después de pagar su material, menos el costo fijo del mes: "Falta para cubrir la estructura" o "Estructura cubierta". Pasa a verde exactamente cuando las horas vendidas llegan al punto de equilibrio, así que los dos cards dicen lo mismo en unidades distintas y ya no pueden contradecirse.
+
+    -Dashboard: la conversión estaba mal calculada
+        *Mostraba porcentajes imposibles (llegó a marcar 217 %) porque comparaba lo vendido en el mes contra lo cotizado en el mes, que son dos grupos distintos de presupuestos: uno de septiembre cerrado en noviembre sumaba de un lado y no del otro.
+        *Ahora mira una sola camada: de los presupuestos hechos en el período elegido, cuántos terminaron en pedido. No puede pasar del 100 %.
+
+    -Dashboard: "Dinero por entrar"
+        *El card de "Pedidos en curso" pasa a ser la plata por cobrar, con el total arriba y el desglose debajo: lo que está en curso (trabajo por hacer y cobrar) y lo que ya se entregó sin terminar de pagar (hay que ir a cobrarlo), que es el que hay que reclamar.
+        *Cada parte lleva a la lista de pedidos con el filtro ya aplicado.
+
+    -Dashboard: filtro por rango de fechas
+        *Además de los botones de semana, 30 días y 3 meses, se puede elegir un rango desde/hasta a mano. Si se cargan al revés, se dan vuelta solos.
+        *El período elegido viaja a los dos botones de exportar, así que el Excel trae exactamente lo que muestra la pantalla. Antes la exportación recalculaba el período por su cuenta.
+        *El ranking de productos por contribución por hora y el Top 5 clientes pasan a seguir el filtro (el ranking estaba atado al mes y los clientes a 6 meses fijos).
+
+    -Correcciones generales
+        *Los usuarios sin foto de perfil generaban un error 404 en cada página que abrían. No se veía, pero ensuciaba el registro del servidor.
+        *En el celular ya no aparece una barra de desplazamiento horizontal en el dashboard.
+
+    -Manual de uso
+        *El capítulo del dashboard se actualizó para describir la pantalla nueva, incluido el corte en dos bloques y el card del resultado del mes.

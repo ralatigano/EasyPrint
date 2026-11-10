@@ -133,8 +133,26 @@ GLOSARIO = {
     'punto_equilibrio': (
         'Cuántas horas de producción tenés que vender este mes para cubrir '
         'los gastos fijos. Sale de dividir el costo fijo por lo que deja en '
-        'promedio cada hora vendida. Por debajo de esa marca, el mes da '
-        'pérdida.'
+        'promedio cada hora vendida. Si da más horas de las que podés '
+        'producir, no hay volumen que lo arregle: con esos precios el mes '
+        'cierra en pérdida aunque vendas toda la capacidad.'
+    ),
+    'resultado_mes': (
+        'Lo que dejó todo lo vendido este mes después de pagar su material, '
+        'menos el costo fijo del mes. En rojo todavía falta plata para '
+        'cubrir la estructura; en verde ya está cubierta y lo que entre es '
+        'ganancia. Cruza el cero justo cuando las horas vendidas llegan al '
+        'punto de equilibrio.'
+    ),
+    'contribucion': (
+        'Lo que deja un trabajo después de pagar su propio material. No es '
+        'la ganancia: es la plata con la que ese trabajo empieza a pagar el '
+        'alquiler y los sueldos. De ahí el nombre.'
+    ),
+    'dinero_por_entrar': (
+        'El saldo que queda por cobrar: los pedidos en curso más los que ya '
+        'se entregaron sin terminar de pagar. Es una foto de hoy, así que no '
+        'cambia con el filtro de período.'
     ),
     'horas_vendidas_mes': (
         'Las horas de producción de los trabajos que este mes pasaron de '
@@ -158,8 +176,9 @@ GLOSARIO = {
         'fijos que esos trabajos ya pagaron.'
     ),
     'conversion_cotizado': (
-        'Qué proporción de las horas que cotizaste terminó vendida. Mide '
-        'cuánto de lo que presupuestás se convierte en trabajo real.'
+        'De los presupuestos hechos en este período, qué proporción terminó '
+        'en un pedido. Se mira siempre la misma camada de presupuestos, así '
+        'que no puede pasar del 100 %.'
     ),
     'contribucion_por_hora': (
         'Lo que deja cada hora de ese producto después de pagar su material. '

@@ -12,11 +12,19 @@
     data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
     aria-controls="navbarSupportedContent" aria-expanded="false"
     aria-label="Toggle navigation" style="border: none">
-    <img id="profile-img-toggler"
-      class="{% if img %}d-inline{% else %}d-none{% endif %}"
+    {% comment %}
+    El <img> va DENTRO del if: antes se dibujaba siempre y, sin foto de
+    perfil, quedaba src="None" (Django imprime None como texto). Lo ocultaba
+    el d-none, pero el navegador igual lo pedía y cada página del cotizador
+    tiraba un 404 a /<ruta>/None en el log del servidor.
+    {% endcomment %}
+    {% if img %}
+    <img id="profile-img-toggler" class="d-inline"
       src="{{ img }}" alt="Profile Image"
       style="width: 40px; height: 40px; border-radius: 50%; border: none;">
-    <span class="navbar-toggler-icon {% if img %}d-none{% else %}d-inline{% endif %}"></span>
+    {% else %}
+    <span class="navbar-toggler-icon d-inline"></span>
+    {% endif %}
   </button>
 
   <!-- Links de nav (visibles en desktop, colapsados en móvil) -->
