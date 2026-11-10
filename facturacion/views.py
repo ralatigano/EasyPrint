@@ -4,6 +4,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from clientes.functions import normalizar_cuit
@@ -12,7 +13,7 @@ from core.utils import format_ar, parse_ar
 from pedidos.models import Pedido
 
 from .models import Comprobante, ConfiguracionMonotributo
-from .services import config, emision, monotributo, padron, pdf
+from .services import config, emision, fechas, monotributo, padron, pdf
 from .services.wsaa import WSAAError
 from .services.wsfev1 import WSFEError
 
@@ -64,12 +65,19 @@ def contexto_facturacion(request, pedido_numero):
             "estado": c.estado,
             "estado_label": c.get_estado_display(),
             "importe": str(c.importe_total),
+            # La usa el modal para no dejar fechar una nota antes que su
+            # factura.
+            "fecha": c.fecha_emision.isoformat() if c.fecha_emision else None,
             # Sólo una factura autorizada puede asociarse a una NC/ND.
             "asociable": c.estado == Comprobante.Estado.AUTORIZADO
             and c.tipo_cbte == Comprobante.Tipo.FACTURA_C,
         }
         for c in pedido.comprobantes.all()
     ]
+
+    # Rango de fechas emitibles, para los `min`/`max` del campo del modal.
+    hoy = timezone.localdate()
+    minimo, maximo = fechas.rango(Comprobante.Concepto.PRODUCTOS, hoy=hoy)
 
     return JsonResponse(
         {
@@ -87,6 +95,12 @@ def contexto_facturacion(request, pedido_numero):
             "comprobantes": comprobantes,
             "ambiente": config.ambiente_actual(),
             "punto_venta": config.punto_venta(),
+            "fechas": {
+                "hoy": hoy.isoformat(),
+                "minima": minimo.isoformat(),
+                "maxima": maximo.isoformat(),
+                "dias": fechas.margen(Comprobante.Concepto.PRODUCTOS),
+            },
         }
     )
 
@@ -152,13 +166,27 @@ def emitir_comprobante(request):
             Comprobante, id=data.get("comprobante_asociado_id"), pedido=pedido
         )
 
+    # Fecha del comprobante. Por defecto hoy; ARCA acepta un margen de días
+    # hacia atrás (ver services/fechas.py). Se valida acá además de en el
+    # navegador: el `min`/`max` del input se saltea sin esfuerzo.
+    concepto = Comprobante.Concepto.PRODUCTOS
+    try:
+        fecha = fechas.parsear(data.get("fecha"))
+        fechas.validar(
+            fecha, concepto,
+            fecha_asociado=asociado.fecha_emision if asociado else None,
+        )
+    except fechas.FechaInvalida as e:
+        return JsonResponse({"ok": False, "error": str(e)}, status=400)
+
     comprobante = Comprobante(
+        fecha_emision=fecha,
         pedido=pedido,
         comprobante_asociado=asociado,
         ambiente=config.ambiente_actual(),
         tipo_cbte=tipo,
         punto_venta=config.punto_venta(),
-        concepto=Comprobante.Concepto.PRODUCTOS,
+        concepto=concepto,
         importe_total=importe,
         doc_tipo=doc_tipo,
         doc_nro=doc_nro,

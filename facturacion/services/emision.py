@@ -1,6 +1,8 @@
 """Orquestador de alto nivel: emite un Comprobante en borrador contra ARCA."""
 import datetime
 
+from django.utils import timezone
+
 from ..models import Comprobante
 from . import wsfev1
 
@@ -22,6 +24,10 @@ def emitir(comprobante):
             {"tipo": asoc.tipo_cbte, "punto_venta": asoc.punto_venta, "numero": asoc.numero}
         ]
 
+    # La fecha del comprobante se respeta si viene puesta (ARCA acepta un
+    # margen de días hacia atrás; ver services/fechas.py). Si no, es hoy.
+    fecha = comprobante.fecha_emision or timezone.localdate()
+
     resp = wsfev1.solicitar_cae(
         punto_venta=comprobante.punto_venta,
         tipo_cbte=comprobante.tipo_cbte,
@@ -31,8 +37,12 @@ def emitir(comprobante):
         cond_iva_receptor=comprobante.cond_iva_receptor,
         importe_total=comprobante.importe_total,
         cbtes_asoc=cbtes_asoc,
+        fecha=fecha,
     )
 
+    # Se guarda también si ARCA rechaza: saber con qué fecha se intentó es
+    # parte de poder explicar el rechazo.
+    comprobante.fecha_emision = fecha
     comprobante.respuesta_afip = resp
     if resp["resultado"] == "A":
         comprobante.numero = resp["numero"]
@@ -40,7 +50,6 @@ def emitir(comprobante):
         comprobante.cae_vencimiento = datetime.datetime.strptime(
             resp["cae_vto"], "%Y%m%d"
         ).date()
-        comprobante.fecha_emision = datetime.date.today()
         comprobante.estado = Comprobante.Estado.AUTORIZADO
     else:
         # Rechazado: el número no fue asignado por ARCA, no lo persistimos.

@@ -7,10 +7,12 @@ import base64
 import datetime
 import json
 from decimal import Decimal
+from unittest import mock
 
 from django.conf import settings
 from django.test import TestCase, override_settings
 from django.urls import reverse
+from django.utils import timezone
 
 # En tests no se corre collectstatic, así que el ManifestStaticFilesStorage de
 # producción rompe al renderizar plantillas (busca el manifest). Para los tests
@@ -28,7 +30,7 @@ from clientes.models import Cliente
 from pedidos.models import Pedido
 
 from .models import Comprobante
-from .services import pdf
+from .services import emision, fechas, pdf
 
 
 def _comprobante_autorizado(**extra):
@@ -507,3 +509,201 @@ class ConfigMonotributoViewTests(TestCase):
         resp = self.client.get(reverse("lista_comprobantes"))
         self.assertContains(resp, "Configurar categoría")
         self.assertContains(resp, "modalMonotributo")
+
+
+class RangoDeFechasTests(TestCase):
+    """La regla de ARCA vive en un solo lugar (services/fechas.py)."""
+
+    HOY = datetime.date(2026, 11, 10)
+
+    def test_productos_son_cinco_dias_para_cada_lado(self):
+        minimo, maximo = fechas.rango(Comprobante.Concepto.PRODUCTOS, hoy=self.HOY)
+        self.assertEqual(minimo, datetime.date(2026, 11, 5))
+        self.assertEqual(maximo, datetime.date(2026, 11, 15))
+
+    def test_servicios_son_diez(self):
+        for concepto in (Comprobante.Concepto.SERVICIOS,
+                         Comprobante.Concepto.PRODUCTOS_Y_SERVICIOS):
+            with self.subTest(concepto=concepto):
+                minimo, maximo = fechas.rango(concepto, hoy=self.HOY)
+                self.assertEqual(minimo, datetime.date(2026, 10, 31))
+                self.assertEqual(maximo, datetime.date(2026, 11, 20))
+
+    def test_un_concepto_raro_usa_el_margen_corto(self):
+        """Equivocarse para el lado restrictivo sólo cuesta un rechazo evitado."""
+        self.assertEqual(fechas.margen(99), 5)
+
+    def test_una_nota_no_puede_ser_anterior_a_su_factura(self):
+        minimo, _ = fechas.rango(
+            Comprobante.Concepto.PRODUCTOS, hoy=self.HOY,
+            fecha_asociado=datetime.date(2026, 11, 8))
+        self.assertEqual(minimo, datetime.date(2026, 11, 8))
+
+    def test_una_factura_vieja_no_amplia_el_rango(self):
+        """El piso lo sigue poniendo ARCA si la factura es más vieja."""
+        minimo, _ = fechas.rango(
+            Comprobante.Concepto.PRODUCTOS, hoy=self.HOY,
+            fecha_asociado=datetime.date(2026, 1, 1))
+        self.assertEqual(minimo, datetime.date(2026, 11, 5))
+
+    def test_los_bordes_son_validos(self):
+        for dia in (5, 15):
+            with self.subTest(dia=dia):
+                fecha = datetime.date(2026, 11, dia)
+                self.assertEqual(
+                    fechas.validar(fecha, Comprobante.Concepto.PRODUCTOS,
+                                   hoy=self.HOY),
+                    fecha)
+
+    def test_un_dia_antes_del_borde_se_rechaza(self):
+        with self.assertRaises(fechas.FechaInvalida) as cm:
+            fechas.validar(datetime.date(2026, 11, 4),
+                           Comprobante.Concepto.PRODUCTOS, hoy=self.HOY)
+        self.assertIn("05/11/2026", str(cm.exception))
+
+    def test_un_dia_despues_del_borde_se_rechaza(self):
+        with self.assertRaises(fechas.FechaInvalida):
+            fechas.validar(datetime.date(2026, 11, 16),
+                           Comprobante.Concepto.PRODUCTOS, hoy=self.HOY)
+
+    def test_el_mensaje_de_la_nota_nombra_a_su_factura(self):
+        with self.assertRaises(fechas.FechaInvalida) as cm:
+            fechas.validar(datetime.date(2026, 11, 6),
+                           Comprobante.Concepto.PRODUCTOS, hoy=self.HOY,
+                           fecha_asociado=datetime.date(2026, 11, 8))
+        self.assertIn("08/11/2026", str(cm.exception))
+
+    def test_parsear_sin_fecha_devuelve_el_default(self):
+        self.assertEqual(fechas.parsear(None, por_defecto=self.HOY), self.HOY)
+        self.assertEqual(fechas.parsear("", por_defecto=self.HOY), self.HOY)
+
+    def test_parsear_iso(self):
+        self.assertEqual(fechas.parsear("2026-11-05"),
+                         datetime.date(2026, 11, 5))
+
+    def test_una_fecha_ilegible_es_un_error_y_no_un_default(self):
+        """Facturar con otra fecha en silencio sería peor que fallar."""
+        with self.assertRaises(fechas.FechaInvalida):
+            fechas.parsear("10/11/2026")
+
+
+class FechaAlEmitirTests(TestCase):
+    """`emitir()` manda al web service la fecha del comprobante, no la de hoy."""
+
+    def _borrador(self, fecha=None):
+        c = _comprobante_autorizado()
+        c.pk = None
+        c.numero = None
+        c.cae = ""
+        c.estado = Comprobante.Estado.BORRADOR
+        c.fecha_emision = fecha
+        c.save()
+        return c
+
+    def _respuesta_ok(self):
+        return {"resultado": "A", "numero": 7, "cae": "123", "cae_vto": "20261130"}
+
+    def test_usa_la_fecha_cargada(self):
+        elegida = datetime.date(2026, 11, 6)
+        comprobante = self._borrador(elegida)
+        with mock.patch.object(emision.wsfev1, "solicitar_cae",
+                               return_value=self._respuesta_ok()) as pedido_cae:
+            emision.emitir(comprobante)
+        self.assertEqual(pedido_cae.call_args.kwargs["fecha"], elegida)
+        comprobante.refresh_from_db()
+        self.assertEqual(comprobante.fecha_emision, elegida)
+
+    def test_sin_fecha_usa_hoy(self):
+        comprobante = self._borrador(None)
+        with mock.patch.object(emision.wsfev1, "solicitar_cae",
+                               return_value=self._respuesta_ok()) as pedido_cae:
+            emision.emitir(comprobante)
+        self.assertEqual(pedido_cae.call_args.kwargs["fecha"], timezone.localdate())
+
+    def test_un_rechazo_conserva_la_fecha_intentada(self):
+        """Saber con qué fecha se intentó es parte de poder explicar el error."""
+        elegida = datetime.date(2026, 11, 6)
+        comprobante = self._borrador(elegida)
+        with mock.patch.object(emision.wsfev1, "solicitar_cae",
+                               return_value={"resultado": "R", "observaciones": ["x"]}):
+            emision.emitir(comprobante)
+        comprobante.refresh_from_db()
+        self.assertEqual(comprobante.estado, Comprobante.Estado.ERROR)
+        self.assertEqual(comprobante.fecha_emision, elegida)
+        self.assertIsNone(comprobante.numero)
+
+
+class EmitirConFechaViewTests(TestCase):
+    """La validación también va en el servidor: el `min` del input se saltea."""
+
+    def setUp(self):
+        from django.contrib.auth.models import User
+        User.objects.create_user("tester", password="x")
+        self.client.login(username="tester", password="x")
+        self.pedido = _comprobante_autorizado().pedido
+
+    def _emitir(self, fecha):
+        return self.client.post(
+            reverse("emitir_comprobante"),
+            data=json.dumps({
+                "pedido_numero": self.pedido.numero,
+                "tipo_cbte": int(Comprobante.Tipo.FACTURA_C),
+                "receptor": "consumidor_final",
+                "importe": "1000",
+                "fecha": fecha,
+            }),
+            content_type="application/json")
+
+    def test_una_fecha_vieja_se_rechaza_sin_llamar_a_arca(self):
+        vieja = (timezone.localdate() - datetime.timedelta(days=30)).isoformat()
+        with mock.patch.object(emision.wsfev1, "solicitar_cae") as pedido_cae:
+            resp = self._emitir(vieja)
+        self.assertEqual(resp.status_code, 400)
+        self.assertFalse(resp.json()["ok"])
+        self.assertIn("ARCA no acepta", resp.json()["error"])
+        pedido_cae.assert_not_called()
+
+    def test_una_fecha_ilegible_se_rechaza(self):
+        with mock.patch.object(emision.wsfev1, "solicitar_cae") as pedido_cae:
+            resp = self._emitir("ayer")
+        self.assertEqual(resp.status_code, 400)
+        pedido_cae.assert_not_called()
+
+    def test_una_fecha_dentro_del_rango_llega_al_web_service(self):
+        elegida = timezone.localdate() - datetime.timedelta(days=3)
+        with mock.patch.object(
+            emision.wsfev1, "solicitar_cae",
+            return_value={"resultado": "A", "numero": 9, "cae": "1",
+                          "cae_vto": "20261130"}) as pedido_cae:
+            resp = self._emitir(elegida.isoformat())
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(pedido_cae.call_args.kwargs["fecha"], elegida)
+
+    def test_sin_fecha_sigue_facturando_con_hoy(self):
+        """El caso de siempre no cambia."""
+        with mock.patch.object(
+            emision.wsfev1, "solicitar_cae",
+            return_value={"resultado": "A", "numero": 9, "cae": "1",
+                          "cae_vto": "20261130"}) as pedido_cae:
+            resp = self._emitir("")
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(pedido_cae.call_args.kwargs["fecha"], timezone.localdate())
+
+
+class ContextoFechasTests(TestCase):
+    def setUp(self):
+        from django.contrib.auth.models import User
+        User.objects.create_user("tester", password="x")
+        self.client.login(username="tester", password="x")
+
+    def test_el_modal_recibe_el_rango_y_la_fecha_de_cada_comprobante(self):
+        c = _comprobante_autorizado()
+        data = self.client.get(
+            reverse("contexto_facturacion", args=[c.pedido.numero])).json()
+        hoy = timezone.localdate()
+        self.assertEqual(data["fechas"]["hoy"], hoy.isoformat())
+        self.assertEqual(data["fechas"]["dias"], 5)
+        self.assertEqual(
+            data["fechas"]["minima"],
+            (hoy - datetime.timedelta(days=5)).isoformat())
+        self.assertEqual(data["comprobantes"][0]["fecha"], "2026-08-10")

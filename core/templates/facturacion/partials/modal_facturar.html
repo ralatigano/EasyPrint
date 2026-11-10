@@ -119,6 +119,14 @@
           </div>
         </div>
 
+        <!-- Fecha del comprobante: hoy por defecto. ARCA acepta un margen de
+             días hacia atrás, así que se puede facturar algo de días pasados. -->
+        <div class="mb-3">
+          <label for="facturarFecha" class="form-label" style="font-weight:600;">Fecha del comprobante</label>
+          <input type="date" id="facturarFecha" class="form-control">
+          <div class="form-text" id="facturarFechaAyuda" style="font-size:12px;"></div>
+        </div>
+
         <!-- Resultado de la emisión -->
         <div id="facturarResultado" class="d-none"></div>
       </div>

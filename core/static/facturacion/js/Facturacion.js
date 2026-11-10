@@ -21,6 +21,8 @@
         el('facturarPreviosWrap').classList.add('d-none');
         el('facturarPrevios').innerHTML = '';
         el('facturarTipo').value = '11';
+        el('facturarFecha').value = '';
+        el('facturarFechaAyuda').textContent = '';
         el('facturarAsociadoWrap').classList.add('d-none');
         el('recConsumidorFinal').checked = true;
         el('facturarIdentificadoWrap').classList.add('d-none');
@@ -140,6 +142,45 @@
         const tipo = el('facturarTipo').value;
         const esNota = (tipo === '12' || tipo === '13');
         el('facturarAsociadoWrap').classList.toggle('d-none', !esNota);
+        aplicarLimitesFecha();
+    }
+
+    // ── Fecha del comprobante ─────────────────────────────────────────────────
+    // El rango lo manda el servidor (services/fechas.py es la fuente única);
+    // acá sólo se traduce a los `min`/`max` del input. Una nota de crédito o
+    // débito, además, no puede ser anterior a la factura que corrige.
+    function aplicarLimitesFecha() {
+        const campo = el('facturarFecha');
+        const ayuda = el('facturarFechaAyuda');
+        const limites = contexto && contexto.fechas;
+        if (!limites) { campo.removeAttribute('min'); campo.removeAttribute('max'); return; }
+
+        let minima = limites.minima;
+        const asociada = fechaDeAsociada();
+        if (asociada && asociada > minima) minima = asociada;
+
+        campo.min = minima;
+        campo.max = limites.maxima;
+        if (campo.value && campo.value < minima) campo.value = minima;
+
+        ayuda.textContent = asociada && asociada === minima
+            ? `No puede ser anterior a la factura que corrige (${aFechaAr(minima)}).`
+            : `ARCA acepta hasta ${limites.dias} días hacia atrás: desde el ${aFechaAr(minima)}.`;
+    }
+
+    function fechaDeAsociada() {
+        const tipo = el('facturarTipo').value;
+        if (tipo !== '12' && tipo !== '13') return null;
+        const id = el('facturarAsociado').value;
+        if (!id) return null;
+        const c = ((contexto && contexto.comprobantes) || [])
+            .find(x => String(x.id) === String(id));
+        return (c && c.fecha) || null;
+    }
+
+    function aFechaAr(iso) {
+        const [a, m, d] = iso.split('-');
+        return `${d}/${m}/${a}`;
     }
 
     function mostrarResultado(ok, payload) {
@@ -180,6 +221,8 @@
                 mostrarAmbiente();
                 poblarPrevios();
                 poblarAsociadas();
+                el('facturarFecha').value = data.fechas ? data.fechas.hoy : '';
+                aplicarLimitesFecha();
             })
             .catch(() => {
                 el('facturarMonto').value = formatearNumeroLocal(info[1] || '0');
@@ -192,6 +235,7 @@
 
     // ── Toggles ───────────────────────────────────────────────────────────────
     el('facturarTipo').addEventListener('change', toggleTipo);
+    el('facturarAsociado').addEventListener('change', aplicarLimitesFecha);
     document.querySelectorAll('input[name="facturarReceptor"]').forEach(r =>
         r.addEventListener('change', toggleReceptor));
     el('facturarEditarMonto').addEventListener('change', function () {
@@ -209,6 +253,7 @@
             tipo_cbte: parseInt(tipo, 10),
             receptor: receptor,
             importe: el('facturarMonto').value,
+            fecha: el('facturarFecha').value,
         };
         if (receptor === 'identificado') {
             payload.doc_tipo = parseInt(el('facturarDocTipo').value, 10);
@@ -226,6 +271,13 @@
             const asoc = el('facturarAsociado').value;
             if (!asoc) { mostrarResultado(false, 'Seleccioná la factura asociada.'); return; }
             payload.comprobante_asociado_id = parseInt(asoc, 10);
+        }
+        // Avisar acá en vez de hacer el viaje: el servidor valida igual, pero
+        // el mensaje llega antes y sin esperar a ARCA.
+        if (!el('facturarFecha').checkValidity()) {
+            mostrarResultado(false, el('facturarFechaAyuda').textContent
+                || 'La fecha del comprobante está fuera del rango que acepta ARCA.');
+            return;
         }
 
         const original = this.innerHTML;

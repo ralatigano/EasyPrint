@@ -567,3 +567,17 @@ Versión v3.12.0
         *Se agregaron dos campos "Entrega entre" a la barra de filtros, para ver solo los pedidos que se entregan dentro de un rango de fechas.
         *Se combina con los filtros que ya estaban (cliente, producto, estado, saldo), se borra con "Limpiar filtros" y se conserva al volver de editar un pedido, igual que los demás.
         *Si las fechas se cargan al revés, se dan vuelta solas. Los pedidos sin fecha de entrega quedan fuera mientras el rango esté activo.
+
+****************** 10/11/2026 ******************
+Versión v3.13.0
+
+    -Facturación: se puede elegir la fecha del comprobante
+        *El modal de facturar ahora tiene un campo "Fecha del comprobante". Viene con la fecha de hoy, así que facturar como siempre no cambia en nada: solo hay que tocarlo cuando se quiere facturar algo de días anteriores.
+        *El calendario no deja elegir fechas que ARCA va a rechazar, y debajo del campo dice hasta cuándo se puede retroceder.
+        *ATENCIÓN: el margen es de 5 días, no de 10. ARCA permite 10 días solo para comprobantes de servicios; los del cotizador se emiten como productos, que admiten 5 días hacia atrás (y 5 hacia adelante).
+        *En una nota de crédito o débito, la fecha nunca puede ser anterior a la factura que corrige. El sistema lo controla solo y lo avisa.
+        *Si la fecha queda fuera de rango, el aviso aparece al instante, sin esperar la respuesta de ARCA. Y si ARCA igual rechaza por otro motivo, su observación se muestra tal cual.
+        *Un comprobante rechazado ahora guarda con qué fecha se intentó emitirlo, para poder entender el error.
+
+    -Ojo con el widget de monotributo
+        *El acumulado de facturación se suma por fecha del comprobante. Si se factura con fecha del mes anterior, ese monto cuenta en ese mes y no en el actual: puede mover los totales de la ventana de recategorización.
