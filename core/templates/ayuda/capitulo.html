@@ -1,0 +1,74 @@
+{% extends 'core/base.html' %}
+
+{% block title %}{{ capitulo.titulo }}{% endblock %}
+
+{% block head %}{% include 'ayuda/_estilos.html' %}{% endblock %}
+
+{% block header %}
+<div class="titulo">
+    <h1>{{ capitulo.titulo }}</h1>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="container pb-5">
+    <nav aria-label="Dónde estoy" class="mb-3">
+        <ol class="breadcrumb small mb-0">
+            <li class="breadcrumb-item"><a href="{% url 'ayuda_indice' %}">Manual</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ capitulo.titulo }}</li>
+        </ol>
+    </nav>
+
+    <div class="row g-4">
+        {# Índice lateral: en mobile queda arriba, plegado. #}
+        <div class="col-12 col-lg-3 manual-nav">
+            <div class="d-lg-none mb-2">
+                <button class="btn btn-sm btn-outline-secondary w-100" type="button"
+                        data-bs-toggle="collapse" data-bs-target="#indiceManual">
+                    <i class="fa-solid fa-list me-1"></i> Ver el índice
+                </button>
+            </div>
+            <div class="collapse d-lg-block" id="indiceManual">
+                <div class="list-group shadow-sm" style="position: sticky; top: 1rem;">
+                    {% for c in capitulos %}
+                    {% if c.pendiente %}
+                    <span class="list-group-item small text-muted bg-body-tertiary">
+                        {{ c.numero }}. {{ c.titulo }}
+                        <span class="d-block" style="font-size: .75rem;">en preparación</span>
+                    </span>
+                    {% else %}
+                    <a href="{% url 'ayuda_capitulo' c.slug %}"
+                       class="list-group-item list-group-item-action small {% if c.slug == capitulo.slug %}active{% endif %}">
+                        {{ c.numero }}. {{ c.titulo }}
+                    </a>
+                    {% endif %}
+                    {% endfor %}
+                    <a href="{% url 'ayuda_pdf' %}" class="list-group-item list-group-item-action small text-muted">
+                        <i class="fa-solid fa-file-pdf me-1"></i> Descargar en PDF
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-9">
+            <article class="manual-contenido">
+                {% include capitulo.template %}
+            </article>
+
+            <hr class="my-4">
+            <div class="d-flex justify-content-between gap-2">
+                {% if anterior %}
+                <a href="{% url 'ayuda_capitulo' anterior.slug %}" class="btn btn-outline-secondary">
+                    <i class="fa-solid fa-arrow-left me-1"></i> {{ anterior.titulo }}
+                </a>
+                {% else %}<span></span>{% endif %}
+                {% if siguiente %}
+                <a href="{% url 'ayuda_capitulo' siguiente.slug %}" class="btn btn-primary ms-auto">
+                    {{ siguiente.titulo }} <i class="fa-solid fa-arrow-right ms-1"></i>
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

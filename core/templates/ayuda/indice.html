@@ -1,0 +1,93 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Manual de uso{% endblock %}
+
+{% block head %}{% include 'ayuda/_estilos.html' %}{% endblock %}
+
+{% block header %}
+<div class="titulo">
+    <h1>Manual de uso</h1>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="container pb-5">
+
+    {% if no_encontrado %}
+    <div class="alert alert-warning">
+        No existe un capítulo llamado <strong>{{ no_encontrado }}</strong>. Abajo está el índice completo.
+    </div>
+    {% endif %}
+
+    <div class="row">
+        <div class="col-12 col-lg-8">
+            <p class="lead">
+                Cómo funciona el cotizador y cómo se carga cada cosa, con ejemplos
+                sacados de los datos de esta imprenta.
+            </p>
+            <p class="text-muted">
+                Si buscás qué significa un término suelto, pasá el mouse por el
+                botón <i class="fa-solid fa-circle-info"></i> que aparece al lado
+                de cada concepto en las pantallas (en el celular, tocalo): lo
+                explica sin salir de donde estás. Este manual es para lo otro:
+                los procedimientos. En el PDF, donde no se puede tocar nada, esas
+                definiciones van juntas en un glosario al final.
+            </p>
+        </div>
+        <div class="col-12 col-lg-4 text-lg-end mt-3 mt-lg-0">
+            <a href="{% url 'ayuda_pdf' %}" class="btn btn-outline-secondary">
+                <i class="fa-solid fa-file-pdf me-1"></i> Descargar en PDF
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-3 mt-2">
+        {% for c in capitulos %}
+        <div class="col-12 col-md-6">
+            {% if c.pendiente %}
+            {% comment %}
+            Sin link: el capítulo todavía no existe. Se lista igual para que se
+            vea qué falta y en qué orden va.
+            {% endcomment %}
+            <div class="card h-100 border-dashed bg-body-tertiary">
+                <div class="card-body">
+                    <div class="d-flex align-items-start gap-3">
+                        <i class="{{ c.icono }} fs-4 text-secondary opacity-50 mt-1"></i>
+                        <div>
+                            <h5 class="card-title mb-1 text-muted">
+                                {{ c.numero }}. {{ c.titulo }}
+                                <span class="badge bg-secondary ms-1 align-middle">en preparación</span>
+                            </h5>
+                            <p class="card-text text-muted small mb-0">{{ c.resumen }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <a href="{% url 'ayuda_capitulo' c.slug %}"
+               class="card h-100 shadow-sm text-decoration-none text-reset">
+                <div class="card-body">
+                    <div class="d-flex align-items-start gap-3">
+                        <i class="{{ c.icono }} fs-4 text-primary mt-1"></i>
+                        <div>
+                            <h5 class="card-title mb-1">{{ c.numero }}. {{ c.titulo }}</h5>
+                            <p class="card-text text-muted small mb-0">{{ c.resumen }}</p>
+                        </div>
+                    </div>
+                </div>
+            </a>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="alert alert-light border mt-4">
+        <strong>Los capítulos marcados «en preparación» todavía no están
+        escritos.</strong> Se listan para que se vea el mapa completo. Los que
+        faltan describen partes del cotizador que hoy se usan sin mayor
+        problema{% if puede.dashboard %}; por eso el capítulo del dashboard, que
+        explica los conceptos más difíciles, se adelantó{% endif %}.
+    </div>
+
+</div>
+{% endblock %}

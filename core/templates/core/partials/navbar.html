@@ -57,6 +57,7 @@
         <a class="nav-link {% if '/clientes' in path %}nav-active{% endif %}" href="/clientes" id="nav_item_clientes">Clientes</a>
       </li>
 
+
       <li class="nav-item dropdown nav-menu">
         <a class="nav-link dropdown-toggle {% if path|slice:':10' == '/dashboard' or path|slice:':5' == '/caja' or path|slice:':13' == '/tercerizados' or '/facturacion/comprobantes' in path or path|slice:':9' == '/usuarios' %}nav-active{% endif %}" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Gestión</a>
         <ul class="dropdown-menu dropdown-menu-lg-end">
@@ -74,6 +75,17 @@
           <li><a class="dropdown-item {% if path|slice:':9' == '/usuarios' %}active{% endif %}" href="/usuarios" id="nav_item_usuarios"><i class="fa-solid fa-users fa-fw me-2"></i>Usuaries</a></li>
           {% endif %}
         </ul>
+      </li>
+
+      {% comment %}
+      Manual de uso. Va último en la barra principal, a la derecha de "Gestión",
+      y fuera de ese menú porque lo ve cualquier rol: Ventas es quien más lo
+      necesita.
+      {% endcomment %}
+      <li class="nav-item">
+        <a class="nav-link {% if path|slice:':6' == '/ayuda' %}nav-active{% endif %}" href="/ayuda/" id="nav_item_ayuda" title="Manual de uso">
+          <i class="fa-solid fa-circle-question fa-fw"></i><span class="d-lg-none ms-2">Manual de uso</span>
+        </a>
       </li>
     </ul>
     {% endwith %}

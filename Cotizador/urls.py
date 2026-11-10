@@ -30,6 +30,7 @@ urlpatterns = [
     path('facturacion/', include('facturacion.urls')),
     path('caja/', include('caja.urls')),
     path('tercerizados/', include('tercerizados.urls')),
+    path('ayuda/', include('ayuda.urls')),
     # API del agente LLM de gerencia: autenticada por token, acotada al CRUD
     # de pedidos tercerizados (ver tercerizados/api.py).
     path('api/tercerizados/', include('tercerizados.api_urls')),

@@ -1,0 +1,99 @@
+{% comment %}
+El manual entero en una página, para weasyprint. Incluye los MISMOS templates
+de capítulo que la wiki: lo que se lee en pantalla y lo que se imprime no
+pueden separarse.
+{% endcomment %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <title>Manual de uso — EasyPrint</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 2cm 1.8cm 2cm 1.8cm;
+            @bottom-center {
+                content: counter(page);
+                font-family: sans-serif; font-size: 9pt; color: #777;
+            }
+        }
+        body { font-family: sans-serif; font-size: 10.5pt; color: #222; }
+        .portada { text-align: center; margin-top: 7cm; break-after: page; }
+        .portada h1 { font-size: 26pt; margin-bottom: .3cm; }
+        .portada .sub { color: #666; font-size: 11pt; }
+        .indice { break-after: page; }
+        .indice li { margin-bottom: .2cm; }
+        .capitulo { break-before: page; }
+        .capitulo > h1 { font-size: 18pt; border-bottom: 2px solid #ddd;
+                         padding-bottom: .2cm; margin-bottom: .6cm; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #ccc; padding: 3pt 5pt; text-align: left; }
+        th { background: #f2f2f2; }
+        a { color: inherit; text-decoration: none; }
+
+        /* Los botones "(i)" no sirven en papel: sin hover ni tap, weasyprint
+           los dibuja como un recuadro gris vacío. Se ocultan, y los conceptos
+           que explicaban van como glosario al final. */
+        .ayuda-info { display: none; }
+
+        .glosario { break-before: page; }
+        .glosario dt { font-weight: bold; margin-top: .35cm; }
+        .glosario dd { margin: 0 0 0 .8cm; }
+    </style>
+    {% include 'ayuda/_estilos.html' %}
+</head>
+<body>
+
+<div class="portada">
+    <h1>Manual de uso</h1>
+    <div class="sub">Cotizador EasyPrint</div>
+    <div class="sub">Generado el {{ generado|date:"d/m/Y" }}</div>
+    <p class="sub" style="margin-top:2cm; font-size:9pt;">
+        Los ejemplos de este manual se arman con los datos cargados en el sistema
+        el día que se generó el PDF. Si los costos cambiaron, volvé a descargarlo.
+    </p>
+</div>
+
+<div class="indice">
+    <h1>Contenido</h1>
+    {% comment %}
+    Lista sin numeración automática: el número sale de `c.numero`, el mismo que
+    encabeza cada capítulo. Con <ol> se renumeraba de 1 en adelante y no
+    coincidía con los títulos cuando el PDF no lleva todos los capítulos.
+    {% endcomment %}
+    <ul style="list-style: none; padding-left: 0;">
+        {% for c in capitulos %}
+        <li style="margin-bottom: .5rem;">
+            <strong>{{ c.numero }}. {{ c.titulo }}</strong><br>
+            <span style="color:#666; font-size:9.5pt;">{{ c.resumen }}</span></li>
+        {% endfor %}
+    </ul>
+</div>
+
+{% for c in capitulos %}
+<div class="capitulo">
+    <h1>{{ c.numero }}. {{ c.titulo }}</h1>
+    <div class="manual-contenido">
+        {% include c.template %}
+    </div>
+</div>
+{% endfor %}
+
+{% if glosario %}
+<div class="glosario">
+    <h1>Glosario</h1>
+    <p style="color:#666;">
+        En pantalla estos conceptos se explican tocando el botón «i» que
+        aparece al lado de cada uno. Como en papel no se pueden tocar, van acá.
+    </p>
+    <dl>
+        {% for g in glosario %}
+        <dt>{{ g.titulo }}</dt>
+        <dd>{{ g.texto }}</dd>
+        {% endfor %}
+    </dl>
+</div>
+{% endif %}
+
+</body>
+</html>

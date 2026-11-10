@@ -163,7 +163,7 @@ GLOSARIO = {
     ),
     'contribucion_por_hora': (
         'Lo que deja cada hora de ese producto después de pagar su material. '
-        'Es el criterio para saber qué conviene empujar: el recurso escaso es '
+        'Es el criterio para saber qué conviene fomentar: el recurso escaso es '
         'el tiempo, así que un producto de margen chico pero rápido puede '
         'rendir más que uno de margen grande que tarda un día.'
     ),

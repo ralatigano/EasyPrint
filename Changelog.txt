@@ -504,3 +504,16 @@ Versión v3.9.0
 
     -Tabla de pedidos tercerizados
         *Las filas se despliegan haciendo click, igual que en la tabla de Pedidos, con los pagos imputados, los pedidos vinculados, la nota completa y las acciones.
+
+****************** 9/11/2026 ******************
+Versión v3.10.0
+
+    -Manual de uso (nuevo, botón "?" al final de la barra de navegación)
+        *Explica cómo funciona el cotizador con ejemplos sacados de los datos reales de la imprenta: la tasa por hora, los precios y los tiempos que están cargados hoy, no números inventados. Si cambia la estructura de costos, el manual cambia con ella.
+        *Capítulos escritos: cómo funciona el cotizador de punta a punta; insumos (unidad de compra y unidad de uso, el factor de conversión, el precio y el stock); productos (los cuatro tipos de cálculo, la receta de insumos, el factor y los tiempos); cotizar un trabajo; y entender el dashboard.
+        *Sobre el factor, el manual no inventa una forma de calcularlo: es un remarcado que se decide, y lo único que se puede hacer con una cuenta es despejarlo a partir del precio que se quiere cobrar. Los dos métodos de precio se presentan como dos respuestas distintas a "¿cuánto debería cobrar esto?", no como uno viejo y uno nuevo. El precio sugerido no usa el factor.
+        *El capítulo del dashboard desarma paso a paso los conceptos que más confunden: por qué el tablero habla de horas, la tasa por hora, los dos pisos de un trabajo, la contribución, la absorción y el punto de equilibrio. Explica en particular por qué el punto de equilibrio puede dar más horas que la capacidad del local, que es la alarma más importante del tablero y hoy pasa desapercibida.
+        *Deja dicho de qué depende que el tablero signifique algo: los tiempos cargados en los productos son valores puestos de arranque y no mediciones, así que conviene leerlo como una tendencia hasta medir los productos que más se venden.
+        *Se descarga en PDF, con un glosario al final que junta las definiciones de los botones "(i)": en papel no se pueden tocar.
+        *Los capítulos de pedidos, caja, tercerizados y el recetario se listan como "en preparación". Se ve el mapa completo sin prometer páginas que todavía no existen.
+        *El capítulo del dashboard es solo para Gerencia, igual que el tablero: muestra el costo fijo, la tasa por hora y lo que se cobró en cotizaciones reales. El resto del manual lo ve cualquier usuario.

@@ -1,0 +1,490 @@
+{% load ayuda %}
+
+<p class="lead">
+    El dashboard usa palabras de contabilidad de costos —absorción, piso,
+    contribución— que no se explican solas. Este capítulo las desarma una por
+    una, en orden, y después muestra cómo se leen juntas.
+</p>
+
+<h2>Por qué el tablero habla de horas y no de plata</h2>
+
+<p>
+    Una imprenta no vende papel: vende <strong>trabajo hecho</strong>. Trabajos
+    que toman tiempo, y tiempo que no se puede recuperar ni usar para otro
+    pedido. La hora que pasó, pasó.
+</p>
+
+<p>
+    Por eso el recurso que hay que administrar es el tiempo, y por eso una parte
+    del tablero está medida en horas. Las preguntas que intenta responder son
+    dos:
+</p>
+
+<ul>
+    <li><strong>¿Las horas que vendí este mes alcanzan para pagar lo que cuesta
+        tener el local abierto?</strong></li>
+    <li><strong>¿Con todo lo vendido queda algo después de pagar las
+        cuentas?</strong></li>
+</ul>
+
+<h2>Paso 1: el costo fijo y las horas del mes</h2>
+
+<p>
+    El <strong>costo fijo</strong> {% ayuda 'costo_fijo_mensual' %} es todo lo
+    que se paga esté o no esté entrando trabajo: alquiler, sueldos, servicios,
+    impuestos. Se carga en <em>Configuración → Estructura de costos</em> y cada
+    línea se normaliza a un monto mensual.
+</p>
+
+<p>
+    Las <strong>horas disponibles</strong> {% ayuda 'horas_disponibles' %} salen
+    de una multiplicación simple: operarios × horas por día × días por mes. Pero
+    no todas esas horas son producción: hay atención al cliente, presupuestos,
+    limpieza, esperas. Para eso está el
+    <strong>ratio de horas productivas</strong> {% ayuda 'ratio_productivas' %},
+    que dice qué parte de esas horas queda realmente disponible para producir.
+    El resultado son las <strong>horas productivas</strong>
+    {% ayuda 'horas_productivas' %}.
+</p>
+
+{% if par.hay_estructura %}
+<div class="manual-ejemplo">
+    <div class="manual-ejemplo-titulo">Con los parámetros cargados hoy</div>
+    <div class="manual-formula" style="margin:.5rem 0;">{{ par.operarios }} operarios × {{ par.horas_dia|floatformat:0 }} h por día × {{ par.dias_mes }} días = {{ par.horas_disponibles|floatformat:0 }} h disponibles
+{{ par.horas_disponibles|floatformat:0 }} h × {{ par.ratio_productivas }} de ratio productivo = <strong>{{ par.horas_productivas|floatformat:0 }} h productivas</strong></div>
+    <p class="mb-0">
+        Esas <strong>{{ par.horas_productivas|floatformat:0 }} horas</strong> son
+        la capacidad del local en un mes: el techo contra el que se compara todo
+        lo demás.
+    </p>
+</div>
+{% endif %}
+
+<h2>Paso 2: la tasa por hora</h2>
+
+<p>
+    Acá aparece el número del que cuelga el resto. Si el costo fijo hay que
+    pagarlo y las horas productivas son las que hay, entonces cada hora de
+    producción tiene que <strong>cargar con una porción de ese costo fijo</strong>:
+</p>
+
+<div class="manual-formula">tasa por hora = costo fijo del mes ÷ horas productivas del mes</div>
+
+{% if par.hay_estructura %}
+<div class="manual-ejemplo">
+    <div class="manual-ejemplo-titulo">Con los números de hoy</div>
+    <div class="manual-formula" style="margin:.5rem 0;">${{ par.costo_fijo|floatformat:0 }} ÷ {{ par.horas_productivas|floatformat:0 }} h = <strong>${{ par.tasa_hora|floatformat:0 }} por hora</strong></div>
+    <p class="mb-0">
+        Leído en castellano: <strong>cada hora que el local produce tiene que
+        dejar ${{ par.tasa_hora|floatformat:0 }} solamente para pagar la
+        estructura</strong>, antes de ganar un peso y sin contar el material.
+    </p>
+</div>
+{% endif %}
+
+<div class="manual-ojo">
+    <strong>La tasa por hora no es lo que se le cobra al cliente por hora.</strong>
+    Es cuánto cuesta tener el local abierto, repartido entre las horas que
+    produce. El precio que paga el cliente tiene que cubrir eso <em>más</em> el
+    material <em>más</em> la ganancia.
+</div>
+
+<h2>Paso 3: los dos pisos de un trabajo</h2>
+
+<p>
+    Con la tasa en la mano, cualquier trabajo tiene dos umbrales por debajo de
+    los cuales no conviene cobrarlo.
+</p>
+
+<ul>
+    <li><strong>Piso absoluto</strong> {% ayuda 'piso_absoluto' %}: lo que
+        cuesta el material y el empaquetado, a precio de costo. Cobrar menos que
+        esto es poner plata del bolsillo para trabajar.</li>
+    <li><strong>Piso de absorción</strong> {% ayuda 'piso_absorcion' %}: el piso
+        absoluto más las horas del trabajo valuadas a la tasa. Es lo que hay que
+        cobrar para que ese trabajo pague el material que usa <em>y</em> el uso
+        de la estructura durante el tiempo que cuesta hacerlo.</li>
+</ul>
+
+<div class="manual-formula">piso absoluto     = material + empaquetado
+piso de absorción = piso absoluto + (horas del trabajo × tasa por hora)</div>
+
+{% if cotizaciones.caso %}
+<div class="manual-ejemplo">
+    <div class="manual-ejemplo-titulo">Una cotización real, desarmada</div>
+    <p class="mb-2"><strong>{{ cotizaciones.caso.nombre }}</strong> — {{ cotizaciones.caso.horas }} h de producción</p>
+    <div class="table-responsive">
+    <table class="table table-sm mb-2">
+        <tbody>
+            <tr>
+                <td>Material y empaquetado, a costo</td>
+                <td class="text-end">${{ cotizaciones.caso.material|floatformat:2 }}</td>
+                <td class="text-muted small">piso absoluto</td>
+            </tr>
+            <tr>
+                <td>+ {{ cotizaciones.caso.horas }} h × ${{ cotizaciones.caso.tasa_del_dia|floatformat:0 }} la hora</td>
+                <td class="text-end">${{ cotizaciones.caso.estructura|floatformat:2 }}</td>
+                <td class="text-muted small">su parte de la estructura</td>
+            </tr>
+            <tr class="fw-bold">
+                <td>= lo mínimo para que pague su parte</td>
+                <td class="text-end">${{ cotizaciones.caso.piso_absorcion|floatformat:2 }}</td>
+                <td class="text-muted small fw-normal">piso de absorción</td>
+            </tr>
+            <tr>
+                <td>Se cobró</td>
+                <td class="text-end">${{ cotizaciones.caso.cobrado|floatformat:2 }}</td>
+                <td class="small">
+                    {% if cotizaciones.caso.paga_su_parte %}
+                    <span class="text-success">por encima del piso</span>
+                    {% else %}
+                    <span class="text-danger">por debajo del piso</span>
+                    {% endif %}
+                </td>
+            </tr>
+        </tbody>
+    </table>
+    </div>
+    <p class="mb-0 small text-muted">
+        La tasa que se usa es la del día en que se cotizó, no la de hoy: cada
+        cotización guarda una foto de los costos del momento.
+    </p>
+</div>
+{% endif %}
+
+<h2>Paso 4: la contribución, y qué quiere decir que un trabajo «aporta»</h2>
+
+<p>
+    Como cada mes hay que pagar el costo fijo y el tiempo del que disponemos
+    para hacerlo es finito, necesitamos que <strong>cada hora que se trabaja
+    aporte el valor de la tasa</strong>. Por eso, cuando se cotiza un trabajo de
+    una hora y ese presupuesto se convierte en pedido, se dice que se
+    <strong>vendió</strong> o <strong>recuperó</strong> una hora. El objetivo del
+    mes es recuperar todas las horas que la estructura va a estar funcionando, es
+    decir, las horas productivas.
+</p>
+
+<p>
+    De ahí sale el número que el tablero llama
+    <strong>absorción recuperada</strong> {% ayuda 'absorcion_recuperada' %}: las
+    horas de todos los pedidos creados en el mes, valuadas a la tasa. Esas horas
+    salen del tiempo cargado en cada producto —setup más el unitario por la
+    cantidad—, <strong>no del precio que se cobró</strong>. Y la
+    diferencia contra el costo fijo es la <strong>sub-absorción</strong>
+    {% ayuda 'absorcion_mes' %}, que es el número que el card
+    <em>Absorción del mes</em> muestra en grande, en rojo o en verde:
+</p>
+
+<div class="manual-formula">absorción recuperada = horas vendidas en el mes × tasa por hora
+sub-absorción        = absorción recuperada − costo fijo del mes</div>
+
+<div class="table-responsive">
+<table class="table table-sm">
+    <thead>
+        <tr><th>Lo que se ve</th><th>Qué significa</th></tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td class="text-danger fw-bold text-nowrap">−$ … en rojo</td>
+            <td>Las horas vendidas todavía no alcanzan a repartirse todo el
+                costo fijo del mes. Ese monto es lo que falta recuperar.</td>
+        </tr>
+        <tr>
+            <td class="text-success fw-bold text-nowrap">+$ … en verde</td>
+            <td>Las horas vendidas ya cubren el costo fijo del mes. De ahí en
+                adelante, cada hora que entra trabaja para la ganancia.</td>
+        </tr>
+    </tbody>
+</table>
+</div>
+
+<div class="manual-ojo">
+    <strong>La absorción es un mecanismo de precios, no un flujo de fondos.</strong>
+    El alquiler y los sueldos se pagan igual, haya o no haya trabajo. Que el mes
+    cierre «sub-absorbido» no significa que falte plata en la caja ese día:
+    significa que el trabajo que entró no da para sostener la estructura a ese
+    ritmo. Un mes en rojo no es alarma —hay temporadas—; varios seguidos sí.
+</div>
+
+<h3>Lo que un trabajo aporta de verdad: la contribución</h3>
+
+<p>
+    La absorción recuperada mide <strong>horas</strong>: cuenta cada hora vendida
+    como si hubiera dejado la tasa, sin mirar a qué precio se cobró. Para saber
+    cuánto dejó realmente un trabajo está la <strong>contribución</strong>, que
+    es lo que queda después de pagar <em>su propio material</em>:
+</p>
+
+<div class="manual-formula">contribución = lo cobrado − piso absoluto</div>
+
+<div class="manual-ojo">
+    <strong>Se resta el material, no la estructura.</strong> Es el error de
+    lectura más fácil de cometer. La contribución no es la ganancia: es la plata
+    que ese trabajo deja disponible <em>para empezar a pagar</em> el alquiler,
+    los sueldos y recién después ganar. De ahí el nombre: es lo que el trabajo
+    «contribuye» al pozo común.
+</div>
+
+<p>
+    Las dos miradas responden preguntas distintas, y por eso pueden no coincidir:
+    la absorción dice <strong>si se vendieron suficientes horas</strong>, y la
+    contribución dice <strong>si esas horas se vendieron a buen precio</strong>.
+    El paso siguiente las junta.
+</p>
+
+<h2>Paso 5: el punto de equilibrio</h2>
+
+<p>
+    Como vimos, cada trabajo aporta plata para cubrir la estructura. Pero para
+    efectivamente pagar las cuentas hay que vender y producir todo el tiempo. El
+    punto de equilibrio {% ayuda 'punto_equilibrio' %} responde
+    <strong>cuántas horas habría que vender para no perder plata, al ritmo al
+    que se está aportando este mes</strong>.
+</p>
+
+<div class="manual-ejemplo">
+    <div class="manual-ejemplo-titulo">Un ejemplo chico, con números redondos</div>
+    <p>
+        Supongamos que el local funciona 100 horas al mes y que se vende un solo
+        producto, que toma 1 hora producirlo. Si la estructura va a estar
+        funcionando 100 horas, hacen falta <strong>100 ventas</strong> para
+        pagarla: una por hora.
+    </p>
+    <p class="mb-0">
+        Ahora supongamos que, por alguna razón, los pedidos empiezan a tomar el
+        doble de tiempo (se enfermó un operario, entró un trabajo más engorroso).
+        El precio no cambió, así que cada venta deja la misma plata, pero ocupa
+        <strong>dos horas</strong> en lugar de una: cada hora está aportando la
+        mitad de lo que hace falta. El cálculo dice entonces que harían falta
+        <strong>200 horas</strong> para cubrir el costo fijo… y el local da 100.
+    </p>
+</div>
+
+<p>
+    Ese «cuánto aporta cada hora, en promedio, este mes» es la
+    <strong>contribución promedio por hora</strong>: la contribución de todo lo
+    vendido, dividida por sus horas. El punto de equilibrio sale de dividir el
+    costo fijo por ese promedio:
+</p>
+
+<div class="manual-formula">contribución promedio por hora = contribución de lo vendido ÷ horas vendidas
+punto de equilibrio            = costo fijo del mes ÷ contribución promedio por hora</div>
+
+<p>
+    Lo ideal es que el punto de equilibrio sea <strong>igual o menor</strong> que
+    las horas productivas. De ese modo:
+</p>
+
+<div class="table-responsive">
+<table class="table table-sm">
+    <thead>
+        <tr><th>Si el punto de equilibrio…</th><th>Quiere decir que…</th></tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td class="text-nowrap"><strong>&gt; horas productivas</strong></td>
+            <td>No alcanza el mes. Hay que subir precios, fomentar la venta de
+                los trabajos que dejan más por hora, o mejorar los procesos para
+                que los trabajos tomen menos tiempo y liberen antes la
+                estructura para otros pedidos. Vender más horas no lo arregla:
+                no hay más horas.</td>
+        </tr>
+        <tr>
+            <td class="text-nowrap"><strong>= horas productivas</strong></td>
+            <td>Se empata sólo si se vende el 100 % de la capacidad. No hay
+                colchón: cada hora que no se venda es pérdida.</td>
+        </tr>
+        <tr>
+            <td class="text-nowrap"><strong>&lt; horas productivas</strong></td>
+            <td>Está funcionando como se espera: las horas que se vendan por
+                encima del equilibrio son ganancia. Con un margen cómodo se
+                puede pensar en una promoción, un aumento para los operarios o
+                invertir en alguna mejora.</td>
+        </tr>
+    </tbody>
+</table>
+</div>
+
+<p>
+    Conviene no confundir el punto de equilibrio con las horas productivas,
+    porque en la pantalla conviven dos números de horas que parecen comparables
+    y miden cosas distintas:
+</p>
+
+<div class="table-responsive">
+<table class="table table-sm">
+    <thead>
+        <tr><th>Número</th><th>Qué es</th><th>De dónde sale</th></tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>Horas productivas</strong> {% ayuda 'horas_objetivo' %}</td>
+            <td>La <strong>capacidad</strong>: lo máximo que el local puede producir</td>
+            <td>operarios × horas × días × ratio</td>
+        </tr>
+        <tr>
+            <td><strong>Punto de equilibrio</strong> {% ayuda 'punto_equilibrio' %}</td>
+            <td>Lo que <strong>habría que vender</strong> para no perder plata, a los precios de este mes</td>
+            <td>costo fijo ÷ contribución promedio por hora</td>
+        </tr>
+    </tbody>
+</table>
+</div>
+
+<p>
+    La diferencia está en el denominador. La tasa por hora es lo que cada hora
+    <strong>debería</strong> dejar; la contribución promedio por hora es lo que
+    las horas vendidas <strong>realmente</strong> están dejando. Si se deja menos
+    que la tasa, el equilibrio se corre por encima de la capacidad; si se deja
+    más, queda por debajo.
+</p>
+
+<div class="manual-ojo">
+    <strong>Un punto de equilibrio mayor que las horas productivas es la alarma
+    más importante del tablero.</strong> Quiere decir que, con el mix y los
+    precios de este mes, <em>aunque vendieras el 100 % de la capacidad el mes
+    cerraría en pérdida</em>. No se arregla trabajando más: no alcanzan las
+    horas. Se arregla aumentando precios, fomentando la venta de los productos
+    que dejan más por hora, o reduciendo el tiempo que lleva cada trabajo.
+    <br><br>
+    Si ves 353 h de equilibrio contra 297 h de capacidad, eso es lo que está
+    diciendo.
+</div>
+
+<div class="manual-ojo">
+    <strong>Si la absorción y el punto de equilibrio no se dan la mano, manda el
+    punto de equilibrio.</strong> La absorción cuenta horas; el equilibrio mira
+    lo que se cobró. Un mes se puede llenar de horas a precios flojos: la
+    absorción lo va a ver bien y el equilibrio no.
+</div>
+
+<h2>Paso 6: contribución por hora, el criterio para decidir qué vender</h2>
+
+<p>
+    Si el recurso escaso es el tiempo, entonces el producto que más conviene
+    <strong>no es el de mayor margen, sino el que deja más por hora</strong>.
+    Un trabajo de margen chico que se despacha en veinte minutos puede rendir
+    más que uno de margen grande que ocupa la máquina todo el día.
+</p>
+
+<div class="manual-formula">contribución por hora = contribución ÷ horas del trabajo</div>
+
+{% if cotizaciones.mejor and cotizaciones.peor %}
+<div class="manual-ejemplo">
+    <div class="manual-ejemplo-titulo">Dos cotizaciones reales, comparadas</div>
+    <div class="table-responsive">
+    <table class="table table-sm mb-2">
+        <thead>
+            <tr>
+                <th></th>
+                <th class="text-end">Horas</th>
+                <th class="text-end">Se cobró</th>
+                <th class="text-end">Contribución</th>
+                <th class="text-end">Por hora</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>{{ cotizaciones.mejor.nombre }}</td>
+                <td class="text-end">{{ cotizaciones.mejor.horas }}</td>
+                <td class="text-end">${{ cotizaciones.mejor.cobrado|floatformat:0 }}</td>
+                <td class="text-end">${{ cotizaciones.mejor.contribucion|floatformat:0 }}</td>
+                <td class="text-end fw-bold">${{ cotizaciones.mejor.contribucion_por_hora|floatformat:0 }}</td>
+            </tr>
+            <tr>
+                <td>{{ cotizaciones.peor.nombre }}</td>
+                <td class="text-end">{{ cotizaciones.peor.horas }}</td>
+                <td class="text-end">${{ cotizaciones.peor.cobrado|floatformat:0 }}</td>
+                <td class="text-end">${{ cotizaciones.peor.contribucion|floatformat:0 }}</td>
+                <td class="text-end fw-bold">${{ cotizaciones.peor.contribucion_por_hora|floatformat:0 }}</td>
+            </tr>
+        </tbody>
+    </table>
+    </div>
+    <p class="mb-0">
+        El ranking del tablero ordena por esa última columna, y no por el total
+        cobrado ni por el margen en porcentaje. Es el criterio real para saber
+        qué conviene salir a buscar.
+    </p>
+</div>
+{% endif %}
+
+{% if cotizaciones.bajo_piso %}
+<h3>Cómo se ve un trabajo que no paga su parte</h3>
+
+<p>
+    De las cotizaciones cargadas, esta quedó por debajo de su piso de absorción:
+</p>
+
+<div class="manual-ejemplo">
+    <p class="mb-1"><strong>{{ cotizaciones.bajo_piso.nombre }}</strong>
+        ({{ cotizaciones.bajo_piso.producto }})</p>
+    <p class="mb-0">
+        Material: <strong>${{ cotizaciones.bajo_piso.material|floatformat:2 }}</strong> ·
+        su parte de estructura por {{ cotizaciones.bajo_piso.horas }} h:
+        <strong>${{ cotizaciones.bajo_piso.estructura|floatformat:2 }}</strong> ·
+        piso de absorción: <strong>${{ cotizaciones.bajo_piso.piso_absorcion|floatformat:2 }}</strong>.<br>
+        Se cobró <strong>${{ cotizaciones.bajo_piso.cobrado|floatformat:2 }}</strong>.
+    </p>
+</div>
+
+<p>
+    No es que se haya perdido plata en el acto: se cobró por encima del material,
+    así que dejó una contribución de
+    ${{ cotizaciones.bajo_piso.contribucion|floatformat:2 }}. Lo que pasa es que
+    esa contribución <strong>no alcanza a cubrir la estructura que consumió al
+    ocupar la máquina</strong>. Un trabajo así, de vez en cuando y por un
+    cliente que importa, se banca. Repetido, es exactamente lo que corre el
+    punto de equilibrio por encima de la capacidad.
+</p>
+{% endif %}
+
+<h2>De qué depende que todo esto signifique algo</h2>
+
+<div class="manual-ojo">
+    <strong>Todos los números de este capítulo se apoyan en el tiempo cargado en
+    cada producto.</strong> El piso de absorción, la contribución por hora, las
+    horas vendidas y el punto de equilibrio salen de ahí. Si los tiempos no se
+    parecen a lo que los trabajos llevan de verdad, el tablero va a ser
+    coherente consigo mismo y aun así equivocado.
+    <br><br>
+    Hoy los tiempos de los productos son valores puestos de arranque, no
+    mediciones (lo explica el capítulo de productos). <strong>Medir los
+    productos que más se venden es el paso que convierte este tablero en
+    información para decidir.</strong> Antes de eso, conviene leerlo como una
+    tendencia y no como una cifra.
+</div>
+
+<p class="small text-muted">
+    Otra cosa que conviene saber: el panel sólo cuenta lo cotizado
+    <strong>con la estructura de costos</strong>. Las cotizaciones anteriores a
+    la estructura no tienen el dato de los pisos ni de las horas, y contarlas
+    falsearía el panel. Por eso un mes con ventas viejas puede mostrar menos
+    horas vendidas de las que se trabajaron.
+</p>
+
+<h2>Qué mirar, en qué orden</h2>
+
+<ol>
+    <li><strong>¿El punto de equilibrio entra en la capacidad?</strong> Si no
+        entra, no hay volumen que lo arregle: hay que revisar precios o mix.</li>
+    <li><strong>¿Cuántas horas van vendidas contra el equilibrio?</strong> Dice
+        si el mes va encaminado.</li>
+    <li><strong>¿Qué productos encabezan la contribución por hora?</strong> Son
+        los que conviene fomentar.</li>
+    <li><strong>¿Hay trabajos por debajo del piso de absorción?</strong> Si se
+        repiten en un mismo producto, el problema es el precio de ese producto,
+        no el trabajo puntual.</li>
+</ol>
+
+<div class="manual-ejemplo">
+    <div class="manual-ejemplo-titulo">Dos bloques que se leen distinto</div>
+    <p class="mb-0">
+        Los números de horas, equilibrio y absorción son <strong>siempre del mes
+        en curso</strong>, porque la estructura de costos está mensualizada y no
+        tiene sentido preguntarse cuánto alquiler le toca a «los últimos 17
+        días». Los filtros de período afectan a la otra parte del tablero —
+        pedidos completados, ticket promedio, productos más vendidos—, que sí se
+        puede mirar en cualquier ventana.
+    </p>
+</div>

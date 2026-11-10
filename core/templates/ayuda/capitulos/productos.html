@@ -1,0 +1,297 @@
+{% load ayuda %}
+
+<p class="lead">
+    Un producto es lo que se elige al cotizar. Dice de qué está hecho (la
+    receta), cómo se mide (el tipo de cálculo), cuánto se cobra por encima del
+    material (el factor) y cuánto tiempo lleva (los tiempos).
+</p>
+
+<h2>Los cuatro tipos de cálculo</h2>
+
+<p>
+    Al cotizar se elige primero cómo se va a medir el trabajo. De eso depende qué
+    es «la cantidad» en todas las cuentas que siguen.
+</p>
+
+<div class="table-responsive">
+<table class="table table-sm">
+    <thead>
+        <tr><th>En pantalla</th><th>Qué calcula</th><th>La cantidad es…</th></tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>Papeles</strong></td>
+            <td>Cuántas piezas entran en una hoja y cuántas hojas hacen falta</td>
+            <td>hojas</td>
+        </tr>
+        <tr>
+            <td><strong>Vinilos y lonas</strong></td>
+            <td>El área ocupada en el rollo</td>
+            <td>m²</td>
+        </tr>
+        <tr>
+            <td><strong>DTF UV o textil</strong></td>
+            <td>Los metros de rollo que se consumen</td>
+            <td>metros lineales</td>
+        </tr>
+        <tr>
+            <td><strong>Precio por unidad</strong></td>
+            <td>Nada: precio × cantidad, directo</td>
+            <td>unidades</td>
+        </tr>
+    </tbody>
+</table>
+</div>
+
+<div class="manual-ojo">
+    <strong>«La cantidad» casi nunca es la cantidad de piezas que pide el
+    cliente.</strong> Si alguien pide 100 tarjetas y entran 20 por hoja, la
+    cantidad que usan las cuentas es <strong>5 hojas</strong>, no 100. Esto es
+    clave para entender el factor y los tiempos: todo lo que sigue está medido
+    por hoja, por m² o por metro, no por pieza entregada.
+</div>
+
+<h2>La receta: de qué insumos está hecho</h2>
+
+<p>
+    Un producto no tercerizado se vincula a uno o más insumos, y de cada uno se
+    indica cuánto lleva <strong>en unidad de uso</strong> (hojas, cm², unidades).
+    El costo del producto es la suma de lo que cuesta cada componente.
+</p>
+
+<p>
+    Ese costo se recalcula solo cada vez que cambia el precio de alguno de sus
+    insumos. No se toca a mano.
+</p>
+
+<p>
+    Los productos <strong>tercerizados</strong> funcionan al revés: no tienen
+    receta ni consumen stock. Su costo es el campo <em>precio del proveedor</em>,
+    cargado a mano.
+</p>
+
+<h2>El factor</h2>
+
+<p>
+    El factor multiplica al costo del material. Es lo que convierte un costo en
+    un precio, en el método de cotización actual:
+</p>
+
+<div class="manual-formula">precio = cantidad × costo del material × <strong>factor</strong>
+        + 1 hora de mano de obra
+        + empaquetado (si corresponde)</div>
+
+<div class="manual-ojo">
+    <strong>El factor no se calcula: se decide.</strong> No hay una fórmula que
+    diga cuál es «el» factor de un producto. Es la perilla con la que se acomoda
+    el precio hasta donde uno quiere cobrarlo, mirando el mercado, el cliente y
+    lo que se viene cobrando. Cualquier cuenta que lo «derive» de otra cosa está
+    en realidad partiendo de un precio que alguien ya decidió.
+</div>
+
+<h3>Cómo ponerlo en la práctica</h3>
+
+<p>
+    Dado que el precio es la decisión y el factor es la consecuencia, conviene
+    trabajar en ese orden:
+</p>
+
+<ol>
+    <li>Pensá un trabajo típico de ese producto: cuántas hojas, m² o metros.</li>
+    <li>Decidí <strong>cuánto querés cobrar</strong> por ese trabajo.</li>
+    <li>Despejá el factor que te deja ahí:</li>
+</ol>
+
+<div class="manual-formula">factor = (precio que querés cobrar − mano de obra − empaquetado) ÷ costo del material</div>
+
+<p>
+    Después se cotiza un par de trabajos de distinto tamaño y se ajusta. Es
+    tanteo, y está bien que lo sea.
+</p>
+
+<div class="manual-ejemplo">
+    <div class="manual-ejemplo-titulo">El factor sólo vive en el método actual</div>
+    <p class="mb-0">
+        <strong>El precio sugerido no usa el factor para nada.</strong> Se arma
+        con el costo del material, el tiempo y el margen objetivo:
+        <code>(material + tiempo × tasa por hora) × margen</code>.
+        Así que al dar de alta un producto no hace falta inventar ni justificar
+        un factor «correcto» pensando en el sugerido: el factor es sólo para
+        que el método actual dé el precio que vos querés que dé.
+    </p>
+</div>
+
+<h2>Las familias por cantidad</h2>
+
+<p>
+    Un mismo trabajo no se cobra igual por unidad si son 5 hojas que si son 500:
+    <strong>a mayor cantidad, menor precio por unidad</strong>. Eso es una
+    decisión comercial, no un resultado de ninguna cuenta.
+</p>
+
+<p>
+    Para que el cotizador la respete existen las <strong>familias</strong>:
+    varios productos con el mismo nombre y un rango entre corchetes al final.
+    Cada escalón lleva su propio factor, y <strong>se le bajó el factor a los
+    escalones grandes justamente para que el precio por unidad baje</strong>.
+</p>
+
+<div class="manual-formula">Papel obra oficio 75g simple faz byn <strong>[1-5]</strong>
+Papel obra oficio 75g simple faz byn <strong>[6-30]</strong>
+Papel obra oficio 75g simple faz byn <strong>[31-100]</strong></div>
+
+<p>
+    Al cotizar no hay que elegir el escalón a mano: el sistema calcula cuántas
+    hojas hacen falta y <strong>salta solo al producto cuyo rango contiene esa
+    cantidad</strong>. Se elige cualquiera de la familia y él corrige.
+</p>
+
+<div class="manual-ojo">
+    <strong>Los rangos se miden en la unidad del cálculo, no en piezas.</strong>
+    <code>[31-100]</code> en un producto de papel quiere decir «de 31 a 100
+    <em>hojas</em>». Un pedido de 100 tarjetas que entra en 5 hojas cae en el
+    escalón <code>[1-5]</code>, no en el de 101-300.
+</div>
+
+{% if familia %}
+<h3>Una familia real</h3>
+
+<p>
+    Así está cargada hoy la familia <strong>{{ familia.nombre }}</strong>. La
+    última columna es lo que queda cobrándose por {{ familia.unidad }} en cada
+    escalón (el material por su factor; la hora de mano de obra es fija por
+    trabajo y no cambia entre escalones):
+</p>
+
+<div class="table-responsive">
+<table class="table table-sm table-striped">
+    <thead>
+        <tr>
+            <th>Escalón ({{ familia.unidad }}s)</th>
+            <th class="text-end">Factor</th>
+            <th class="text-end">Se cobra por {{ familia.unidad }}</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for f in familia.filas %}
+        <tr>
+            <td>{% if f.hasta %}{{ f.desde }} a {{ f.hasta }}{% else %}{{ f.desde }} o más{% endif %}</td>
+            <td class="text-end">{{ f.factor|floatformat:2 }}</td>
+            <td class="text-end">${{ f.precio_unidad|floatformat:2 }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+</div>
+
+<p>
+    El factor baja escalón por escalón, y con él el precio por unidad. Si
+    agregás un escalón nuevo a una familia, el criterio para elegir su factor es
+    ese: que el precio por unidad siga bajando respecto del escalón anterior.
+</p>
+{% endif %}
+
+<h2>Los tiempos: setup y unitario</h2>
+
+<p>
+    Cada producto tiene dos tiempos, en horas:
+</p>
+
+<ul>
+    <li><strong>Tiempo de setup</strong>: desde que está el archivo hasta la
+        primera copia buena. Armar el archivo, calibrar, hacer la prueba. No
+        depende de la cantidad: es el mismo para 5 que para 500.</li>
+    <li><strong>Tiempo unitario</strong>: lo que lleva cada unidad <em>de la
+        magnitud del cálculo</em> — por hoja, por m², por metro—, no por pieza
+        entregada.</li>
+</ul>
+
+<div class="manual-formula">tiempo del trabajo = setup + unitario × cantidad</div>
+
+<h3>Cómo medirlos</h3>
+
+<ol>
+    <li>Tomá un trabajo real de ese producto y cronometralo entero, de recibir el
+        archivo a tenerlo listo.</li>
+    <li>Anotá aparte cuánto tardó la preparación hasta la primera copia buena:
+        ese es el <strong>setup</strong>.</li>
+    <li>El resto, dividido por la cantidad de hojas (o m², o metros) del trabajo,
+        es el <strong>tiempo unitario</strong>.</li>
+</ol>
+
+<div class="manual-formula">unitario = (tiempo total − setup) ÷ cantidad</div>
+
+<p>
+    Con un par de trabajos de tamaños bien distintos alcanza para que el número
+    sea razonable. Conviene repetirlo cuando cambia la máquina o el proceso.
+</p>
+
+<h3>Qué mueve y qué no mueve cargar estos tiempos</h3>
+
+<div class="manual-ojo">
+    <strong>Los tiempos no cambian el precio del método actual.</strong> Ese
+    método usa una hora fija de mano de obra, siempre la misma, así que cargar
+    los tiempos no mueve las listas de precios vigentes.<br><br>
+    Lo que sí alimentan es <strong>el precio sugerido y todas las horas del
+    dashboard</strong>: las horas vendidas, el punto de equilibrio y la
+    contribución por hora. Son el único insumo de ese lado del sistema, así que
+    de lo realistas que sean depende que esos números signifiquen algo.
+</div>
+
+{% if tiempos %}
+<div class="manual-ejemplo">
+    <div class="manual-ejemplo-titulo">Cómo están hoy</div>
+    <p class="mb-1">
+        Hay <strong>{{ tiempos.con_tiempos }}</strong> productos con tiempos
+        cargados, de {{ tiempos.total }} activos, pero solo
+        <strong>{{ tiempos.distintas }}</strong> combinaciones distintas de
+        setup y unitario entre todos.
+    </p>
+    <div class="table-responsive">
+    <table class="table table-sm mb-1 mt-2">
+        <thead>
+            <tr>
+                <th>Setup</th><th>Unitario</th>
+                <th class="text-end">Productos</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for c in tiempos.combinaciones %}
+            <tr>
+                <td>{{ c.setup }} h</td>
+                <td>{{ c.unitario }} h</td>
+                <td class="text-end">{{ c.productos }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+    <p class="mb-0 small">
+        Que tantos productos compartan exactamente el mismo par quiere decir que
+        son <strong>valores puestos de arranque para que el sistema funcione, no
+        mediciones</strong>. Medir los productos que más se venden es lo que
+        convierte al precio sugerido y al dashboard en información utilizable.
+    </p>
+</div>
+{% endif %}
+
+<h2>Alta de un producto, paso a paso</h2>
+
+<ol>
+    <li>Asegurate de que el <strong>insumo</strong> exista, con su precio y su
+        factor de conversión bien cargados.</li>
+    <li>Creá el producto y elegí su <strong>categoría</strong> (la categoría es
+        la que agrupa los productos en el desplegable del cotizador).</li>
+    <li>Vinculá el insumo y poné <strong>cuánto lleva</strong>, en unidad de uso.</li>
+    <li>Si es un producto que se imprime sobre una hoja o un rollo, cargá el
+        <strong>ancho y alto imprimibles</strong> del material. El ancho es el
+        imprimible, no el del rollo entero.</li>
+    <li>Decidí cuánto querés cobrar un trabajo típico y poné el
+        <strong>factor</strong> que te deja ahí. Cotizá un par de trabajos para
+        comprobarlo.</li>
+    <li>Cargá los <strong>tiempos</strong> con la receta de medición de arriba.
+        No van a mover el precio, pero sí el sugerido y el dashboard.</li>
+    <li>Si el producto se vende en cantidades muy distintas, armá una
+        <strong>familia</strong> con escalones, bajando el factor a medida que
+        sube el rango.</li>
+</ol>

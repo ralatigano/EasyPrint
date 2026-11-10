@@ -1,0 +1,198 @@
+{% load ayuda %}
+
+<p class="lead">
+    Cotizar es elegir un producto, decir cuánto se necesita y revisar el precio
+    que sale. Lo que vale la pena entender es de dónde sale cada número de la
+    comparación que se muestra abajo.
+</p>
+
+<h2>El recorrido en pantalla</h2>
+
+<ol>
+    <li>Elegir <strong>cómo se mide</strong> el trabajo: papeles, vinilos y
+        lonas, DTF, o precio por unidad.</li>
+    <li>Elegir la <strong>categoría</strong> y el <strong>producto</strong> (el
+        material).</li>
+    <li>Cargar las <strong>medidas de la pieza</strong> y cuántas se necesitan.
+        En «precio por unidad» no hace falta.</li>
+    <li>Generar el <strong>gráfico</strong>: el sistema acomoda las piezas y
+        calcula cuántas hojas, m² o metros se consumen. En «precio por unidad»
+        no existe este paso: no hay gráfico porque no hay nada que acomodar.</li>
+    <li>Completar el campo <strong>Producto</strong>, que es el texto que va a
+        aparecer en la línea del presupuesto.</li>
+    <li>Revisar el precio y agregarlo al presupuesto.</li>
+</ol>
+
+<div class="manual-ojo">
+    <strong>El campo «Producto» es lo que lee el cliente</strong>, y es distinto
+    del producto que se eligió en el desplegable (que es el material). En el
+    desplegable va «Papel ilustración A3 300g»; en el campo Producto va «100
+    tarjetas personales». Conviene escribirlo pensando en el presupuesto
+    impreso.
+</div>
+
+<h2>Partir el diseño</h2>
+
+<p>
+    En vinilos y lonas (y DTF), cuando una pieza es más ancha que el material
+    aparece el botón de tijera
+    (<i class="fa-solid fa-scissors" aria-hidden="true"></i>) al lado del
+    gráfico. Tocándolo, el diseño se parte en franjas iguales de un solo lado,
+    con unos centímetros de solapamiento entre vecinas para poder pegarlas.
+</p>
+
+<p>
+    El sistema <strong>no decide por vos</strong>: muestra lo que consume partido
+    y lo que consumiría sin partir, para que compares. Regenerar alterna el lado
+    por el que corta cuando eso cambia el resultado.
+</p>
+
+<h2>Los números de la comparación</h2>
+
+<p>
+    Debajo del precio aparecen varios números que son los que más confunden. Van
+    de abajo hacia arriba, de lo mínimo a lo deseable:
+</p>
+
+<div class="table-responsive">
+<table class="table table-sm">
+    <thead>
+        <tr><th>Número</th><th>Qué es</th></tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>Piso absoluto</strong> {% ayuda 'piso_absoluto' %}</td>
+            <td>El material y el empaquetado, a costo. Por debajo de esto se
+                pierde plata en el acto, con el trabajo puesto. Es el límite
+                duro.</td>
+        </tr>
+        <tr>
+            <td><strong>Piso de absorción</strong> {% ayuda 'piso_absorcion' %}</td>
+            <td>El piso absoluto más el tiempo del trabajo valuado a la tasa por
+                hora. Es lo que hay que cobrar para que ese trabajo pague la
+                parte de estructura que le toca.</td>
+        </tr>
+        <tr>
+            <td><strong>Precio sugerido</strong> {% ayuda 'precio_sugerido' %}</td>
+            <td>El piso de absorción por el margen objetivo. Es el precio al que
+                el negocio funciona como se planificó.</td>
+        </tr>
+        <tr>
+            <td><strong>Precio actual</strong> {% ayuda 'precio_actual' %}</td>
+            <td>El que se está cobrando: material × factor, más una hora fija de
+                mano de obra, más empaquetado.</td>
+        </tr>
+    </tbody>
+</table>
+</div>
+
+<p>
+    Los dos precios salen de cuentas distintas, y conviene tenerlas a la vista
+    para saber qué mueve a cada uno:
+</p>
+
+<div class="manual-formula">precio actual   = cantidad × costo del material × factor
+                + 1 hora de mano de obra + empaquetado
+
+precio sugerido = (costo del material + tiempo × tasa por hora) × margen</div>
+
+<p>
+    Se ve ahí que <strong>el factor sólo afecta al actual</strong> y
+    <strong>el tiempo sólo afecta al sugerido</strong>. La
+    <strong>diferencia</strong> {% ayuda 'diferencia_metodos' %} entre los dos
+    compara, en definitiva, un remarcado decidido a mano contra un costeo
+    basado en tiempos estimados.
+</p>
+
+<p>
+    Por defecto se agrega el precio actual. El botón
+    <strong>«Agregar con precio sugerido»</strong> agrega el ítem con el otro.
+</p>
+
+<div class="manual-ejemplo">
+    <div class="manual-ejemplo-titulo">Cómo leerlo en la práctica</div>
+    <p class="mb-0">
+        <strong>Precio actual por encima del sugerido:</strong> ese producto está
+        bien cobrado o incluso caro.<br>
+        <strong>Por debajo del sugerido pero encima del piso de absorción:</strong>
+        deja menos de lo planeado, pero paga su parte. Sirve para llenar horas
+        ociosas.<br>
+        <strong>Por debajo del piso de absorción:</strong> ese trabajo no paga la
+        estructura. Puede tener sentido una vez, por un cliente; repetido, es el
+        que hunde el mes.<br>
+        <strong>Por debajo del piso absoluto:</strong> se pierde plata haciéndolo.
+        Nunca.
+    </p>
+</div>
+
+<div class="manual-ojo">
+    <strong>Todo lo de arriba vale sólo si el tiempo del trabajo es
+    realista.</strong> El piso de absorción y el precio sugerido se calculan
+    desde el tiempo; si el tiempo cargado en el producto no se parece a lo que
+    el trabajo lleva de verdad, los tres niveles se corren juntos y la
+    comparación no dice nada. Hoy los tiempos de los productos son estimaciones
+    puestas de arranque (ver el capítulo de productos), así que esta lectura es
+    más confiable en los productos que ya se midieron, y hay que tomarla con
+    pinzas en el resto.<br><br>
+    Si un trabajo en particular va a llevar bastante más o menos de lo normal,
+    corregí el tiempo en la cotización: es gratis y hace que la comparación
+    valga.
+</div>
+
+<h2>El tiempo del trabajo</h2>
+
+<p>
+    El tiempo se precarga con la fórmula del producto
+    (<code>setup + unitario × cantidad</code>) y se puede ajustar a mano para
+    esa cotización con la opción de ajustar tiempos.
+</p>
+
+<p>
+    Cambiar el tiempo <strong>no cambia el precio que se cobra</strong>: mueve el
+    piso de absorción, el precio sugerido y las horas que ese trabajo le aporta
+    al dashboard. Si un trabajo va a llevar bastante más (o menos) de lo normal,
+    vale la pena corregirlo: es lo que hace que las horas del tablero se parezcan
+    a la realidad.
+</p>
+
+<h2>Descuentos</h2>
+
+<p>
+    Se puede descontar un monto fijo o un porcentaje. El descuento se aplica
+    sobre el precio del método actual.
+</p>
+
+<p>
+    Lo importante: <strong>el descuento sale del margen, no del costo</strong>.
+    Un descuento que deja el precio por debajo del piso de absorción convierte un
+    trabajo rentable en uno que no paga su parte de la estructura. La comparación
+    sigue visible mientras se descuenta, justamente para poder ver hasta dónde se
+    puede bajar.
+</p>
+
+<h2>Del presupuesto al pedido</h2>
+
+<p>
+    Un presupuesto es una propuesta: no toca el stock ni la caja. Cuando el
+    cliente acepta y se confirma, se convierte en <strong>pedido</strong>, y ahí sí:
+</p>
+
+<ul>
+    <li>se descuentan los insumos de todos los productos del pedido;</li>
+    <li>lo que no alcance queda registrado como faltante;</li>
+    <li>el pedido entra en la lista con estado <em>No iniciado</em>;</li>
+    <li>los cobros (seña, pagos, devoluciones) se registran en caja.</li>
+</ul>
+
+<p>
+    Si un pedido se cancela, el stock se repone y lo cobrado se retiene o se
+    devuelve según corresponda. Un pedido cancelado queda bloqueado: no se puede
+    reabrir.
+</p>
+
+<div class="manual-ojo">
+    <strong>Las cotizaciones guardan una foto de los costos del momento.</strong>
+    Si después sube el papel, el presupuesto viejo no cambia. Es a propósito: un
+    presupuesto que ya se le pasó a un cliente no puede moverse solo. Para
+    recotizar con precios nuevos hay que hacer una cotización nueva.
+</div>

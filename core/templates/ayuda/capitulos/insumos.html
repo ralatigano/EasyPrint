@@ -1,0 +1,160 @@
+{% load ayuda %}
+
+<p class="lead">
+    Un insumo es algo que se compra. Lo único complicado es que casi siempre
+    <strong>se compra en una unidad y se usa en otra</strong>, y el sistema
+    necesita saber las dos.
+</p>
+
+<h2>Las dos unidades</h2>
+
+<p>
+    El papel se compra por resma y se usa por hoja. El vinilo se compra por rollo
+    y se usa por centímetro cuadrado. Los anillos se compran por caja y se usan
+    de a uno. Por eso cada insumo tiene tres campos que van juntos:
+</p>
+
+<ul>
+    <li><strong>Unidad de medida</strong>: cómo se compra (resma, rollo, caja).</li>
+    <li><strong>Unidad de composición</strong>: cómo se usa (hoja, cm², unidad).</li>
+    <li><strong>Factor de conversión</strong>: cuántas unidades de uso entran en
+        una de compra.</li>
+</ul>
+
+{% if insumo %}
+<div class="manual-ejemplo">
+    <div class="manual-ejemplo-titulo">Un insumo de los que están cargados</div>
+    <p class="mb-1"><strong>{{ insumo.nombre }}</strong></p>
+    <p class="mb-1">
+        Se compra por <strong>{{ insumo.unidad_medida }}</strong> y se usa por
+        <strong>{{ insumo.unidad_composicion }}</strong>.
+        Factor de conversión: <strong>{{ insumo.factor_conversion }}</strong>.
+    </p>
+    <p class="mb-1">
+        Es decir: <strong>1 {{ insumo.unidad_medida|lower }} =
+        {{ insumo.factor_conversion }} × {{ insumo.unidad_composicion|lower }}</strong>.
+    </p>
+    {% if insumo_costo_uso %}
+    <p class="mb-0">
+        Se paga <strong>${{ insumo.precio|floatformat:2 }}</strong> por
+        {{ insumo.unidad_medida|lower }}, así que cada
+        {{ insumo.unidad_composicion|lower }} cuesta
+        <strong>${{ insumo_costo_uso|floatformat:2 }}</strong>. Esa división la
+        hace el sistema: en la ficha del insumo se carga el precio de la
+        {{ insumo.unidad_medida|lower }}.
+    </p>
+    {% endif %}
+</div>
+{% endif %}
+
+<h2>El precio va por unidad de compra</h2>
+
+<p>
+    Esta es la primera fuente de errores. <strong>El precio que se carga es el de
+    la unidad de compra</strong>, no el de la unidad de uso. Si la resma sale
+    $18.000, se carga 18.000, no lo que sale una hoja.
+</p>
+
+<p>
+    El sistema hace la división solo cuando calcula el costo de un producto:
+</p>
+
+<div class="manual-formula">costo por unidad de uso = precio ÷ factor de conversión</div>
+
+<div class="manual-ojo">
+    <strong>Si cargás el precio ya dividido, el producto sale carísimo o
+    baratísimo por un factor de varios cientos.</strong> Es el error más común y
+    el más difícil de ver, porque el número no parece raro hasta que se cotiza.
+    Regla simple: <em>el precio es el del remito del proveedor</em>.
+</div>
+
+<h2>El stock, en cambio, va por unidad de uso</h2>
+
+<p>
+    Al revés que el precio. Cuando se carga o se corrige el stock desde la
+    pantalla de insumos, se escribe <strong>en unidades de uso</strong>: hojas,
+    no resmas. El sistema divide por el factor para guardarlo internamente, y
+    vuelve a multiplicar para mostrarlo.
+</p>
+
+<p>
+    Por eso la tabla de insumos muestra el stock en la unidad de uso y redondeado:
+    la ida y vuelta de la conversión puede dejar decimales raros («102,27 hojas»)
+    que no significan nada.
+</p>
+
+<div class="manual-ejemplo">
+    <div class="manual-ejemplo-titulo">Cómo queda</div>
+    <p class="mb-0">
+        <strong>Precio:</strong> lo que sale la unidad de compra (la resma).<br>
+        <strong>Stock:</strong> lo que hay en unidades de uso (las hojas).<br>
+        No es una inconsistencia: se compra por resma pero se cuenta por hoja,
+        que es lo que efectivamente se mira al revisar si alcanza.
+    </p>
+</div>
+
+<h2>Cómo escribir los números</h2>
+
+<p>
+    Los importes usan el formato argentino: <strong>el punto separa miles y la
+    coma separa decimales</strong>. Mil doscientos treinta y cuatro con cincuenta
+    y seis se escribe <code>1.234,56</code>.
+</p>
+
+<p>
+    No hace falta poner el signo <code>$</code>: el sistema lo interpreta bien
+    si lo escribís, pero no es necesario.
+</p>
+
+<h2>Nombres: no puede haber dos iguales</h2>
+
+<p>
+    El nombre de un insumo es único, ignorando mayúsculas y minúsculas: no pueden
+    convivir «Papel Obra A4» y «papel obra a4». Esto es a propósito, porque el
+    nombre es lo que usa la importación por Excel para saber si un insumo ya
+    existe o hay que crearlo.
+</p>
+
+<div class="manual-ojo">
+    <strong>Al importar insumos por Excel, el nombre tiene que coincidir
+    exactamente con el que ya está cargado</strong> (salvo mayúsculas). Si en el
+    Excel dice «Papel obra A4 80gr» y en el sistema está como «Papel obra A4
+    80g», la importación crea un insumo nuevo en lugar de actualizar el que
+    existe, y los productos quedan apuntando al viejo.
+</div>
+
+<h2>Qué pasa cuando cambia un precio</h2>
+
+<p>
+    Al guardar un insumo con un precio nuevo, <strong>el sistema recalcula solo
+    el precio de todos los productos no tercerizados que lo usan</strong>. No hay
+    que tocarlos uno por uno.
+</p>
+
+<p>
+    Lo que <em>no</em> se recalcula son las cotizaciones ya hechas. Cada
+    cotización guarda una foto de los costos del momento, para que actualizar una
+    lista de precios no reescriba la historia ni cambie un presupuesto que ya se
+    le mandó a un cliente.
+</p>
+
+<h2>Faltantes</h2>
+
+<p>
+    Cuando se confirma un pedido y no hay insumo suficiente, el stock queda en
+    cero y se registra un <strong>faltante</strong> por lo que no se pudo cubrir.
+    No bloquea el pedido: lo anota.
+</p>
+
+<p>
+    Después, cualquier ingreso de material —una compra, una corrección de stock,
+    una importación— cubre primero los faltantes abiertos, y recién el sobrante
+    queda como stock disponible. La prioridad la da la fecha de entrega más
+    cercana.
+</p>
+
+<p>
+    La pantalla de faltantes (en <em>Inventario → Faltantes</em>) permite además
+    generar la lista de compra en Excel y registrar la compra cuando llega el
+    material.
+</p>

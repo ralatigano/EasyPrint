@@ -1,0 +1,162 @@
+{% load ayuda %}
+
+<p class="lead">
+    El cotizador calcula el precio de un trabajo a partir de lo que cuesta el
+    material y el tiempo que lleva hacerlo. Todo lo demás —presupuestos, pedidos,
+    stock, caja— cuelga de eso.
+</p>
+
+<h2>El recorrido completo</h2>
+
+<p>
+    Hay cuatro cosas que se cargan una vez y después se usan muchas veces, y dos
+    que pasan todos los días. Conviene tenerlas separadas en la cabeza, porque la
+    mayoría de los errores salen de mezclarlas.
+</p>
+
+<p><strong>Se carga una vez (y se mantiene):</strong></p>
+
+<ol>
+    <li><strong>Insumos.</strong> Lo que se compra: el papel, el vinilo, los
+        anillos. Tiene precio y stock.</li>
+    <li><strong>Productos.</strong> Lo que se cotiza. Un producto dice de qué
+        insumos está hecho y cuánto lleva de cada uno. De ahí sale su costo.</li>
+    <li><strong>La estructura de costos.</strong> El alquiler, los sueldos, los
+        servicios: lo que se paga todos los meses se produzca o no. Dividido por
+        las horas que el local puede producir, da la <em>tasa por hora</em>
+        {% ayuda 'tasa_hora' %}.</li>
+    <li><strong>Los parámetros de producción.</strong> Cuántos operarios, cuántas
+        horas por día, cuántos días por mes, y qué proporción de esas horas es
+        realmente productiva {% ayuda 'ratio_productivas' %}.</li>
+</ol>
+
+<p><strong>Pasa todos los días:</strong></p>
+
+<ol start="5">
+    <li><strong>Un presupuesto.</strong> Se elige un producto, se dice cuánto se
+        necesita, y el sistema calcula el precio.</li>
+    <li><strong>Un pedido.</strong> Cuando el cliente acepta, el presupuesto se
+        convierte en pedido: ahí se descuenta el stock, se registran los cobros
+        en caja y, si hace falta, se emite la factura.</li>
+</ol>
+
+<h2>En qué orden cargar las cosas</h2>
+
+<p>
+    El orden importa, porque cada nivel se apoya en el anterior. Si se intenta
+    saltar un paso, el precio sale mal y no es evidente por qué.
+</p>
+
+<div class="manual-formula">Insumo  →  Producto  →  Presupuesto  →  Pedido
+(lo que   (lo que     (el precio     (el trabajo
+ comprás)  vendés)     para el        y la plata)
+                       cliente)</div>
+
+<p>
+    Para dar de alta algo nuevo que se va a vender, entonces:
+</p>
+
+<ol>
+    <li>Primero el <strong>insumo</strong>, con su precio y su unidad.</li>
+    <li>Después el <strong>producto</strong>, vinculado a ese insumo, con su
+        receta, su factor y sus tiempos.</li>
+    <li>Recién ahí se puede cotizar.</li>
+</ol>
+
+<div class="manual-ojo">
+    <strong>Un producto sin insumo vinculado no tiene costo.</strong> El precio
+    de un producto no tercerizado se calcula desde sus insumos: si no tiene
+    ninguno, su costo es cero y el precio que salga va a ser cualquier cosa. Los
+    productos tercerizados son la excepción: ahí el costo lo pone a mano el
+    campo <em>precio del proveedor</em>.
+</div>
+
+<h2>Los dos métodos de precio que conviven</h2>
+
+<p>
+    Esto es lo que más confunde al mirar una cotización, así que conviene
+    aclararlo de entrada: <strong>el sistema calcula dos precios distintos para
+    el mismo trabajo</strong> y muestra los dos. No son «el viejo y el nuevo»,
+    ni «el malo y el bueno»: son <strong>dos maneras distintas de responder la
+    misma pregunta</strong> —¿cuánto debería cobrar esto?— y cada una mira algo
+    que la otra no mira.
+</p>
+
+<h3>El precio actual {% ayuda 'precio_actual' %}</h3>
+
+<div class="manual-formula">precio actual = cantidad × costo del material × factor
+              + 1 hora de mano de obra
+              + empaquetado (si corresponde)</div>
+
+<p>
+    Parte del material y le aplica el <em>factor</em> del producto, que es el
+    remarcado que se decidió para ese producto. Mira el mercado y lo que se
+    viene cobrando. <strong>Es el precio que se cobra por defecto.</strong>
+</p>
+
+<h3>El precio sugerido {% ayuda 'precio_sugerido' %}</h3>
+
+<div class="manual-formula">precio sugerido = (costo del material + tiempo × tasa por hora) × margen</div>
+
+<p>
+    Parte del costo: el material a costo, más el tiempo que lleva el trabajo
+    valuado a la tasa por hora de la estructura, más un margen. Mira cuánto le
+    cuesta al local hacerlo. <strong>No usa el factor.</strong>
+</p>
+
+<p>
+    Normalmente se cobra el precio actual, pero el sugerido no es sólo
+    informativo: el botón <strong>«Agregar con precio sugerido»</strong> agrega
+    el ítem al presupuesto con ese precio en lugar del otro.
+</p>
+
+<div class="manual-ojo">
+    <strong>Ninguno de los dos es automático.</strong> El actual depende del
+    factor, que alguien decidió a mano. El sugerido depende de los tiempos
+    cargados en el producto, que hoy son estimaciones. Que den distinto no
+    quiere decir que uno esté mal: quiere decir que están mirando cosas
+    distintas, y la diferencia entre ambos es información para decidir, no un
+    error para corregir.
+</div>
+
+<p>
+    El capítulo <em>Cotizar un trabajo</em> explica cada número de esa
+    comparación y cómo leerla.
+</p>
+
+<h2>Qué mirar si algo no cierra</h2>
+
+<div class="table-responsive">
+<table class="table table-sm">
+    <thead>
+        <tr><th>Síntoma</th><th>Dónde mirar primero</th></tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>El precio de un producto cambió solo</td>
+            <td>Alguien editó el precio de un insumo que usa. Al guardar un
+                insumo se recalculan todos los productos no tercerizados que lo
+                contienen.</td>
+        </tr>
+        <tr>
+            <td>Un trabajo da un precio absurdo (muy alto o muy bajo)</td>
+            <td>El <em>factor</em> del producto, o que el producto esté en el
+                escalón de cantidad equivocado. Ver el capítulo de productos.</td>
+        </tr>
+        <tr>
+            <td>El precio sugerido da muy distinto del actual</td>
+            <td>Mirá primero el tiempo cargado del producto: es lo único que
+                mueve el sugerido además del material.</td>
+        </tr>
+        <tr>
+            <td>El stock no baja al confirmar un pedido</td>
+            <td>El producto no tiene insumos vinculados, o es tercerizado.</td>
+        </tr>
+        <tr>
+            <td>Las horas del dashboard no tienen sentido</td>
+            <td>Los tiempos de setup y unitarios de los productos. Son
+                estimaciones cargadas a mano y se pueden corregir.</td>
+        </tr>
+    </tbody>
+</table>
+</div>

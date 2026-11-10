@@ -1,0 +1,52 @@
+{% comment %}
+Estilos del manual. Van en un parcial y no en styles.css porque sólo los usa
+esta sección y porque el PDF (ayuda/manual_pdf.html) incluye este mismo archivo:
+weasyprint no levanta la hoja de estilos del sitio, así que lo que el manual
+necesita para leerse bien tiene que viajar con él.
+{% endcomment %}
+<style>
+  .manual-contenido { max-width: 46rem; }
+  .manual-contenido h2 { font-size: 1.5rem; margin-top: 2.5rem; margin-bottom: .75rem; }
+  .manual-contenido h2:first-child { margin-top: 0; }
+  .manual-contenido h3 { font-size: 1.15rem; margin-top: 1.75rem; margin-bottom: .5rem; font-weight: 600; }
+  .manual-contenido p, .manual-contenido li { line-height: 1.65; }
+  .manual-contenido > p, .manual-contenido ul, .manual-contenido ol { margin-bottom: 1rem; }
+
+  /* Caja de ejemplo con datos reales de la base. */
+  .manual-ejemplo {
+    border-left: 4px solid var(--bs-primary, #0d6efd);
+    background: rgba(13, 110, 253, .05);
+    padding: .9rem 1.1rem;
+    border-radius: .25rem;
+    margin: 1.25rem 0;
+  }
+  .manual-ejemplo .manual-ejemplo-titulo {
+    font-weight: 600; font-size: .8rem; text-transform: uppercase;
+    letter-spacing: .04em; opacity: .75; margin-bottom: .5rem;
+  }
+
+  /* Advertencia: algo que se puede hacer mal y duele después. */
+  .manual-ojo {
+    border-left: 4px solid #ffc107;
+    background: rgba(255, 193, 7, .08);
+    padding: .9rem 1.1rem;
+    border-radius: .25rem;
+    margin: 1.25rem 0;
+  }
+
+  .manual-formula {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: .9rem; background: rgba(128, 128, 128, .12);
+    padding: .75rem 1rem; border-radius: .25rem; margin: 1rem 0;
+    overflow-x: auto; white-space: pre-wrap;
+  }
+
+  .manual-nav .list-group-item.active { font-weight: 600; }
+  .border-dashed { border: 1px dashed var(--bs-border-color, #ccc); }
+  .manual-contenido table { font-size: .9rem; }
+
+  @media print {
+    .manual-ejemplo, .manual-ojo { break-inside: avoid; }
+    .manual-contenido h2 { break-after: avoid; }
+  }
+</style>
