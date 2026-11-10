@@ -554,3 +554,16 @@ Versión v3.11.0
 
     -Manual de uso
         *El capítulo del dashboard se actualizó para describir la pantalla nueva, incluido el corte en dos bloques y el card del resultado del mes.
+
+****************** 10/11/2026 ******************
+Versión v3.12.0
+
+    -Pedidos: marca de facturado en la tabla
+        *Al lado del número de cada pedido aparece una marca chica que dice si ya se facturó: un comprobante verde si tiene factura autorizada, un triángulo amarillo si hubo un intento que falló y quedó sin factura. Si no se intentó facturar, no aparece nada.
+        *Pasando el mouse por la marca (o tocándola en el celular) se lee qué significa.
+        *Solo cuentan las facturas del ambiente de ARCA que esté activo: una factura emitida en homologación no marca el pedido como facturado en producción.
+
+    -Pedidos: filtro por rango de fechas
+        *Se agregaron dos campos "Entrega entre" a la barra de filtros, para ver solo los pedidos que se entregan dentro de un rango de fechas.
+        *Se combina con los filtros que ya estaban (cliente, producto, estado, saldo), se borra con "Limpiar filtros" y se conserva al volver de editar un pedido, igual que los demás.
+        *Si las fechas se cargan al revés, se dan vuelta solas. Los pedidos sin fecha de entrega quedan fuera mientras el rango esté activo.

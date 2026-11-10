@@ -1,12 +1,12 @@
 # Plan v3.10 — Manual de uso y mejoras de lectura
 
-Estado: **lotes A (v3.10.0) y B (v3.11.0) terminados y desplegados**; quedan
-C, D y E. Punto de partida: `main` en `e09f8c6` (v3.9.0,
+Estado: **lotes A (v3.10.0), B (v3.11.0) y C (v3.12.0) terminados y
+desplegados**; quedan D y E. Punto de partida: `main` en `e09f8c6` (v3.9.0,
 desplegada en la VM).
 
 Los lotes salen de a uno, a medida que se terminan, en lugar de esperar a un
-release grande: **A = v3.10.0** (manual), **B = v3.11.0** (dashboard). Lo que
-queda (C, D, E) va a releases posteriores.
+release grande: **A = v3.10.0** (manual), **B = v3.11.0** (dashboard),
+**C = v3.12.0** (pedidos). Lo que queda (D, E) va a releases posteriores.
 
 Este plan agrupa un conjunto de trabajos heterogéneos que salieron de una misma
 observación: el cotizador acumuló features y la forma de usarlo dejó de ser
@@ -34,11 +34,11 @@ Lotes y ramas:
 |------|------|-----------|--------|
 | **A** | `feature/manual` | Manual de uso como wiki en la app (`/ayuda/`) + export PDF | **hecho**, v3.10.0 |
 | **B** | `feature/dashboard-claro` | Corte en dos bloques, panel de horas reescrito, conversión arreglada, card "Dinero por entrar", filtro de fechas | **hecho**, v3.11.0 |
-| **C** | `feature/pedidos-filtros` | Indicador de facturado + filtro de fechas en pedidos | chico |
+| **C** | `feature/pedidos-filtros` | Indicador de facturado + filtro de fechas en pedidos | **hecho**, v3.12.0 |
 | **D** | `feature/buscador-costos` | Buscador en estructura de costos | mínimo (puede ir con B) |
 | **E** | `feature/producto-estandar` | Guardar un ProductoCotizado como producto estándar reutilizable | grande |
 
-**Orden**: A y B hechos. Siguen D y C (chicos, no dependen de nada) → E. El capítulo del dashboard se escribió **antes** de B, así que
+**Orden**: A, B y C hechos. Quedan D (mínimo) y E (grande). El capítulo del dashboard se escribió **antes** de B, así que
 describe el tablero actual: cuando B cambie la pantalla hay que repasar el paso
 5 del capítulo y sacar el recuadro sobre absorción vs. equilibrio (ver §2.4).
 

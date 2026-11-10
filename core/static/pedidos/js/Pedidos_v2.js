@@ -441,12 +441,16 @@ cambiarClienteModal.addEventListener('show.bs.modal', function (event) {
 
 // ── Filtros ───────────────────────────────────────────────────────────────────
 const FILTROS_KEY = 'pedidos_filtros';
-let filtroActivo = { clientes: [], productos: [], estados: [], soloConSaldo: false };
+const FILTROS_VACIOS = {
+    clientes: [], productos: [], estados: [], soloConSaldo: false,
+    desde: '', hasta: '',
+};
+let filtroActivo = { ...FILTROS_VACIOS };
 
 $.fn.dataTable.ext.search.push(function (settings, data, dataIndex) {
     if (settings.nTable.id !== 'Pedidos') return true;
 
-    const { clientes, productos, estados, soloConSaldo } = filtroActivo;
+    const { clientes, productos, estados, soloConSaldo, desde, hasta } = filtroActivo;
     const nodoFila = settings.aoData[dataIndex].nTr;
     if (!nodoFila) return true;
 
@@ -454,13 +458,20 @@ $.fn.dataTable.ext.search.push(function (settings, data, dataIndex) {
     const productosTexto = nodoFila.children[3]?.querySelector('.prod-text')?.textContent.trim().toLowerCase() || '';
     const estadoTexto    = nodoFila.children[4]?.textContent.trim().toLowerCase() || '';
     const saldo          = parseFloat(nodoFila.dataset.saldo) || 0;
+    // Fecha de entrega en ISO (data-entrega). Se compara como texto: en
+    // AAAA-MM-DD el orden alfabético y el cronológico coinciden.
+    const entrega        = nodoFila.dataset.entrega || '';
 
     const okCliente  = !clientes.length  || clientes.includes(clienteId);
     const okProducto = !productos.length || productos.some(p => productosTexto.includes(p.toLowerCase()));
     const okEstado   = !estados.length   || estados.map(e => e.toLowerCase()).includes(estadoTexto);
     const okSaldo    = !soloConSaldo     || saldo > 0;
+    // Un pedido sin fecha de entrega no puede estar dentro de un rango, así
+    // que queda afuera mientras el rango esté activo.
+    const okDesde    = !desde || (entrega && entrega >= desde);
+    const okHasta    = !hasta || (entrega && entrega <= hasta);
 
-    return okCliente && okProducto && okEstado && okSaldo;
+    return okCliente && okProducto && okEstado && okSaldo && okDesde && okHasta;
 });
 
 function getSeleccionados(id) {
@@ -469,11 +480,21 @@ function getSeleccionados(id) {
 }
 
 function aplicarFiltros() {
+    let desde = document.getElementById('filtroDesde').value;
+    let hasta = document.getElementById('filtroHasta').value;
+    // Cargado al revés: se da vuelta solo, igual que en el dashboard. Es más
+    // útil que no mostrar nada y dejar al usuario buscando el error.
+    if (desde && hasta && desde > hasta) {
+        [desde, hasta] = [hasta, desde];
+        document.getElementById('filtroDesde').value = desde;
+        document.getElementById('filtroHasta').value = hasta;
+    }
     filtroActivo = {
         clientes:  getSeleccionados('filtroCliente'),
         productos: getSeleccionados('filtroProducto'),
         estados:   getSeleccionados('filtroEstado'),
         soloConSaldo: document.getElementById('filtroSaldo').checked,
+        desde, hasta,
     };
     sessionStorage.setItem(FILTROS_KEY, JSON.stringify(filtroActivo));
     dataTable.draw();
@@ -492,7 +513,7 @@ function manejarTodos(selectEl) {
 function restaurarFiltros() {
     const guardados = sessionStorage.getItem(FILTROS_KEY);
     if (!guardados) return;
-    const { clientes, productos, estados, soloConSaldo } = JSON.parse(guardados);
+    const { clientes, productos, estados, soloConSaldo, desde, hasta } = JSON.parse(guardados);
     const mapa = { filtroCliente: clientes, filtroProducto: productos, filtroEstado: estados };
     Object.entries(mapa).forEach(([id, vals]) => {
         if (!vals?.length) return;
@@ -501,9 +522,11 @@ function restaurarFiltros() {
         });
     });
     document.getElementById('filtroSaldo').checked = !!soloConSaldo;
+    document.getElementById('filtroDesde').value = desde || '';
+    document.getElementById('filtroHasta').value = hasta || '';
     filtroActivo = {
         clientes: clientes || [], productos: productos || [], estados: estados || [],
-        soloConSaldo: !!soloConSaldo,
+        soloConSaldo: !!soloConSaldo, desde: desde || '', hasta: hasta || '',
     };
     // draw(false): NO resetear la paginación, para conservar la página que
     // restauró stateSave (importante al volver de editar un pedido).
@@ -512,11 +535,13 @@ function restaurarFiltros() {
 
 function limpiarFiltros() {
     sessionStorage.removeItem(FILTROS_KEY);
-    filtroActivo = { clientes: [], productos: [], estados: [], soloConSaldo: false };
+    filtroActivo = { ...FILTROS_VACIOS };
     ['filtroCliente', 'filtroProducto', 'filtroEstado'].forEach(id => {
         Array.from(document.getElementById(id).options).forEach(o => o.selected = false);
     });
     document.getElementById('filtroSaldo').checked = false;
+    document.getElementById('filtroDesde').value = '';
+    document.getElementById('filtroHasta').value = '';
     dataTable.draw();
 }
 
@@ -526,6 +551,9 @@ function limpiarFiltros() {
 });
 
 document.getElementById('filtroSaldo').addEventListener('change', aplicarFiltros);
+['filtroDesde', 'filtroHasta'].forEach(id => {
+    document.getElementById(id).addEventListener('change', aplicarFiltros);
+});
 
 document.getElementById('limpiarFiltros').addEventListener('click', limpiarFiltros);
 

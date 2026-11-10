@@ -2,6 +2,9 @@ from django.shortcuts import render, redirect, get_object_or_404, reverse
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
 from django.db import transaction
+from django.db.models import Exists, OuterRef
+from facturacion.models import Comprobante
+from facturacion.services import config
 from .models import Pedido, ViajeCadete
 from presupuestos.models import Presupuesto, DetalleSugerido
 from productos.models import ProductoCotizado
@@ -96,9 +99,37 @@ def _medios_activos():
     return [(m.value, m.label) for m in Movimiento.MEDIOS_ACTIVOS]
 
 
+def _pedidos_con_facturacion():
+    """Los pedidos de la tabla, con el estado de facturación ya resuelto.
+
+    Se anota con `Exists` y no se consulta por fila: la tabla trae todos los
+    pedidos, así que una query por fila serían cientos de consultas.
+
+    Se filtra por el **ambiente de ARCA activo** (igual que el widget de
+    monotributo): un comprobante de homologación no es una factura real y no
+    tiene que marcar el pedido como facturado en producción.
+    """
+    ambiente = config.ambiente_actual()
+    comprobantes = Comprobante.objects.filter(
+        pedido=OuterRef('pk'), ambiente=ambiente)
+    return (
+        Pedido.objects
+        .annotate(
+            facturado=Exists(comprobantes.filter(
+                estado=Comprobante.Estado.AUTORIZADO,
+                tipo_cbte=Comprobante.Tipo.FACTURA_C)),
+            # Un intento fallido también se muestra: es trabajo pendiente, no
+            # un pedido sin facturar.
+            error_facturacion=Exists(comprobantes.filter(
+                estado=Comprobante.Estado.ERROR)),
+        )
+        .order_by('-numero')
+    )
+
+
 def _pedidos_context(request):
     return {
-        'Peds': Pedido.objects.order_by('-numero').all(),
+        'Peds': _pedidos_con_facturacion(),
         'Clientes': Cliente.objects.all().order_by("nombre"),
         'Sugerencias': DetalleSugerido.objects.order_by('-frecuencia'),
         'Estados': [e[0] for e in Pedido.ESTADOS],

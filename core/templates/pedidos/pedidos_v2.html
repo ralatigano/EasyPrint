@@ -16,7 +16,7 @@
 /* Reserva la altura de un label para que los controles cortos (checkbox de saldo,
    botón limpiar) queden alineados con los selects, y su label con los demás. */
 .filter-bar-v2 .label-spacer { visibility: hidden; }
-.filter-bar-v2 > div:not(.check-all-wrap):not(.bulk-filter-actions) {
+.filter-bar-v2 > div:not(.check-all-wrap):not(.bulk-filter-actions):not(.rango-fechas) {
     min-width: 140px;
     max-width: 220px;
     flex: 0 1 220px;
@@ -26,6 +26,11 @@
     overflow: hidden;
     text-overflow: ellipsis;
 }
+/* El rango de fechas necesita más que los 220px de los demás filtros: son dos
+   campos, y recortados quedaban pisados por el botón de limpiar. Por eso la
+   regla de arriba lo excluye en lugar de pelearse con un !important acá. */
+.filter-bar-v2 > div.rango-fechas { flex: 0 0 auto; }
+.filter-bar-v2 .rango-fechas input[type="date"] { width: 148px; }
 
 /* ── Filas expandibles ───────────────────────────────────────────────────────── */
 /* Filas expandibles y panel de detalle: los estilos genéricos viven ahora en
@@ -105,8 +110,15 @@
 #bulkCount { font-weight: 600; margin-right: 6px; }
 
 /* ── Celda número ────────────────────────────────────────────────────────────── */
-.num-mono { font-size: 12px; font-family: monospace; color: var(--bs-secondary-color, #6c757d); display: block; }
+/* nowrap: el número y su marca de facturación son una sola cosa y no pueden
+   partirse en dos renglones. */
+.num-mono { font-size: 12px; font-family: monospace; color: var(--bs-secondary-color, #6c757d); display: block; white-space: nowrap; }
 .num-actions { display: flex; gap: 3px; margin-top: 3px; }
+
+/* Marca de facturación: chica, al lado del número, sin ocupar una columna. */
+.marca-facturado, .marca-factura-error { font-size: 11px; cursor: help; margin-left: 4px; }
+.marca-facturado { color: var(--bs-success, #198754); }
+.marca-factura-error { color: var(--bs-warning, #ffc107); }
 
 /* ── Celda productos ─────────────────────────────────────────────────────────── */
 .prod-cell { display: flex; align-items: center; gap: 6px; }
@@ -185,6 +197,17 @@
             </div>
         </div>
 
+        <div class="rango-fechas">
+            <label class="form-label" for="filtroDesde">Entrega entre</label>
+            <div class="d-flex gap-1 align-items-center" style="height:38px;">
+                <input type="date" id="filtroDesde" class="form-control" style="height:38px;"
+                       aria-label="Entrega desde">
+                <span class="text-muted small">a</span>
+                <input type="date" id="filtroHasta" class="form-control" style="height:38px;"
+                       aria-label="Entrega hasta">
+            </div>
+        </div>
+
         <div>
             <label class="form-label label-spacer">&nbsp;</label>
             <button id="limpiarFiltros" class="btn btn-outline-secondary d-block" style="height:38px;">
@@ -242,6 +265,11 @@
                     data-cliente-ref="{{ p.cliente.referencia }}"
                     data-descripcion="{{ p.descripcion|default:'' }}"
                     data-estado="{{ p.estado }}"
+                    {% comment %}
+                    La fecha en formato ISO para que el filtro de rango la pueda
+                    comparar: la celda visible va en formato argentino.
+                    {% endcomment %}
+                    data-entrega="{{ p.fecha_entrega|date:'Y-m-d' }}"
                     data-es-cancelado="{% if p.bloqueado_cancelado %}true{% else %}false{% endif %}">
 
                     <!-- Checkbox -->
@@ -252,7 +280,17 @@
 
                     <!-- Número + botones rápidos -->
                     <td>
-                        <span class="num-mono">{% localize off %}{{ p.numero }}{% endlocalize %}</span>
+                        {% comment %}
+                        La marca va DENTRO del número: `.num-mono` es un bloque,
+                        así que afuera caía en un renglón propio, separada de lo
+                        que califica.
+                        {% endcomment %}
+                        <span class="num-mono">{% localize off %}{{ p.numero }}{% endlocalize %}{% if p.facturado %}<i
+                            class="fa-solid fa-receipt marca-facturado" data-bs-toggle="tooltip"
+                            title="Facturado"></i>{% elif p.error_facturacion %}<i
+                            class="fa-solid fa-triangle-exclamation marca-factura-error"
+                            data-bs-toggle="tooltip"
+                            title="Hubo un error al facturar: quedó sin factura"></i>{% endif %}</span>
                         <div class="num-actions">
                             <button type="button"
                                     class="btn btn-dark btn-xs"
